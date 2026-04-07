@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import MobileScrollGuide from './MobileScrollGuide';
 import '../styles/Navbar.css';
@@ -14,25 +14,6 @@ const navigationItems = [
 
 const Navbar = ({ theme, onToggleTheme }) => {
   const location = useLocation();
-  const [showScrollGuide, setShowScrollGuide] = useState(true);
-  const activeItem = navigationItems.find(({ to }) => to === location.pathname) || navigationItems[0];
-
-  useEffect(() => {
-    setShowScrollGuide(true);
-  }, [location.pathname, theme]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollGuide(window.scrollY < 36);
-    };
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
 
   return (
     <nav className="navbar">
@@ -50,22 +31,23 @@ const Navbar = ({ theme, onToggleTheme }) => {
         {navigationItems.map(({ to, label }) => (
           <li key={to}>
             <NavLink to={to} className={({ isActive }) => (isActive ? 'active' : '')}>
-              {label}
+              {({ isActive }) => (
+                <span className="navbar-link-inner">
+                  {isActive ? (
+                    <span
+                      className={`navbar-link-guide navbar-link-guide--${theme}`}
+                      aria-hidden="true"
+                    >
+                      <MobileScrollGuide theme={theme} compact />
+                    </span>
+                  ) : null}
+                  <span className="navbar-link-label">{label}</span>
+                </span>
+              )}
             </NavLink>
           </li>
         ))}
       </ul>
-      <div
-        className={`mobile-scroll-guide mobile-scroll-guide--${theme} ${showScrollGuide ? 'is-visible' : 'is-hidden'}`}
-        aria-live="polite"
-      >
-        <div className="mobile-scroll-guide-figure">
-          <MobileScrollGuide theme={theme} />
-        </div>
-        <p className="mobile-scroll-guide-copy">
-          {theme === 'apollo' ? 'Apollo' : 'Selene'} points to {activeItem.label} below.
-        </p>
-      </div>
     </nav>
   );
 };

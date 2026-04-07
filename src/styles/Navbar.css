@@ -92,7 +92,19 @@
   box-shadow: var(--shadow-soft);
 }
 
-.mobile-scroll-guide {
+.navbar-link-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.navbar-link-label {
+  min-width: 0;
+}
+
+.navbar-link-guide {
   display: none;
 }
 
@@ -132,44 +144,46 @@
     transform: translateY(-2px);
   }
 
-  .mobile-scroll-guide {
+  .navbar-link-inner {
+    gap: 0.55rem;
+  }
+
+  .navbar-link-guide {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.85rem;
-    padding: 0.9rem 1rem 0.25rem;
-    color: var(--muted-color);
-    text-align: left;
-    transform-origin: top center;
-    transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease, padding 0.25s ease;
-    max-height: 120px;
-    overflow: hidden;
-  }
-
-  .mobile-scroll-guide.is-hidden {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.96);
-    pointer-events: none;
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-
-  .mobile-scroll-guide.is-visible {
-    opacity: 1;
+    width: 1.9rem;
+    height: 1.9rem;
+    flex: 0 0 auto;
     transform: translateY(0) scale(1);
   }
 
-  .mobile-scroll-guide-figure {
-    width: 78px;
-    height: 102px;
-    flex: 0 0 auto;
+  .navbar-link-guide .mobile-scroll-guide-svg {
+    width: 100%;
+    height: 100%;
   }
 
   .mobile-scroll-guide-svg {
     width: 100%;
     height: 100%;
     display: block;
+  }
+
+  .mobile-scroll-guide-svg--compact {
+    overflow: visible;
+  }
+
+  .mobile-scroll-guide-svg--compact .guide-float {
+    animation: guide-float-compact 3.6s ease-in-out infinite;
+  }
+
+  .mobile-scroll-guide-svg--compact .guide-halo {
+    animation: guide-halo-pulse-compact 3.2s ease-in-out infinite;
+  }
+
+  .mobile-scroll-guide-svg--compact .guide-spark {
+    animation: guide-spark-drift-compact 4.2s ease-in-out infinite;
+    opacity: 0.65;
   }
 
   .guide-float {
@@ -193,22 +207,19 @@
     animation-delay: 0.8s;
   }
 
-  .guide-arrow-bounce {
+  .guide-pointer-bounce {
     animation: mobile-scroll-bob 1.2s ease-in-out infinite;
   }
 
-  .mobile-scroll-guide-copy {
-    margin: 0;
-    font-size: 0.82rem;
-    line-height: 1.45;
-    max-width: 16rem;
+  .mobile-scroll-guide-svg--compact .guide-pointer-bounce {
+    animation: guide-pointer-bob-compact 2.6s ease-in-out infinite;
   }
 
-  .mobile-scroll-guide--apollo {
+  .navbar-link-guide--apollo {
     color: #b8561e;
   }
 
-  .mobile-scroll-guide--selene {
+  .navbar-link-guide--selene {
     color: #c8d7f4;
   }
 }
@@ -220,11 +231,6 @@
 
   .navbar-menu li {
     min-width: 100%;
-  }
-
-  .mobile-scroll-guide {
-    justify-content: flex-start;
-    padding-top: 0.7rem;
   }
 }
 
@@ -275,5 +281,53 @@
   50% {
     transform: translateY(-3px) scale(1.08);
     opacity: 1;
+  }
+}
+
+@keyframes guide-float-compact {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(1.5px);
+  }
+}
+
+@keyframes guide-halo-pulse-compact {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.92;
+    transform: scale(1.025);
+  }
+}
+
+@keyframes guide-spark-drift-compact {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.56;
+  }
+
+  50% {
+    transform: translateY(-1.5px) scale(1.03);
+    opacity: 0.78;
+  }
+}
+
+@keyframes guide-pointer-bob-compact {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(1.5px);
   }
 }

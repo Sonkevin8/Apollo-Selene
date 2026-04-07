@@ -1,8 +1,8 @@
 import React from 'react';
 
-const ApolloGuide = () => (
+const ApolloGuide = ({ compact }) => (
   <svg
-    className="mobile-scroll-guide-svg"
+    className={`mobile-scroll-guide-svg${compact ? ' mobile-scroll-guide-svg--compact' : ''}`}
     viewBox="0 0 120 156"
     role="img"
     aria-hidden="true"
@@ -63,6 +63,13 @@ const ApolloGuide = () => (
         fill="url(#apolloHair)"
       />
       <path
+        d="M46 57c5-8 9-12 14-12 4 0 9 4 14 12"
+        fill="none"
+        stroke="#c96826"
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
+      <path
         d="M49 51c5-5 8-7 11-7 4 0 8 2 11 7"
         fill="none"
         stroke="#fef0c0"
@@ -71,10 +78,14 @@ const ApolloGuide = () => (
         opacity="0.8"
       />
       <circle cx="60" cy="59" r="11.5" fill="url(#apolloSkin)" />
-      <path d="M53 59h4M63 59h4" stroke="#7f3f18" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M56 65c1.2 1.4 2.5 2.1 4 2.1 1.5 0 2.8-.7 4-2.1" fill="none" stroke="#9b4d1d" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M60 60v2.8" stroke="#c27847" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M48 67c-5 6-7 10-9 17m33-17c5 6 7 10 9 17" fill="none" stroke="#efb56d" strokeWidth="4" strokeLinecap="round" />
+      <ellipse cx="55" cy="59" rx="3.2" ry="2.2" fill="#fff8ef" opacity="0.95" />
+      <ellipse cx="65" cy="59" rx="3.2" ry="2.2" fill="#fff8ef" opacity="0.95" />
+      <circle cx="55.4" cy="59.4" r="1.2" fill="#7f3f18" />
+      <circle cx="64.6" cy="59.4" r="1.2" fill="#7f3f18" />
+      <path d="M51.5 55.5c1.5-1.1 2.9-1.6 4.1-1.6 1.2 0 2.5.5 3.8 1.6" fill="none" stroke="#8b4318" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M60 59.8v3.3" stroke="#c27847" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M57.2 64.8c.9.8 1.8 1.2 2.8 1.2 1.1 0 2-.4 2.9-1.2" fill="none" stroke="#9b4d1d" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M48 67c-4 5-6 9-7 13m31-13c4 5 6 9 7 13" fill="none" stroke="#efb56d" strokeWidth="4" strokeLinecap="round" />
 
       <path
         d="M44 64c4-6 11-10 16-10s12 4 16 10l8 42c2 12-8 22-24 22s-26-10-24-22l8-42z"
@@ -113,18 +124,24 @@ const ApolloGuide = () => (
         strokeLinecap="round"
         opacity="0.8"
       />
-    </g>
 
-    <g className="guide-arrow-bounce" fill="none" stroke="#b8561e" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M60 118v21" />
-      <path d="M49 129l11 11 11-11" />
+      <g className="guide-pointer-bounce">
+        <path d="M45 86c-4 10-6 17-6 26" fill="none" stroke="#e7a04d" strokeWidth="4.5" strokeLinecap="round" />
+        <path d="M75 86c4 10 6 17 6 26" fill="none" stroke="#e7a04d" strokeWidth="4.5" strokeLinecap="round" />
+        <path d="M39 112c0 5 0 9 1 13" fill="none" stroke="#f6c78d" strokeWidth="4" strokeLinecap="round" />
+        <path d="M81 112c0 5 0 9-1 13" fill="none" stroke="#f6c78d" strokeWidth="4" strokeLinecap="round" />
+        <path d="M40 125c-2-1-3-1.8-4-2.8" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M40 125c1.3.6 2.5.7 3.7.5" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M80 125c2-1 3-1.8 4-2.8" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M80 125c-1.3.6-2.5.7-3.7.5" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
+      </g>
     </g>
   </svg>
 );
 
-const SeleneGuide = () => (
+const SeleneGuide = ({ compact }) => (
   <svg
-    className="mobile-scroll-guide-svg"
+    className={`mobile-scroll-guide-svg${compact ? ' mobile-scroll-guide-svg--compact' : ''}`}
     viewBox="0 0 120 156"
     role="img"
     aria-hidden="true"
@@ -179,6 +196,13 @@ const SeleneGuide = () => (
         fill="url(#seleneHair)"
       />
       <path
+        d="M47 57c4-8 8-12 13-12 5 0 9 4 13 12"
+        fill="none"
+        stroke="#5d7297"
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
+      <path
         d="M47 52c5-4 9-6 13-6 4 0 8 2 13 6"
         fill="none"
         stroke="#f7fbff"
@@ -187,10 +211,14 @@ const SeleneGuide = () => (
         opacity="0.82"
       />
       <circle cx="60" cy="60" r="11.5" fill="url(#seleneSkin)" />
-      <path d="M53.5 59h4M62.5 59h4" stroke="#20324d" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M56 65c1 1.4 2.3 2.1 4 2.1 1.7 0 3-.7 4-2.1" fill="none" stroke="#324b72" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M60 60v2.8" stroke="#7d97bf" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M48 68c-5 6-8 10-10 17m34-17c5 6 8 10 10 17" fill="none" stroke="#91a9d0" strokeWidth="4" strokeLinecap="round" />
+      <ellipse cx="55.2" cy="59.5" rx="3.2" ry="2.2" fill="#f9fbff" opacity="0.95" />
+      <ellipse cx="64.8" cy="59.5" rx="3.2" ry="2.2" fill="#f9fbff" opacity="0.95" />
+      <circle cx="55.6" cy="59.8" r="1.15" fill="#20324d" />
+      <circle cx="64.4" cy="59.8" r="1.15" fill="#20324d" />
+      <path d="M51.8 55.7c1.2-.9 2.4-1.3 3.6-1.3 1.3 0 2.6.4 4 1.3" fill="none" stroke="#344b72" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M60 60.2v3.1" stroke="#7d97bf" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M56.8 65.1c.9.7 2 .9 3.2.9 1.2 0 2.2-.2 3.2-.9" fill="none" stroke="#324b72" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M48 68c-4 5-6.5 9-8 14m32-14c4 5 6.5 9 8 14" fill="none" stroke="#91a9d0" strokeWidth="4" strokeLinecap="round" />
 
       <path
         d="M44 64c4-7 10-10 16-10s12 3 16 10l8 42c2 12-8 22-24 22s-26-10-24-22l8-42z"
@@ -229,17 +257,23 @@ const SeleneGuide = () => (
         strokeLinecap="round"
         opacity="0.85"
       />
-    </g>
 
-    <g className="guide-arrow-bounce" fill="none" stroke="#c8d7f4" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M60 118v21" />
-      <path d="M49 129l11 11 11-11" />
+      <g className="guide-pointer-bounce">
+        <path d="M45 86c-4 10-6 17-6 26" fill="none" stroke="#88a1ca" strokeWidth="4.5" strokeLinecap="round" />
+        <path d="M75 86c4 10 6 17 6 26" fill="none" stroke="#88a1ca" strokeWidth="4.5" strokeLinecap="round" />
+        <path d="M39 112c0 5 0 9 1 13" fill="none" stroke="#d8e4f8" strokeWidth="4" strokeLinecap="round" />
+        <path d="M81 112c0 5 0 9-1 13" fill="none" stroke="#d8e4f8" strokeWidth="4" strokeLinecap="round" />
+        <path d="M40 125c-2-1-3-1.8-4-2.8" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M40 125c1.3.6 2.5.7 3.7.5" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M80 125c2-1 3-1.8 4-2.8" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M80 125c-1.3.6-2.5.7-3.7.5" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
+      </g>
     </g>
   </svg>
 );
 
-const MobileScrollGuide = ({ theme }) => {
-  return theme === 'apollo' ? <ApolloGuide /> : <SeleneGuide />;
+const MobileScrollGuide = ({ theme, compact = false }) => {
+  return theme === 'apollo' ? <ApolloGuide compact={compact} /> : <SeleneGuide compact={compact} />;
 };
 
 export default MobileScrollGuide;
