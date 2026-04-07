@@ -126,14 +126,18 @@ const ApolloGuide = ({ compact }) => (
       />
 
       <g className="guide-pointer-bounce">
-        <path d="M45 86c-4 10-6 17-6 26" fill="none" stroke="#e7a04d" strokeWidth="4.5" strokeLinecap="round" />
-        <path d="M75 86c4 10 6 17 6 26" fill="none" stroke="#e7a04d" strokeWidth="4.5" strokeLinecap="round" />
-        <path d="M39 112c0 5 0 9 1 13" fill="none" stroke="#f6c78d" strokeWidth="4" strokeLinecap="round" />
-        <path d="M81 112c0 5 0 9-1 13" fill="none" stroke="#f6c78d" strokeWidth="4" strokeLinecap="round" />
-        <path d="M40 125c-2-1-3-1.8-4-2.8" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
-        <path d="M40 125c1.3.6 2.5.7 3.7.5" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
-        <path d="M80 125c2-1 3-1.8 4-2.8" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
-        <path d="M80 125c-1.3.6-2.5.7-3.7.5" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
+        <g className="guide-wave-arm">
+          <path d="M44 86c-6-7-9-13-10-20" fill="none" stroke="#e7a04d" strokeWidth="4.5" strokeLinecap="round" />
+          <path d="M34 66c-.6-4.8.2-8.8 2.4-12.2" fill="none" stroke="#f6c78d" strokeWidth="4" strokeLinecap="round" />
+          <path d="M36.8 54.8c2.2-.2 4 .1 5.6 1" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
+          <path d="M36.8 54.8c-1.8-1.1-3-2.2-3.8-3.5" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
+        </g>
+        <g className="guide-point-arm">
+          <path d="M76 86c5 10 8 18 8 28" fill="none" stroke="#e7a04d" strokeWidth="4.5" strokeLinecap="round" />
+          <path d="M84 114c0 5 0 9-.8 13.2" fill="none" stroke="#f6c78d" strokeWidth="4" strokeLinecap="round" />
+          <path d="M83.2 127.2c2-1.2 3.2-2.1 4-3.1" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
+          <path d="M83.2 127.2c-1.4.5-2.7.6-4 .3" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
+        </g>
       </g>
     </g>
   </svg>
@@ -259,14 +263,18 @@ const SeleneGuide = ({ compact }) => (
       />
 
       <g className="guide-pointer-bounce">
-        <path d="M45 86c-4 10-6 17-6 26" fill="none" stroke="#88a1ca" strokeWidth="4.5" strokeLinecap="round" />
-        <path d="M75 86c4 10 6 17 6 26" fill="none" stroke="#88a1ca" strokeWidth="4.5" strokeLinecap="round" />
-        <path d="M39 112c0 5 0 9 1 13" fill="none" stroke="#d8e4f8" strokeWidth="4" strokeLinecap="round" />
-        <path d="M81 112c0 5 0 9-1 13" fill="none" stroke="#d8e4f8" strokeWidth="4" strokeLinecap="round" />
-        <path d="M40 125c-2-1-3-1.8-4-2.8" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
-        <path d="M40 125c1.3.6 2.5.7 3.7.5" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
-        <path d="M80 125c2-1 3-1.8 4-2.8" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
-        <path d="M80 125c-1.3.6-2.5.7-3.7.5" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
+        <g className="guide-wave-arm">
+          <path d="M44 86c-6-7-9-13-10-20" fill="none" stroke="#88a1ca" strokeWidth="4.5" strokeLinecap="round" />
+          <path d="M34 66c-.6-4.8.2-8.8 2.4-12.2" fill="none" stroke="#d8e4f8" strokeWidth="4" strokeLinecap="round" />
+          <path d="M36.8 54.8c2.2-.2 4 .1 5.6 1" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
+          <path d="M36.8 54.8c-1.8-1.1-3-2.2-3.8-3.5" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
+        </g>
+        <g className="guide-point-arm">
+          <path d="M76 86c5 10 8 18 8 28" fill="none" stroke="#88a1ca" strokeWidth="4.5" strokeLinecap="round" />
+          <path d="M84 114c0 5 0 9-.8 13.2" fill="none" stroke="#d8e4f8" strokeWidth="4" strokeLinecap="round" />
+          <path d="M83.2 127.2c2-1.2 3.2-2.1 4-3.1" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
+          <path d="M83.2 127.2c-1.4.5-2.7.6-4 .3" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
+        </g>
       </g>
     </g>
   </svg>

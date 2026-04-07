@@ -152,8 +152,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 1.9rem;
-    height: 1.9rem;
+    width: 2.45rem;
+    height: 2.45rem;
     flex: 0 0 auto;
     transform: translateY(0) scale(1);
   }
@@ -174,7 +174,7 @@
   }
 
   .mobile-scroll-guide-svg--compact .guide-float {
-    animation: guide-float-compact 3.6s ease-in-out infinite;
+    animation: guide-float-compact 2.8s ease-in-out infinite;
   }
 
   .mobile-scroll-guide-svg--compact .guide-halo {
@@ -182,7 +182,7 @@
   }
 
   .mobile-scroll-guide-svg--compact .guide-spark {
-    animation: guide-spark-drift-compact 4.2s ease-in-out infinite;
+    animation: guide-spark-drift-compact 3.1s ease-in-out infinite;
     opacity: 0.65;
   }
 
@@ -213,6 +213,11 @@
 
   .mobile-scroll-guide-svg--compact .guide-pointer-bounce {
     animation: guide-pointer-bob-compact 2.6s ease-in-out infinite;
+  }
+
+  .mobile-scroll-guide-svg--compact .guide-wave-arm {
+    animation: guide-wave-compact 1.8s ease-in-out infinite;
+    transform-origin: 34px 66px;
   }
 
   .navbar-link-guide--apollo {
@@ -329,5 +334,16 @@
 
   50% {
     transform: translateY(1.5px);
+  }
+}
+
+@keyframes guide-wave-compact {
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+
+  50% {
+    transform: rotate(8deg);
   }
 }
