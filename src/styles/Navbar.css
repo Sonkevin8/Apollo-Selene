@@ -152,8 +152,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 3.8rem;
-    height: 3.8rem;
+    width: 1.9rem;
+    height: 1.9rem;
     flex: 0 0 auto;
     transform: translateY(0) scale(1);
   }
@@ -171,21 +171,19 @@
 
   .mobile-scroll-guide-svg--compact {
     overflow: visible;
-    transform: scale(1.34) translateY(6px);
-    transform-origin: center;
   }
 
   .mobile-scroll-guide-svg--compact .guide-float {
-    animation: guide-float-compact 1.7s ease-in-out infinite;
+    animation: guide-float-compact 3.6s ease-in-out infinite;
   }
 
   .mobile-scroll-guide-svg--compact .guide-halo {
-    animation: guide-halo-pulse-compact 2.5s ease-in-out infinite;
+    animation: guide-halo-pulse-compact 3.2s ease-in-out infinite;
   }
 
   .mobile-scroll-guide-svg--compact .guide-spark {
-    animation: guide-spark-drift-compact 2.2s ease-in-out infinite;
-    opacity: 0.72;
+    animation: guide-spark-drift-compact 4.2s ease-in-out infinite;
+    opacity: 0.65;
   }
 
   .guide-float {
@@ -209,21 +207,12 @@
     animation-delay: 0.8s;
   }
 
-  .guide-pointer-bounce {
+  .guide-arrow-bounce {
     animation: mobile-scroll-bob 1.2s ease-in-out infinite;
   }
 
-  .mobile-scroll-guide-svg--compact .guide-pointer-bounce {
-    animation: guide-pointer-bob-compact 1.55s ease-in-out infinite;
-  }
-
-  .mobile-scroll-guide-svg--compact .guide-wave-arm {
-    animation: guide-wave-compact 0.95s ease-in-out infinite;
-    transform-origin: 33px 67px;
-  }
-
-  .mobile-scroll-guide-svg--compact .guide-point-arm {
-    transform-origin: 80px 101px;
+  .mobile-scroll-guide-svg--compact .guide-arrow-bounce {
+    animation: mobile-scroll-bob 1.2s ease-in-out infinite;
   }
 
   .navbar-link-guide--apollo {
@@ -332,24 +321,3 @@
   }
 }
 
-@keyframes guide-pointer-bob-compact {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(1.5px);
-  }
-}
-
-@keyframes guide-wave-compact {
-  0%,
-  100% {
-    transform: rotate(-2deg);
-  }
-
-  50% {
-    transform: rotate(8deg);
-  }
-}
