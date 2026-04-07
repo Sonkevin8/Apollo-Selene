@@ -2,14 +2,14 @@ import React from 'react';
 
 const EventAnnouncements = () => {
   const events = [
-    { id: 1, title: 'Event 1', date: '2024-07-15', description: 'Description for Event 1' },
-    { id: 2, title: 'Event 2', date: '2024-08-01', description: 'Description for Event 2' },
-    { id: 3, title: 'Event 3', date: '2024-08-20', description: 'Description for Event 3' },
+    { id: 1, title: 'Sunroom Sketch Night', date: '2024-07-15', description: 'A relaxed creative evening with room to unwind, draw, and connect at your own pace.' },
+    { id: 2, title: 'Moonlight Story Circle', date: '2024-08-01', description: 'A welcoming reflection night for listening, sharing, and settling into community.' },
+    { id: 3, title: 'Apollo Selene Open House', date: '2024-08-20', description: 'An easygoing introduction to the space, upcoming events, and the people who gather here.' },
   ];
 
   return (
     <div>
-      <h1>Upcoming Events</h1>
+      <h1>Apollo Selene Events</h1>
       <ul>
         {events.map(event => (
           <li key={event.id}>

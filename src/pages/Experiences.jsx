@@ -6,28 +6,28 @@ const Experiences = () => {
       id: 1,
       author: 'Sarah M.',
       date: '2024-12-15',
-      title: 'Finding My Creative Layer',
-      content: 'I never considered myself artistic until I joined the community art workshop. Working alongside others, I discovered that creativity isn\'t about perfection—it\'s about connection. My layer of hesitation transformed into a layer of bold expression.',
+      title: 'I Felt Comfortable Right Away',
+      content: 'I came to Apollo Selene not knowing anyone and expected to feel awkward. Instead, the room felt soft, friendly, and easy to settle into. By the end of the night, I had sketched, laughed, and actually relaxed.',
       likes: 12,
-      tags: ['creativity', 'art', 'personal-growth']
+      tags: ['welcome', 'art', 'calm']
     },
     {
       id: 2,
       author: 'Marcus T.',
       date: '2024-12-10',
-      title: 'The Power of Parallel Stories',
-      content: 'At the storytelling circle, I shared my journey of starting over in a new city. What amazed me was how many parallel experiences others had. We were all building new layers in different ways, but the emotions and challenges were so similar. I left feeling less alone.',
+      title: 'A Place To Exhale',
+      content: 'The story circle gave me something I did not realize I needed: a place to slow down. No one pushed, no one performed. People listened, shared honestly, and made the whole night feel grounding.',
       likes: 18,
-      tags: ['storytelling', 'community', 'connection']
+      tags: ['storytelling', 'comfort', 'community']
     },
     {
       id: 3,
       author: 'Elena R.',
       date: '2024-12-05',
-      title: 'Layers of Collaboration',
-      content: 'Our project showcase wasn\'t just about displaying work—it was about seeing how individual layers combined into something none of us could have created alone. The synergy was incredible, and it proved that parallel doesn\'t mean separate.',
+      title: 'Gentle Energy, Real Connection',
+      content: 'What stood out to me most was the balance. Apollo Selene feels alive without being overwhelming. I could talk to new people, take a break when I needed one, and still feel part of everything happening around me.',
       likes: 25,
-      tags: ['collaboration', 'projects', 'community']
+      tags: ['connection', 'events', 'reflection']
     }
   ]);
 
@@ -81,21 +81,21 @@ const Experiences = () => {
   return (
     <div className="content-section">
       <div className="flex justify-between items-center mb-4">
-        <h1>Experiences</h1>
+        <h1>Reflections</h1>
         <button 
           onClick={() => setShowForm(true)} 
           className="share-experience-btn"
         >
-          Share Your Experience
+          Share Your Reflection
         </button>
       </div>
 
       <div className="card">
         <p>
-          This is where our community shares their layers of experience. Every story adds depth to our collective narrative, showing how individual journeys run in parallel, creating connections and inspiring growth.
+          This is where people share how Apollo Selene felt to them. Some reflections are about the events themselves, while others are about the comfort, quiet, and connection they found around them.
         </p>
         <p>
-          <strong>Share your layer:</strong> How has Apollo Selene impacted your life? What connections have you made? What have you discovered about yourself or others?
+          <strong>Share your reflection:</strong> Did an event help you unwind? Did you feel welcome, inspired, or understood? Tell us what stayed with you.
         </p>
       </div>
 
@@ -103,7 +103,7 @@ const Experiences = () => {
       {showForm && (
         <div className="modal-overlay">
           <div className="modal experience-modal">
-            <h3>Share Your Experience</h3>
+            <h3>Share Your Reflection</h3>
             <form onSubmit={handleSubmit}>
               <input
                 type="text"
@@ -120,7 +120,7 @@ const Experiences = () => {
                 required
               />
               <textarea
-                placeholder="Share your experience... How has Apollo Selene impacted you? What connections have you made? What layers have you discovered?"
+                placeholder="Share your reflection... How did Apollo Selene make you feel? What part of the event or atmosphere stayed with you?"
                 value={newExperience.content}
                 onChange={(e) => setNewExperience({...newExperience, content: e.target.value})}
                 rows="6"
@@ -128,12 +128,12 @@ const Experiences = () => {
               />
               <input
                 type="text"
-                placeholder="Tags (comma-separated, e.g., creativity, connection, growth)"
+                placeholder="Tags (comma-separated, e.g., calm, connection, welcome)"
                 value={newExperience.tags}
                 onChange={(e) => setNewExperience({...newExperience, tags: e.target.value})}
               />
               <div className="modal-actions">
-                <button type="submit">Share Experience</button>
+                <button type="submit">Share Reflection</button>
                 <button type="button" onClick={() => setShowForm(false)}>Cancel</button>
               </div>
             </form>
@@ -178,7 +178,7 @@ const Experiences = () => {
                 <span className="heart">♥</span>
                 {experience.likes}
               </button>
-              <span className="layer-indicator">+ Layer Added</span>
+              <span className="layer-indicator">+ Reflection Added</span>
             </div>
           </div>
         ))}
@@ -187,9 +187,7 @@ const Experiences = () => {
       <div className="card text-center">
         <h3>Every Experience Matters</h3>
         <p>
-          Your story becomes part of our collective layer. Whether it's a moment of connection, 
-          a creative breakthrough, or a simple realization—every experience adds to the parallel 
-          narrative we're building together.
+          Every reflection helps define the kind of place Apollo Selene is becoming. Whether your story is about meeting someone new, finding a quiet corner, or finally feeling able to relax, it helps others know they can belong here too.
         </p>
       </div>
     </div>

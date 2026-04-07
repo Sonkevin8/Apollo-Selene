@@ -4,33 +4,33 @@ const Events = () => {
   const [events, setEvents] = useState([
     {
       id: 1,
-      title: 'Community Art Workshop',
+      title: 'Sunroom Sketch Night',
       date: '2024-12-28',
       time: '2:00 PM - 5:00 PM',
-      location: 'Downtown Community Center',
-      description: 'Join us for a collaborative art session where we create layers of expression together. Bring your creativity and connect with fellow community members.',
+      location: 'Apollo Selene Lounge',
+      description: 'A relaxed creative evening with sketch materials, soft music, and plenty of room to unwind before or after conversation.',
       poster: 'https://images.pexels.com/photos/1109541/pexels-photo-1109541.jpeg?auto=compress&cs=tinysrgb&w=400',
       attendees: 23,
       maxAttendees: 50
     },
     {
       id: 2,
-      title: 'Storytelling Circle',
+      title: 'Moonlight Story Circle',
       date: '2025-01-05',
       time: '7:00 PM - 9:00 PM',
-      location: 'Riverside Park Pavilion',
-      description: 'Share your layers of experience in our monthly storytelling gathering. Every story adds to our collective narrative.',
+      location: 'Riverside Quiet Room',
+      description: 'A low-pressure gathering for listening, reflecting, and sharing stories at your own pace in a calm environment.',
       poster: 'https://images.pexels.com/photos/1708936/pexels-photo-1708936.jpeg?auto=compress&cs=tinysrgb&w=400',
       attendees: 15,
       maxAttendees: 30
     },
     {
       id: 3,
-      title: 'Parallel Projects Showcase',
+      title: 'Apollo Selene Open House',
       date: '2025-01-15',
       time: '6:00 PM - 10:00 PM',
-      location: 'Innovation Hub',
-      description: 'Celebrate the creative projects born from our community. See how individual layers combine to create something beautiful.',
+      location: 'The Lantern Hall',
+      description: 'Meet the community, explore upcoming plans, and enjoy a welcoming night designed for easy conversation and gentle connection.',
       poster: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400',
       attendees: 42,
       maxAttendees: 100
@@ -55,12 +55,12 @@ const Events = () => {
   const handleLogin = (e) => {
     e.preventDefault();
     // Simple admin check (in real app, this would be secure authentication)
-    if (loginData.username === 'admin' && loginData.password === 'parallellayers2024') {
+    if (loginData.username === 'admin' && loginData.password === 'apolloselene2024') {
       setIsAdmin(true);
       setShowLogin(false);
       setLoginData({ username: '', password: '' });
     } else {
-      alert('Invalid credentials. Try username: admin, password: parallellayers2024');
+      alert('Invalid credentials. Try username: admin, password: apolloselene2024');
     }
   };
 
@@ -114,7 +114,7 @@ const Events = () => {
   return (
     <div className="content-section">
       <div className="flex justify-between items-center mb-4">
-        <h1>Event Announcements</h1>
+        <h1>Apollo Selene Events</h1>
         <div className="flex gap-2">
           {!isAdmin && (
             <button onClick={() => setShowLogin(true)} className="admin-btn">
@@ -136,7 +136,10 @@ const Events = () => {
 
       <div className="card">
         <p>
-          Join us for events that build layers of connection and creativity. Each gathering is an opportunity to meet like-minded people, share experiences, and contribute to our growing community.
+          This is the calm center of Apollo Selene. When a new event is announced, you can come here to read the details, get a feel for the atmosphere, and decide when you are ready to join us.
+        </p>
+        <p>
+          Every gathering is designed to feel welcoming, unhurried, and easy to step into, whether you are meeting people for the first time or returning to a familiar room.
         </p>
       </div>
 

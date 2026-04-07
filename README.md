@@ -1,14 +1,14 @@
 # Apollo Selene
 
 ## Overview
-"Apollo Selene" is a web application designed to provide a platform for event announcements, user experiences, merchandise, and artwork related to a specific movement. The application is built using React and Vite, ensuring a fast and responsive user experience.
+"Apollo Selene" is a web application for a calm, welcoming community space centered on event announcements, reflection, artwork, and supportive gathering. The application is built with React and Vite to provide a fast and responsive experience.
 
 ## Features
 - **Navigation Bar**: Easily navigate through different sections of the website.
-- **Event Announcements**: Stay updated with the latest events related to the movement.
-- **User Experiences**: Share and view personal experiences from users.
-- **Merchandise**: Browse and purchase available merchandise.
-- **Artwork**: Explore artwork that represents the movement.
+- **Events**: Stay updated with upcoming Apollo Selene gatherings and announcements.
+- **Reflections**: Share and read personal reflections about the space and its events.
+- **Shop**: Browse merchandise that helps support future gatherings.
+- **Gallery**: Explore artwork that shapes the tone and identity of Apollo Selene.
 
 ## Project Structure
 ```

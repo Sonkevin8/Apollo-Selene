@@ -1,10 +1,54 @@
 .navbar {
-  background: linear-gradient(90deg, #2d0101 0%, #000 100%);
-  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
   width: 100%;
+  min-height: 100%;
+}
+
+.navbar-brand-block {
+  padding: 1.25rem;
+  border-radius: 24px;
+  background: var(--nav-panel-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18px);
+}
+
+.navbar-kicker {
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: var(--muted-color);
+}
+
+.navbar-brand {
   margin: 0;
-  box-sizing: border-box;
-  position: relative;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+  line-height: 0.95;
+  color: var(--heading-color);
+}
+
+.navbar-copy {
+  margin: 0.85rem 0 0;
+  color: var(--muted-color);
+}
+
+.theme-toggle {
+  margin-top: 1.2rem;
+  max-width: none;
+  width: 100%;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border: 1px solid var(--button-secondary-border);
+}
+
+.theme-toggle:hover {
+  background: var(--button-secondary-hover);
+  transform: translateY(-1px);
 }
 
 .navbar-menu {
@@ -12,8 +56,8 @@
   flex-direction: column;
   list-style: none;
   margin: 0;
-  padding: 0 1rem;
-  gap: 0.75rem;
+  padding: 0;
+  gap: 0.7rem;
   align-items: stretch;
 }
 
@@ -22,110 +66,75 @@
 }
 
 .navbar-menu a {
-  color: #fff;
-  text-decoration: none;
-  font-size: clamp(0.9rem, 2vw, 1rem);
-  transition: all 0.2s ease;
-  padding: clamp(0.75rem, 2vw, 1rem) clamp(1rem, 3vw, 1.5rem);
-  border-radius: 8px;
+  color: var(--text-color);
+  font-size: 0.95rem;
+  transition: all 0.25s ease;
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
   display: block;
   width: 100%;
-  text-align: center;
+  text-align: left;
   border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(5px);
+  background: var(--nav-link-bg);
+  backdrop-filter: blur(8px);
 }
 
 .navbar-menu a:hover {
-  background: #460006;
-  color: #fff;
+  background: var(--nav-link-hover-bg);
   transform: translateX(4px);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 12px rgba(237, 73, 86, 0.3);
+  border-color: var(--border-color-strong);
 }
 
 .navbar-menu .active {
-  background: #063200;
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 2px 8px rgba(237, 73, 86, 0.4);
+  background: var(--nav-link-active-bg);
+  color: var(--nav-link-active-text);
+  border-color: transparent;
+  box-shadow: var(--shadow-soft);
 }
 
-/* TABLET: 601px to 1024px */
-@media (max-width: 1024px) and (min-width: 601px) {
-  .navbar-menu {
-    padding: 0 0.75rem;
-    gap: 0.5rem;
+@media (max-width: 1024px) {
+  .navbar {
+    padding: 1rem;
   }
-  
-  .navbar-menu a {
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
+
+  .navbar-brand-block {
+    padding: 1rem;
   }
 }
 
-/* MOBILE: <= 600px */
 @media (max-width: 600px) {
   .navbar {
-    padding: 0.75rem 0;
+    gap: 1rem;
+    padding: 0.75rem;
   }
-  
+
   .navbar-menu {
     flex-direction: row;
     flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
     gap: 0.5rem;
-    padding: 0 0.5rem;
   }
-  
+
   .navbar-menu li {
-    width: auto;
-    flex: 1;
-    min-width: calc(50% - 0.25rem);
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 140px;
   }
-  
+
   .navbar-menu a {
-    padding: 0.75rem 0.5rem;
-    font-size: 0.85rem;
     text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    padding: 0.85rem 0.75rem;
   }
-  
+
   .navbar-menu a:hover {
     transform: translateY(-2px);
   }
 }
 
-/* SMALL MOBILE: <= 375px */
 @media (max-width: 375px) {
-  .navbar-menu li {
-    min-width: 100%;
-    margin-bottom: 0.25rem;
-  }
-  
   .navbar-menu {
     flex-direction: column;
-    gap: 0.25rem;
   }
-  
-  .navbar-menu a {
-    padding: 0.6rem 0.5rem;
-    font-size: 0.8rem;
-  }
-}
 
-/* LARGE SCREENS: >= 1200px */
-@media (min-width: 1200px) {
-  .navbar-menu {
-    padding: 0 1.5rem;
-    gap: 1rem;
-  }
-  
-  .navbar-menu a {
-    padding: 1rem 1.5rem;
-    font-size: 1.1rem;
+  .navbar-menu li {
+    min-width: 100%;
   }
 }

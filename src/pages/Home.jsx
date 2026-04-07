@@ -1,67 +1,93 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Home() {
   return (
-    <div className="content-section">
-      <h1>Welcome to Apollo Selene</h1>
-      
-      <div className="card">
-        <p>
-          Apollo Selene is a movement and community built on the belief that purposeful, joyful action attracts like-minded people, creating growth, unity, and deeper human connection.
-        </p>
-        <p>
-          It's about living the vision, not just talking about it—proving its value through real-world experiences, events, and relationships.
-        </p>
-      </div>
-
-      <div className="grid grid-2">
-        <div className="card">
-          <h3>What Are Layers?</h3>
+    <div className="content-section home-page">
+      <section className="hero-card">
+        <div className="hero-copy">
+          <p className="section-kicker">Apollo by light. Selene by night.</p>
+          <h1>Welcome to Apollo Selene</h1>
+          <p className="hero-lead">
+            A place to arrive gently, stay informed, and feel comfortable returning whenever a new event is announced.
+          </p>
           <p>
-            Every action, project, and interaction becomes a "layer" in the bigger picture. These layers run in parallel between people—our stories, passions, and moments existing side by side, influencing and inspiring each other.
+            Apollo Selene is designed as a warm landing place for community life. The site centers event announcements, but the feeling matters just as much as the information: clear, calm, and inviting from the first moment.
+          </p>
+          <div className="hero-actions">
+            <Link to="/events" className="button-link primary-link">See Upcoming Events</Link>
+            <Link to="/ember-room" className="button-link secondary-link">Visit the Ember Room</Link>
+          </div>
+        </div>
+
+        <div className="hero-panel">
+          <div className="orbital-badge">
+            <span className="orbital-sun"></span>
+            <span className="orbital-moon"></span>
+          </div>
+          <div className="mission-panel">
+            <p className="mission-label">Mission Statement</p>
+            <p className="mission-text">
+              Apollo Selene exists to announce gatherings with clarity and host them with care, creating a community space where people can relax, reconnect, and feel welcome before they ever walk through the door.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-2">
+        <div className="feature-card card">
+          <h3>Apollo Mode</h3>
+          <p>
+            Light mode carries the daytime side of the identity: warm, bright, and oriented around momentum, visibility, and clear event details.
           </p>
         </div>
 
-        <div className="card">
-          <h3>Our Vision</h3>
+        <div className="feature-card card">
+          <h3>Selene Mode</h3>
           <p>
-            A thriving, accepting community where people work shoulder-to-shoulder, share their layers of life, and create a shared momentum that's impossible to ignore.
+            Dark mode shifts into the evening mood: reflective, soft, and grounded, with the same information delivered in a more restful atmosphere.
           </p>
         </div>
-      </div>
+      </section>
 
-      <div className="card">
-        <h2>Core Principles</h2>
+      <section className="card">
+        <h2>What People Should Feel Here</h2>
         <div className="grid grid-3">
           <div className="principle-card">
-            <h4>Connection Through Shared Experience</h4>
-            <p>Bringing people together physically and emotionally through meaningful interactions and events.</p>
+            <h4>Unrushed</h4>
+            <p>Announcements are easy to read, and the tone never asks visitors to perform or keep up.</p>
           </div>
           <div className="principle-card">
-            <h4>Creativity as a Bridge</h4>
-            <p>Using art, storytelling, and collaboration as tools for unity and deeper understanding.</p>
+            <h4>Included</h4>
+            <p>Every page should make it clear that newcomers, regulars, and quiet observers all belong here.</p>
           </div>
           <div className="principle-card">
-            <h4>Momentum Through Authenticity</h4>
-            <p>Consistency in living our values attracts genuine support and creates lasting impact.</p>
+            <h4>Ready</h4>
+            <p>By the time someone leaves the page for an event, they should know what to expect and feel at ease about going.</p>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="card">
-        <h2>Why Apollo Selene Stands Out</h2>
-        <ul>
-          <li><strong>Self-proving:</strong> Growth is shown in the community, art, and projects it sparks</li>
-          <li><strong>Living culture:</strong> Not just an event or brand—it's a lived culture that expands through participation</li>
-          <li><strong>Heart-led and action-driven:</strong> Blends emotional resonance with tangible outcomes</li>
-        </ul>
-      </div>
-
-      <div className="text-center">
-        <p style={{ fontSize: '1.2rem', fontStyle: 'italic', color: '#ed4956' }}>
-          Join us in creating layers of connection, creativity, and authentic momentum.
-        </p>
-      </div>
+      <section className="home-timeline card">
+        <div>
+          <p className="section-kicker">The Rhythm</p>
+          <h2>Day, night, and the space between</h2>
+        </div>
+        <div className="timeline-grid">
+          <div>
+            <h4>Before the event</h4>
+            <p>Apollo Selene gives people a quiet way to check the details, understand the mood, and decide in their own time.</p>
+          </div>
+          <div>
+            <h4>During the event</h4>
+            <p>The experience carries that same tone forward with thoughtful programming, conversation, and room to breathe.</p>
+          </div>
+          <div>
+            <h4>After the event</h4>
+            <p>Reflections, artwork, and the ember page let the feeling of the gathering linger without turning the homepage into noise.</p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

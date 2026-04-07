@@ -4,25 +4,25 @@ const Merchandise = () => {
   const [items] = useState([
     {
       id: 1,
-      name: 'Apollo Selene T-Shirt',
+      name: 'Apollo Selene Tee',
       price: '$',
-      description: 'Soft cotton tee featuring our signature layered design. Wear your connection to the movement.',
+      description: 'Soft cotton tee with a clean Apollo Selene mark, designed for everyday comfort and quiet community pride.',
       image: 'https://images.pexels.com/photos/8532616/pexels-photo-8532616.jpeg?auto=compress&cs=tinysrgb&w=400',
       category: 'apparel'
     },
     {
       id: 2,
-      name: 'Community Hoodie',
+      name: 'Moonlight Hoodie',
       price: '$',
-      description: 'Cozy hoodie perfect for community gatherings. Features embroidered "Layers" text.',
+      description: 'A cozy layer for evening events and relaxed nights, finished with understated Apollo Selene embroidery.',
       image: 'https://images.pexels.com/photos/7679720/pexels-photo-7679720.jpeg?auto=compress&cs=tinysrgb&w=400',
       category: 'apparel'
     },
     {
       id: 5,
-      name: 'Connection Poster',
+      name: 'Sun and Moon Print Set',
       price: '$',
-      description: 'Set of 3 artistic posters celebrating community, creativity, and authentic connection.',
+      description: 'A set of art prints inspired by rest, gathering, and the balance at the heart of Apollo Selene.',
       image: 'https://images.pexels.com/photos/1109541/pexels-photo-1109541.jpeg?auto=compress&cs=tinysrgb&w=400',
       category: 'art'
     },
@@ -50,12 +50,10 @@ const Merchandise = () => {
       
       <div className="card">
         <p>
-          Support the Apollo Selene movement with merchandise that represents our values of connection, 
-          creativity, and authentic community. Every purchase helps fund community events and projects.
+          Apollo Selene merchandise is meant to feel as relaxed and thoughtful as the space itself. These pieces carry the atmosphere of the community into daily life while helping support future gatherings.
         </p>
         <p>
-          <strong>More than merchandise:</strong> These items are conversation starters, connection points, 
-          and ways to carry the movement's energy into your daily life.
+          <strong>More than merchandise:</strong> They are small reminders of a place where people can show up, settle in, and feel comfortable being themselves.
         </p>
       </div>
 
@@ -103,19 +101,19 @@ const Merchandise = () => {
       </div>
 
       <div className="card">
-        <h3>Supporting the Movement</h3>
+        <h3>Supporting Apollo Selene</h3>
         <p>
           Every purchase directly supports:
         </p>
         <ul>
-          <li><strong>Community Events:</strong> Workshops, storytelling circles, and showcases</li>
-          <li><strong>Creative Projects:</strong> Collaborative art and community initiatives</li>
-          <li><strong>Space & Resources:</strong> Venues and materials for gatherings</li>
-          <li><strong>Outreach:</strong> Growing the movement and reaching new communities</li>
+          <li><strong>Welcoming Events:</strong> Gatherings designed to feel calm, accessible, and easy to join</li>
+          <li><strong>Creative Programming:</strong> Story circles, art sessions, and reflective community moments</li>
+          <li><strong>Comfortable Spaces:</strong> Seating, supplies, and atmosphere-focused details that help people relax</li>
+          <li><strong>Community Reach:</strong> Inviting more people into a space that feels warm from the start</li>
         </ul>
         <p>
           When you wear or use Apollo Selene merchandise, you're not just representing a brand—
-          you're carrying forward a living culture of connection and creativity.
+          you're helping sustain a welcoming place people can return to whenever a new event is announced.
         </p>
       </div>
 

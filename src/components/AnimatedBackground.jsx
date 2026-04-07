@@ -83,9 +83,15 @@ class WebGLHandler {
         this.cn = canvas;
         this.gl = canvas.getContext('webgl2');
         this.startTime = Date.now();
+        this.handleResize = () => this.resize();
+        this.frameId = null;
+
+        if (!this.gl) {
+            return;
+        }
 
         this.resize();
-        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('resize', this.handleResize);
 
         this.program = this.gl.createProgram();
         this.compileShader(this.vertexShaderSource, this.gl.VERTEX_SHADER);
@@ -118,37 +124,51 @@ class WebGLHandler {
     }
 
     render = () => {
+        if (!this.gl) {
+            return;
+        }
+
         this.gl.uniform1f(this.timeLocation, (Date.now() - this.startTime) / 1000);
         this.gl.uniform2fv(this.resolutionLocation, [this.cn.width, this.cn.height]);
         this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-        window.requestAnimationFrame(this.render);
+        this.frameId = window.requestAnimationFrame(this.render);
+    }
+
+    destroy() {
+        window.removeEventListener('resize', this.handleResize);
+
+        if (this.frameId) {
+            window.cancelAnimationFrame(this.frameId);
+        }
     }
 }
 
-const AnimatedBackground = () => {
+const AnimatedBackground = ({ className = '', style = {} }) => {
     const canvasRef = useRef(null);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         const webGL = new WebGLHandler(canvas, fragmentShaderSource);
 
-        // Clean up on unmount
         return () => {
-            window.removeEventListener('resize', webGL.resize);
+            webGL.destroy();
         };
     }, []);
 
     return (
         <canvas
             ref={canvasRef}
+            className={className}
             style={{
                 position: 'fixed',
                 top: 0,
                 left: 0,
                 width: '100vw',
                 height: '100vh',
-                zIndex: -1,
+                zIndex: 0,
                 display: 'block',
+                pointerEvents: 'none',
+                ...style,
             }}
         />
     );
