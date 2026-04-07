@@ -79,6 +79,29 @@
   backdrop-filter: blur(8px);
 }
 
+.navbar-link-disabled {
+  color: var(--muted-color);
+  font-size: 0.95rem;
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px dashed var(--border-color-strong);
+  background: color-mix(in srgb, var(--nav-link-bg) 72%, transparent);
+  opacity: 0.84;
+  cursor: not-allowed;
+}
+
+.navbar-link-note {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-color);
+}
+
 .navbar-menu a:hover {
   background: var(--nav-link-hover-bg);
   transform: translateX(4px);
@@ -136,6 +159,11 @@
   }
 
   .navbar-menu a {
+    text-align: center;
+    padding: 0.85rem 0.75rem;
+  }
+
+  .navbar-link-disabled {
     text-align: center;
     padding: 0.85rem 0.75rem;
   }

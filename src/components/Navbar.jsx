@@ -7,7 +7,7 @@ const navigationItems = [
   { to: '/', label: 'Home' },
   { to: '/events', label: 'Events' },
   { to: '/experiences', label: 'Reflections' },
-  { to: '/merchandise', label: 'Shop' },
+  { to: '/merchandise', label: 'Shop', disabled: true, note: 'Coming Soon' },
   { to: '/artwork', label: 'Gallery' },
   { to: '/ember-room', label: 'Ember Room' },
 ];
@@ -28,23 +28,32 @@ const Navbar = ({ theme, onToggleTheme }) => {
         </button>
       </div>
       <ul className="navbar-menu">
-        {navigationItems.map(({ to, label }) => (
+        {navigationItems.map(({ to, label, disabled, note }) => (
           <li key={to}>
-            <NavLink to={to} className={({ isActive }) => (isActive ? 'active' : '')}>
-              {({ isActive }) => (
+            {disabled ? (
+              <span className="navbar-link-disabled" aria-disabled="true">
                 <span className="navbar-link-inner">
-                  {isActive ? (
-                    <span
-                      className={`navbar-link-guide navbar-link-guide--${theme}`}
-                      aria-hidden="true"
-                    >
-                      <MobileScrollGuide theme={theme} compact />
-                    </span>
-                  ) : null}
                   <span className="navbar-link-label">{label}</span>
                 </span>
-              )}
-            </NavLink>
+                <span className="navbar-link-note">{note}</span>
+              </span>
+            ) : (
+              <NavLink to={to} className={({ isActive }) => (isActive ? 'active' : '')}>
+                {({ isActive }) => (
+                  <span className="navbar-link-inner">
+                    {isActive ? (
+                      <span
+                        className={`navbar-link-guide navbar-link-guide--${theme}`}
+                        aria-hidden="true"
+                      >
+                        <MobileScrollGuide theme={theme} compact />
+                      </span>
+                    ) : null}
+                    <span className="navbar-link-label">{label}</span>
+                  </span>
+                )}
+              </NavLink>
+            )}
           </li>
         ))}
       </ul>
