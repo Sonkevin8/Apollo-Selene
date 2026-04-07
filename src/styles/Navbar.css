@@ -92,6 +92,10 @@
   box-shadow: var(--shadow-soft);
 }
 
+.mobile-scroll-guide {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .navbar {
     padding: 1rem;
@@ -127,6 +131,86 @@
   .navbar-menu a:hover {
     transform: translateY(-2px);
   }
+
+  .mobile-scroll-guide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    padding: 0.9rem 1rem 0.25rem;
+    color: var(--muted-color);
+    text-align: left;
+    transform-origin: top center;
+    transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease, padding 0.25s ease;
+    max-height: 120px;
+    overflow: hidden;
+  }
+
+  .mobile-scroll-guide.is-hidden {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+    pointer-events: none;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .mobile-scroll-guide.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .mobile-scroll-guide-figure {
+    width: 78px;
+    height: 102px;
+    flex: 0 0 auto;
+  }
+
+  .mobile-scroll-guide-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .guide-float {
+    transform-origin: 50% 40%;
+    animation: guide-float 2.8s ease-in-out infinite;
+  }
+
+  .guide-halo {
+    transform-origin: 50% 22%;
+    animation: guide-halo-pulse 2.2s ease-in-out infinite;
+  }
+
+  .guide-spark {
+    transform-origin: center;
+    animation: guide-spark-drift 3.4s ease-in-out infinite;
+    opacity: 0.9;
+  }
+
+  .guide-spark--two,
+  .guide-spark--four {
+    animation-delay: 0.8s;
+  }
+
+  .guide-arrow-bounce {
+    animation: mobile-scroll-bob 1.2s ease-in-out infinite;
+  }
+
+  .mobile-scroll-guide-copy {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    max-width: 16rem;
+  }
+
+  .mobile-scroll-guide--apollo {
+    color: #b8561e;
+  }
+
+  .mobile-scroll-guide--selene {
+    color: #c8d7f4;
+  }
 }
 
 @media (max-width: 375px) {
@@ -136,5 +220,60 @@
 
   .navbar-menu li {
     min-width: 100%;
+  }
+
+  .mobile-scroll-guide {
+    justify-content: flex-start;
+    padding-top: 0.7rem;
+  }
+}
+
+@keyframes mobile-scroll-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.68;
+  }
+
+  50% {
+    transform: translateY(8px);
+    opacity: 1;
+  }
+}
+
+@keyframes guide-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+@keyframes guide-halo-pulse {
+  0%,
+  100% {
+    opacity: 0.88;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes guide-spark-drift {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.72;
+  }
+
+  50% {
+    transform: translateY(-3px) scale(1.08);
+    opacity: 1;
   }
 }
