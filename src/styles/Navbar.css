@@ -152,8 +152,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 3.3rem;
-    height: 3.3rem;
+    width: 3.8rem;
+    height: 3.8rem;
     flex: 0 0 auto;
     transform: translateY(0) scale(1);
   }
@@ -171,12 +171,12 @@
 
   .mobile-scroll-guide-svg--compact {
     overflow: visible;
-    transform: scale(1.22) translateY(4px);
+    transform: scale(1.34) translateY(6px);
     transform-origin: center;
   }
 
   .mobile-scroll-guide-svg--compact .guide-float {
-    animation: guide-float-compact 2.1s ease-in-out infinite;
+    animation: guide-float-compact 1.7s ease-in-out infinite;
   }
 
   .mobile-scroll-guide-svg--compact .guide-halo {
@@ -185,7 +185,7 @@
 
   .mobile-scroll-guide-svg--compact .guide-spark {
     animation: guide-spark-drift-compact 2.2s ease-in-out infinite;
-    opacity: 0.65;
+    opacity: 0.72;
   }
 
   .guide-float {
@@ -214,11 +214,11 @@
   }
 
   .mobile-scroll-guide-svg--compact .guide-pointer-bounce {
-    animation: guide-pointer-bob-compact 1.95s ease-in-out infinite;
+    animation: guide-pointer-bob-compact 1.55s ease-in-out infinite;
   }
 
   .mobile-scroll-guide-svg--compact .guide-wave-arm {
-    animation: guide-wave-compact 1.2s ease-in-out infinite;
+    animation: guide-wave-compact 0.95s ease-in-out infinite;
     transform-origin: 33px 67px;
   }
 

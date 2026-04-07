@@ -129,18 +129,27 @@ const ApolloGuide = ({ compact }) => (
         <g className="guide-wave-arm">
           <path d="M45 87c-7-6-10.8-12.6-12.2-20" fill="none" stroke="#e7a04d" strokeWidth="4.8" strokeLinecap="round" />
           <path d="M32.8 67c-.2-5.6 1.1-10 4.2-13.6" fill="none" stroke="#f6c78d" strokeWidth="4.4" strokeLinecap="round" />
-          <path d="M37 53.4c2.6-.6 4.9-.2 7 1" fill="none" stroke="#f6c78d" strokeWidth="3.6" strokeLinecap="round" />
-          <path d="M37 53.4c-1.6-1.5-2.7-3-3.3-4.8" fill="none" stroke="#f6c78d" strokeWidth="3.6" strokeLinecap="round" />
-          <path d="M37 53.4c-.4 2.1-.1 4 .8 5.7" fill="none" stroke="#f6c78d" strokeWidth="3.1" strokeLinecap="round" />
+          <path d="M37.4 53.6c2.4-.8 4.9-.7 7.3.2" fill="none" stroke="#f6c78d" strokeWidth="3.7" strokeLinecap="round" />
+          <path d="M37.4 53.6c-1.8-1.7-2.9-3.3-3.5-5" fill="none" stroke="#f6c78d" strokeWidth="3.5" strokeLinecap="round" />
+          <path d="M37.4 53.6c-.6 2.2-.4 4.2.5 6" fill="none" stroke="#f6c78d" strokeWidth="3.1" strokeLinecap="round" />
+          <path d="M40 51.8c1.2-2 2.5-3.1 4-3.6" fill="none" stroke="#f6c78d" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M41.7 53.2c1.4-1.3 3-2 4.7-2.2" fill="none" stroke="#f6c78d" strokeWidth="2.1" strokeLinecap="round" />
+          <path d="M42.5 55c1.6-.6 3.3-.7 5.1-.4" fill="none" stroke="#f6c78d" strokeWidth="2" strokeLinecap="round" />
+          <path d="M41.8 56.9c1.4.1 2.9.5 4.3 1.2" fill="none" stroke="#f6c78d" strokeWidth="2" strokeLinecap="round" />
+          <path d="M40.4 58.3c1.1.5 2.2 1.3 3.2 2.2" fill="none" stroke="#f6c78d" strokeWidth="1.9" strokeLinecap="round" />
         </g>
         <g className="guide-point-arm">
           <path d="M75 86c4.4 6.8 6.8 12.2 7.4 17.2" fill="none" stroke="#e7a04d" strokeWidth="4.8" strokeLinecap="round" />
           <path d="M82.4 103.2c.4 4.4-.8 8.7-3.6 13" fill="none" stroke="#f6c78d" strokeWidth="4.4" strokeLinecap="round" />
           <path d="M78.8 116.2c-.6 3.4-.7 6.6-.4 9.8" fill="none" stroke="#f6c78d" strokeWidth="3.8" strokeLinecap="round" />
-          <path d="M78.4 126c0 2.9 0 5.3.1 7.4" fill="none" stroke="#f6c78d" strokeWidth="3.6" strokeLinecap="round" />
-          <path d="M78.5 133.4c1.7-.8 2.9-1.3 3.8-1.5" fill="none" stroke="#f6c78d" strokeWidth="2.8" strokeLinecap="round" />
-          <path d="M78.5 129.8c-1.2.3-2.3.2-3.3-.2" fill="none" stroke="#f6c78d" strokeWidth="3" strokeLinecap="round" />
-          <path d="M79 131.5c-.9.8-1.9 1.2-3.1 1.4" fill="none" stroke="#f6c78d" strokeWidth="2.8" strokeLinecap="round" />
+          <path d="M78.5 124.2c-.1 4 .1 7.3.4 10.1" fill="none" stroke="#f6c78d" strokeWidth="3.7" strokeLinecap="round" />
+          <path d="M79 134.3c0 3.2.1 5.8.2 7.8" fill="none" stroke="#f6c78d" strokeWidth="3.1" strokeLinecap="round" />
+          <path d="M79.3 142.1c.2 5 .3 8.8.2 11.5" fill="none" stroke="#f6c78d" strokeWidth="2.9" strokeLinecap="round" />
+          <path d="M79.3 141.1c2-.9 3.6-1.3 5-1.3" fill="none" stroke="#f6c78d" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M79.1 138.6c-1.1.2-2.3.1-3.5-.2" fill="none" stroke="#f6c78d" strokeWidth="2.3" strokeLinecap="round" />
+          <path d="M79.2 136.6c-1.4.7-2.8 1.1-4.4 1.2" fill="none" stroke="#f6c78d" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M79.3 140c-1.3 0-2.7.3-4 .8" fill="none" stroke="#f6c78d" strokeWidth="2.1" strokeLinecap="round" />
+          <path d="M79.3 143.1c-1 .2-2.1.7-3.3 1.5" fill="none" stroke="#f6c78d" strokeWidth="2" strokeLinecap="round" />
         </g>
       </g>
     </g>
@@ -270,18 +279,27 @@ const SeleneGuide = ({ compact }) => (
         <g className="guide-wave-arm">
           <path d="M45 87c-7-6-10.8-12.6-12.2-20" fill="none" stroke="#88a1ca" strokeWidth="4.8" strokeLinecap="round" />
           <path d="M32.8 67c-.2-5.6 1.1-10 4.2-13.6" fill="none" stroke="#d8e4f8" strokeWidth="4.4" strokeLinecap="round" />
-          <path d="M37 53.4c2.6-.6 4.9-.2 7 1" fill="none" stroke="#d8e4f8" strokeWidth="3.6" strokeLinecap="round" />
-          <path d="M37 53.4c-1.6-1.5-2.7-3-3.3-4.8" fill="none" stroke="#d8e4f8" strokeWidth="3.6" strokeLinecap="round" />
-          <path d="M37 53.4c-.4 2.1-.1 4 .8 5.7" fill="none" stroke="#d8e4f8" strokeWidth="3.1" strokeLinecap="round" />
+          <path d="M37.4 53.6c2.4-.8 4.9-.7 7.3.2" fill="none" stroke="#d8e4f8" strokeWidth="3.7" strokeLinecap="round" />
+          <path d="M37.4 53.6c-1.8-1.7-2.9-3.3-3.5-5" fill="none" stroke="#d8e4f8" strokeWidth="3.5" strokeLinecap="round" />
+          <path d="M37.4 53.6c-.6 2.2-.4 4.2.5 6" fill="none" stroke="#d8e4f8" strokeWidth="3.1" strokeLinecap="round" />
+          <path d="M40 51.8c1.2-2 2.5-3.1 4-3.6" fill="none" stroke="#d8e4f8" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M41.7 53.2c1.4-1.3 3-2 4.7-2.2" fill="none" stroke="#d8e4f8" strokeWidth="2.1" strokeLinecap="round" />
+          <path d="M42.5 55c1.6-.6 3.3-.7 5.1-.4" fill="none" stroke="#d8e4f8" strokeWidth="2" strokeLinecap="round" />
+          <path d="M41.8 56.9c1.4.1 2.9.5 4.3 1.2" fill="none" stroke="#d8e4f8" strokeWidth="2" strokeLinecap="round" />
+          <path d="M40.4 58.3c1.1.5 2.2 1.3 3.2 2.2" fill="none" stroke="#d8e4f8" strokeWidth="1.9" strokeLinecap="round" />
         </g>
         <g className="guide-point-arm">
           <path d="M75 86c4.4 6.8 6.8 12.2 7.4 17.2" fill="none" stroke="#88a1ca" strokeWidth="4.8" strokeLinecap="round" />
           <path d="M82.4 103.2c.4 4.4-.8 8.7-3.6 13" fill="none" stroke="#d8e4f8" strokeWidth="4.4" strokeLinecap="round" />
           <path d="M78.8 116.2c-.6 3.4-.7 6.6-.4 9.8" fill="none" stroke="#d8e4f8" strokeWidth="3.8" strokeLinecap="round" />
-          <path d="M78.4 126c0 2.9 0 5.3.1 7.4" fill="none" stroke="#d8e4f8" strokeWidth="3.6" strokeLinecap="round" />
-          <path d="M78.5 133.4c1.7-.8 2.9-1.3 3.8-1.5" fill="none" stroke="#d8e4f8" strokeWidth="2.8" strokeLinecap="round" />
-          <path d="M78.5 129.8c-1.2.3-2.3.2-3.3-.2" fill="none" stroke="#d8e4f8" strokeWidth="3" strokeLinecap="round" />
-          <path d="M79 131.5c-.9.8-1.9 1.2-3.1 1.4" fill="none" stroke="#d8e4f8" strokeWidth="2.8" strokeLinecap="round" />
+          <path d="M78.5 124.2c-.1 4 .1 7.3.4 10.1" fill="none" stroke="#d8e4f8" strokeWidth="3.7" strokeLinecap="round" />
+          <path d="M79 134.3c0 3.2.1 5.8.2 7.8" fill="none" stroke="#d8e4f8" strokeWidth="3.1" strokeLinecap="round" />
+          <path d="M79.3 142.1c.2 5 .3 8.8.2 11.5" fill="none" stroke="#d8e4f8" strokeWidth="2.9" strokeLinecap="round" />
+          <path d="M79.3 141.1c2-.9 3.6-1.3 5-1.3" fill="none" stroke="#d8e4f8" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M79.1 138.6c-1.1.2-2.3.1-3.5-.2" fill="none" stroke="#d8e4f8" strokeWidth="2.3" strokeLinecap="round" />
+          <path d="M79.2 136.6c-1.4.7-2.8 1.1-4.4 1.2" fill="none" stroke="#d8e4f8" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M79.3 140c-1.3 0-2.7.3-4 .8" fill="none" stroke="#d8e4f8" strokeWidth="2.1" strokeLinecap="round" />
+          <path d="M79.3 143.1c-1 .2-2.1.7-3.3 1.5" fill="none" stroke="#d8e4f8" strokeWidth="2" strokeLinecap="round" />
         </g>
       </g>
     </g>
