@@ -152,8 +152,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.45rem;
-    height: 2.45rem;
+    width: 3.3rem;
+    height: 3.3rem;
     flex: 0 0 auto;
     transform: translateY(0) scale(1);
   }
@@ -171,18 +171,20 @@
 
   .mobile-scroll-guide-svg--compact {
     overflow: visible;
+    transform: scale(1.22) translateY(4px);
+    transform-origin: center;
   }
 
   .mobile-scroll-guide-svg--compact .guide-float {
-    animation: guide-float-compact 2.8s ease-in-out infinite;
+    animation: guide-float-compact 2.1s ease-in-out infinite;
   }
 
   .mobile-scroll-guide-svg--compact .guide-halo {
-    animation: guide-halo-pulse-compact 3.2s ease-in-out infinite;
+    animation: guide-halo-pulse-compact 2.5s ease-in-out infinite;
   }
 
   .mobile-scroll-guide-svg--compact .guide-spark {
-    animation: guide-spark-drift-compact 3.1s ease-in-out infinite;
+    animation: guide-spark-drift-compact 2.2s ease-in-out infinite;
     opacity: 0.65;
   }
 
@@ -212,12 +214,16 @@
   }
 
   .mobile-scroll-guide-svg--compact .guide-pointer-bounce {
-    animation: guide-pointer-bob-compact 2.6s ease-in-out infinite;
+    animation: guide-pointer-bob-compact 1.95s ease-in-out infinite;
   }
 
   .mobile-scroll-guide-svg--compact .guide-wave-arm {
-    animation: guide-wave-compact 1.8s ease-in-out infinite;
-    transform-origin: 34px 66px;
+    animation: guide-wave-compact 1.2s ease-in-out infinite;
+    transform-origin: 33px 67px;
+  }
+
+  .mobile-scroll-guide-svg--compact .guide-point-arm {
+    transform-origin: 80px 101px;
   }
 
   .navbar-link-guide--apollo {
