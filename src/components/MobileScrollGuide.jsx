@@ -61,9 +61,20 @@ const ApolloGuide = ({ compact }) => (
       <path d="M46 56c4-7 10-11 14-11s10 4 14 11l-2 10H48l-2-10z" fill="url(#apolloHair)" />
       <path d="M49 51c5-5 8-7 11-7 4 0 8 2 11 7" fill="none" stroke="#fef0c0" strokeWidth="3" strokeLinecap="round" opacity="0.8" />
       <circle cx="60" cy="59" r="11.5" fill="url(#apolloSkin)" />
-      <path d="M53 59h4M63 59h4" stroke="#7f3f18" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M56 65c1.2 1.4 2.5 2.1 4 2.1 1.5 0 2.8-.7 4-2.1" fill="none" stroke="#9b4d1d" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M60 60v2.8" stroke="#c27847" strokeWidth="1.8" strokeLinecap="round" />
+      <ellipse cx="55" cy="59" rx="3.2" ry="2.2" fill="#fff8ef" opacity="0.95" />
+      <ellipse cx="65" cy="59" rx="3.2" ry="2.2" fill="#fff8ef" opacity="0.95" />
+      <circle cx="55.4" cy="59.4" r="1.2" fill="#7f3f18" />
+      <circle cx="64.6" cy="59.4" r="1.2" fill="#7f3f18" />
+      <path d="M51.5 55.5c1.5-1.1 2.9-1.6 4.1-1.6 1.2 0 2.5.5 3.8 1.6" fill="none" stroke="#8b4318" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M60 59.8v3.3" stroke="#c27847" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M57.2 64.8c.9.8 1.8 1.2 2.8 1.2 1.1 0 2-.4 2.9-1.2" fill="none" stroke="#9b4d1d" strokeWidth="2.1" strokeLinecap="round" />
+      <g className="guide-wave-arm">
+        <path d="M47 72c-5-4-9-8.5-11-14" fill="none" stroke="#efb56d" strokeWidth="4" strokeLinecap="round" />
+        <path d="M36 58c-1-3.7-.6-7.1 1-10.4" fill="none" stroke="#f6c78d" strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M37 47.6c2-.3 3.8-.1 5.6.8" fill="none" stroke="#f6c78d" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M37 47.6c-1.6-.9-2.8-2-3.8-3.5" fill="none" stroke="#f6c78d" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M37.2 47.8c-.3 1.8-.1 3.4.6 4.9" fill="none" stroke="#f6c78d" strokeWidth="2" strokeLinecap="round" />
+      </g>
       <path d="M48 67c-5 6-7 10-9 17m33-17c5 6 7 10 9 17" fill="none" stroke="#efb56d" strokeWidth="4" strokeLinecap="round" />
 
       <path d="M44 64c4-6 11-10 16-10s12 4 16 10l8 42c2 12-8 22-24 22s-26-10-24-22l8-42z" fill="url(#apolloDrape)" />
@@ -133,9 +144,20 @@ const SeleneGuide = ({ compact }) => (
       <path d="M47 56c4-8 8-12 13-12 5 0 10 4 13 12l-2 11H49l-2-11z" fill="url(#seleneHair)" />
       <path d="M47 52c5-4 9-6 13-6 4 0 8 2 13 6" fill="none" stroke="#f7fbff" strokeWidth="2.6" strokeLinecap="round" opacity="0.82" />
       <circle cx="60" cy="60" r="11.5" fill="url(#seleneSkin)" />
-      <path d="M53.5 59h4M62.5 59h4" stroke="#20324d" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M56 65c1 1.4 2.3 2.1 4 2.1 1.7 0 3-.7 4-2.1" fill="none" stroke="#324b72" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M60 60v2.8" stroke="#7d97bf" strokeWidth="1.6" strokeLinecap="round" />
+      <ellipse cx="55.2" cy="59.5" rx="3.2" ry="2.2" fill="#f9fbff" opacity="0.95" />
+      <ellipse cx="64.8" cy="59.5" rx="3.2" ry="2.2" fill="#f9fbff" opacity="0.95" />
+      <circle cx="55.6" cy="59.8" r="1.15" fill="#20324d" />
+      <circle cx="64.4" cy="59.8" r="1.15" fill="#20324d" />
+      <path d="M51.8 55.7c1.2-.9 2.4-1.3 3.6-1.3 1.3 0 2.6.4 4 1.3" fill="none" stroke="#344b72" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M60 60.2v3.1" stroke="#7d97bf" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M56.8 65.1c.9.7 2 .9 3.2.9 1.2 0 2.2-.2 3.2-.9" fill="none" stroke="#324b72" strokeWidth="2.1" strokeLinecap="round" />
+      <g className="guide-wave-arm">
+        <path d="M47 73c-5-4-9-8.5-11-14" fill="none" stroke="#91a9d0" strokeWidth="4" strokeLinecap="round" />
+        <path d="M36 59c-1-3.7-.6-7.1 1-10.4" fill="none" stroke="#d8e4f8" strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M37 48.6c2-.3 3.8-.1 5.6.8" fill="none" stroke="#d8e4f8" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M37 48.6c-1.6-.9-2.8-2-3.8-3.5" fill="none" stroke="#d8e4f8" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M37.2 48.8c-.3 1.8-.1 3.4.6 4.9" fill="none" stroke="#d8e4f8" strokeWidth="2" strokeLinecap="round" />
+      </g>
       <path d="M48 68c-5 6-8 10-10 17m34-17c5 6 8 10 10 17" fill="none" stroke="#91a9d0" strokeWidth="4" strokeLinecap="round" />
 
       <path d="M44 64c4-7 10-10 16-10s12 3 16 10l8 42c2 12-8 22-24 22s-26-10-24-22l8-42z" fill="url(#seleneDrape)" />

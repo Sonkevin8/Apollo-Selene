@@ -152,10 +152,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 1.9rem;
-    height: 1.9rem;
+    width: 5.7rem;
+    height: 5.7rem;
     flex: 0 0 auto;
     transform: translateY(0) scale(1);
+  }
+
+  .navbar-menu .active {
+    min-height: 6.2rem;
+    overflow: visible;
+  }
+
+  .navbar-menu .active .navbar-link-inner {
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .navbar-menu .active .navbar-link-label {
+    line-height: 1.2;
   }
 
   .navbar-link-guide .mobile-scroll-guide-svg {
@@ -171,6 +185,8 @@
 
   .mobile-scroll-guide-svg--compact {
     overflow: visible;
+    transform: scale(1.04) translateY(2px);
+    transform-origin: center;
   }
 
   .mobile-scroll-guide-svg--compact .guide-float {
@@ -209,6 +225,11 @@
 
   .guide-arrow-bounce {
     animation: mobile-scroll-bob 1.2s ease-in-out infinite;
+  }
+
+  .guide-wave-arm {
+    animation: guide-wave-compact 1.2s ease-in-out infinite;
+    transform-origin: 37px 59px;
   }
 
   .mobile-scroll-guide-svg--compact .guide-arrow-bounce {
