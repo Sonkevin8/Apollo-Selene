@@ -3,11 +3,11 @@ import React from 'react';
 export default function Home() {
   return (
     <div className="content-section">
-      <h1>Welcome to Parallel Layers</h1>
+      <h1>Welcome to Apollo Selene</h1>
       
       <div className="card">
         <p>
-          Parallel Layers is a movement and community built on the belief that purposeful, joyful action attracts like-minded people, creating growth, unity, and deeper human connection.
+          Apollo Selene is a movement and community built on the belief that purposeful, joyful action attracts like-minded people, creating growth, unity, and deeper human connection.
         </p>
         <p>
           It's about living the vision, not just talking about it—proving its value through real-world experiences, events, and relationships.
@@ -49,7 +49,7 @@ export default function Home() {
       </div>
 
       <div className="card">
-        <h2>Why Parallel Layers Stands Out</h2>
+        <h2>Why Apollo Selene Stands Out</h2>
         <ul>
           <li><strong>Self-proving:</strong> Growth is shown in the community, art, and projects it sparks</li>
           <li><strong>Living culture:</strong> Not just an event or brand—it's a lived culture that expands through participation</li>

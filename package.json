@@ -1,7 +1,7 @@
 {
-  "name": "parallel-layers",
+  "name": "apollo-selene",
   "version": "1.0.0",
-  "description": "A website for the Parallel Layers movement, featuring event announcements, user experiences, merchandise, and artwork.",
+  "description": "A website for the Apollo Selene movement, featuring event announcements, user experiences, merchandise, and artwork.",
   "main": "src/main.jsx",
   "scripts": {
     "dev": "vite",
@@ -18,7 +18,7 @@
     "vite": "^3.0.0"
   },
   "keywords": [
-    "parallel-layers",
+    "apollo-selene",
     "react",
     "vite"
   ],

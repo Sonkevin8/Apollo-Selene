@@ -1,7 +1,7 @@
-# Parallel Layers
+# Apollo Selene
 
 ## Overview
-"Parallel Layers" is a web application designed to provide a platform for event announcements, user experiences, merchandise, and artwork related to a specific movement. The application is built using React and Vite, ensuring a fast and responsive user experience.
+"Apollo Selene" is a web application designed to provide a platform for event announcements, user experiences, merchandise, and artwork related to a specific movement. The application is built using React and Vite, ensuring a fast and responsive user experience.
 
 ## Features
 - **Navigation Bar**: Easily navigate through different sections of the website.
@@ -12,7 +12,7 @@
 
 ## Project Structure
 ```
-Parallel-Layers
+Apollo-Selene
 ├── public
 │   └── index.html
 ├── src
@@ -44,7 +44,7 @@ Parallel-Layers
    ```
 2. Navigate to the project directory:
    ```
-   cd Parallel-Layers
+   cd Apollo-Selene
    ```
 3. Install the dependencies:
    ```

@@ -4,7 +4,7 @@ const Merchandise = () => {
   const [items] = useState([
     {
       id: 1,
-      name: 'Parallel Layers T-Shirt',
+      name: 'Apollo Selene T-Shirt',
       price: '$',
       description: 'Soft cotton tee featuring our signature layered design. Wear your connection to the movement.',
       image: 'https://images.pexels.com/photos/8532616/pexels-photo-8532616.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -50,7 +50,7 @@ const Merchandise = () => {
       
       <div className="card">
         <p>
-          Support the Parallel Layers movement with merchandise that represents our values of connection, 
+          Support the Apollo Selene movement with merchandise that represents our values of connection, 
           creativity, and authentic community. Every purchase helps fund community events and projects.
         </p>
         <p>
@@ -114,7 +114,7 @@ const Merchandise = () => {
           <li><strong>Outreach:</strong> Growing the movement and reaching new communities</li>
         </ul>
         <p>
-          When you wear or use Parallel Layers merchandise, you're not just representing a brand—
+          When you wear or use Apollo Selene merchandise, you're not just representing a brand—
           you're carrying forward a living culture of connection and creativity.
         </p>
       </div>

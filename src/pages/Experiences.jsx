@@ -95,7 +95,7 @@ const Experiences = () => {
           This is where our community shares their layers of experience. Every story adds depth to our collective narrative, showing how individual journeys run in parallel, creating connections and inspiring growth.
         </p>
         <p>
-          <strong>Share your layer:</strong> How has Parallel Layers impacted your life? What connections have you made? What have you discovered about yourself or others?
+          <strong>Share your layer:</strong> How has Apollo Selene impacted your life? What connections have you made? What have you discovered about yourself or others?
         </p>
       </div>
 
@@ -120,7 +120,7 @@ const Experiences = () => {
                 required
               />
               <textarea
-                placeholder="Share your experience... How has Parallel Layers impacted you? What connections have you made? What layers have you discovered?"
+                placeholder="Share your experience... How has Apollo Selene impacted you? What connections have you made? What layers have you discovered?"
                 value={newExperience.content}
                 onChange={(e) => setNewExperience({...newExperience, content: e.target.value})}
                 rows="6"
