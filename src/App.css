@@ -626,6 +626,12 @@ select:focus {
   color: var(--muted-color);
 }
 
+.event-updated-at {
+  margin: -0.3rem 0 0.8rem;
+  font-size: 0.82rem;
+  color: var(--muted-color);
+}
+
 .event-description {
   margin: 1rem 0;
   line-height: 1.6;
@@ -635,6 +641,39 @@ select:focus {
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
+}
+
+.event-admin-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.event-admin-btn {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.82rem;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border-color: var(--button-secondary-border);
+  box-shadow: none;
+}
+
+.event-admin-btn:hover {
+  background: var(--button-secondary-hover);
+}
+
+.event-admin-btn-danger {
+  background: rgba(196, 60, 47, 0.14);
+  border-color: rgba(196, 60, 47, 0.35);
+  color: #b9382b;
+}
+
+.event-admin-btn-danger:hover {
+  background: rgba(196, 60, 47, 0.2);
 }
 
 .attendance-info {
@@ -685,6 +724,106 @@ select:focus {
   background: var(--button-secondary-bg);
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.guest-list-btn {
+  width: 100%;
+  max-width: none;
+  margin-top: 0.75rem;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border-color: var(--button-secondary-border);
+  box-shadow: none;
+}
+
+.guest-list-btn:hover {
+  background: var(--button-secondary-hover);
+}
+
+.guest-list-controls {
+  margin-top: 0.75rem;
+}
+
+.guest-list-controls .guest-list-btn {
+  margin-top: 0;
+}
+
+.guest-list-count {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--muted-color);
+}
+
+.guest-list-modal {
+  max-width: 460px;
+}
+
+.guest-list {
+  margin: 0 0 0.6rem;
+  padding-left: 1.35rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.guest-list li {
+  margin-bottom: 0.45rem;
+  color: var(--text-color);
+}
+
+.guest-list-item {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-left: -1.35rem;
+  padding-left: 1.35rem;
+}
+
+.remove-guest-btn {
+  width: auto;
+  max-width: none;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.76rem;
+  border-radius: 999px;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border-color: var(--button-secondary-border);
+  box-shadow: none;
+}
+
+.remove-guest-btn:hover {
+  background: var(--button-secondary-hover);
+}
+
+.guest-list-empty {
+  margin: 0;
+  color: var(--muted-color);
+}
+
+.add-guest-btn {
+  width: 100%;
+  max-width: none;
+  margin: 0.6rem 0 0;
+}
+
+.add-guest-form {
+  margin-top: 0.85rem;
+}
+
+.add-guest-form input {
+  margin-bottom: 0.7rem;
+}
+
+.add-guest-actions {
+  margin-top: 0.2rem;
+}
+
+.form-error {
+  margin: -0.2rem 0 0.6rem;
+  font-size: 0.82rem;
+  color: #c43c2f;
 }
 
 /* Modal styles */
