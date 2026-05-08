@@ -554,7 +554,9 @@ const Events = () => {
   return (
     <div className="content-section">
       <div className="flex justify-between items-center mb-4">
-        <h1>Apollo Selene Events</h1>
+        <h1>
+          Apollo Selene Events <span className="name-secret">confidential</span>
+        </h1>
         <div className="flex gap-2">
           {!isAdmin && (
             <button onClick={() => setShowLogin(true)} className="admin-btn">
@@ -574,12 +576,13 @@ const Events = () => {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card events-intro-card">
+        <p className="section-kicker">Invitation Circle</p>
         <p>
-          This is the calm center of Apollo Selene. When a new event is announced, you can come here to read the details, get a feel for the atmosphere, and decide when you are ready to join us.
+          This is the private bulletin room of Apollo Selene. New gatherings appear here quietly, with limited seats and details shared only when each announcement is unsealed.
         </p>
         <p>
-          Every gathering is designed to feel welcoming, unhurried, and easy to step into, whether you are meeting people for the first time or returning to a familiar room.
+          Each event is intentionally rare and carefully held, with attendance kept intimate so every invitation feels meaningful, precious, and worth arriving for.
         </p>
       </div>
 
@@ -871,6 +874,10 @@ const Events = () => {
               </div>
             )}
             <div className="event-content">
+              <div className="event-card-meta">
+                <p className="event-whisper">Sealed announcement</p>
+                <span className="event-seal">Exclusive</span>
+              </div>
               <h3>{event.title}</h3>
               {event.updatedAt && (
                 <p className="event-updated-at">
@@ -906,11 +913,11 @@ const Events = () => {
 
                 <div className="attendance-info">
                   <span className="attendee-count">
-                    {event.attendees}/{event.maxAttendees} attending
+                    {event.attendees}/{event.maxAttendees} reserved seats
                   </span>
                   {attendanceDetails[event.id] && userAttendance.has(event.id) && (
                     <span className="attendee-count">
-                      You are attending as {attendanceDetails[event.id].name}
+                      Invitation held as {attendanceDetails[event.id].name}
                     </span>
                   )}
                   <div className="attendance-bar">
@@ -927,10 +934,10 @@ const Events = () => {
                   disabled={!userAttendance.has(event.id) && event.attendees >= event.maxAttendees}
                 >
                   {userAttendance.has(event.id) 
-                    ? 'Cancel Attendance' 
+                    ? 'Release Invitation' 
                     : event.attendees >= event.maxAttendees 
-                      ? 'Event Full' 
-                      : 'Attend Event'
+                      ? 'Sealed Full' 
+                      : 'Request Invitation'
                   }
                 </button>
 
@@ -940,10 +947,10 @@ const Events = () => {
                     className="guest-list-btn"
                     onClick={() => toggleGuestList(event.id)}
                   >
-                    See Guest List
+                    View Guest Ledger
                   </button>
                   <span className="guest-list-count">
-                    {(eventGuestLists[event.id] || []).length} guests listed
+                    {(eventGuestLists[event.id] || []).length} names in ledger
                   </span>
                 </div>
               </div>

@@ -18,7 +18,9 @@ const Navbar = ({ theme, onToggleTheme }) => {
   return (
     <nav className="navbar">
       <div className="navbar-brand-block">
-        <p className="navbar-kicker">Apollo Selene</p>
+        <p className="navbar-kicker">
+          Apollo Selene <span className="name-secret">secrets</span>
+        </p>
         <h2 className="navbar-brand">Sun by day. Moon by night.</h2>
         <p className="navbar-copy">
           A welcoming place to pause, check the next event, and ease into community.

@@ -246,6 +246,18 @@ select:focus {
   color: var(--muted-color);
 }
 
+.name-secret {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.34em;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted-color);
+  vertical-align: super;
+  opacity: 0.92;
+}
+
 .hero-card {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
@@ -465,6 +477,11 @@ select:focus {
   .grid-3,
   .grid-4,
   .timeline-grid,
+  .name-secret {
+    font-size: 0.4em;
+    letter-spacing: 0.16em;
+  }
+
   .hero-card {
     grid-template-columns: 1fr;
   }
@@ -589,13 +606,44 @@ select:focus {
   margin-top: 2rem;
 }
 
+.events-intro-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surface-color-strong) 86%, transparent), var(--surface-color)),
+    radial-gradient(circle at 90% 10%, color-mix(in srgb, var(--accent-soft) 74%, transparent), transparent 42%);
+}
+
+.events-intro-card::after {
+  content: '';
+  position: absolute;
+  inset: auto -24% -42% auto;
+  width: 240px;
+  height: 240px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 .event-card {
+  position: relative;
   background: var(--surface-color);
   border-radius: 24px;
   overflow: hidden;
   backdrop-filter: blur(15px);
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
+}
+
+.event-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--accent-soft) 72%, transparent), transparent 40%),
+    linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--surface-color-strong) 18%, transparent) 100%);
+  pointer-events: none;
 }
 
 .event-card:hover {
@@ -617,7 +665,39 @@ select:focus {
 }
 
 .event-content {
+  position: relative;
   padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.event-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.event-whisper {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.19em;
+  font-size: 0.67rem;
+  color: var(--muted-color);
+}
+
+.event-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.2rem;
+  padding: 0.26rem 0.56rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-color-strong);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--heading-color);
+  background: color-mix(in srgb, var(--surface-color-strong) 82%, transparent);
 }
 
 .event-details p {
@@ -630,6 +710,7 @@ select:focus {
   margin: -0.3rem 0 0.8rem;
   font-size: 0.82rem;
   color: var(--muted-color);
+  font-style: italic;
 }
 
 .event-description {
@@ -753,6 +834,18 @@ select:focus {
   margin-top: 0.35rem;
   font-size: 0.82rem;
   color: var(--muted-color);
+}
+
+@media (max-width: 600px) {
+  .event-card-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  .event-seal {
+    min-width: 0;
+  }
 }
 
 .guest-list-modal {

@@ -7,7 +7,9 @@ export default function Home() {
       <section className="hero-card">
         <div className="hero-copy">
           <p className="section-kicker">Apollo by light. Selene by night.</p>
-          <h1>Welcome to Apollo Selene</h1>
+          <h1>
+            Welcome to Apollo Selene <span className="name-secret">secrets</span>
+          </h1>
           <p className="hero-lead">
             A place to arrive gently, stay informed, and feel comfortable returning whenever a new event is announced.
           </p>
