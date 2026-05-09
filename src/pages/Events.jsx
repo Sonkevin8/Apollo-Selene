@@ -6,17 +6,23 @@ const USER_ATTENDANCE_STORAGE_KEY = 'apollo-selene-user-attendance';
 const ATTENDANCE_DETAILS_STORAGE_KEY = 'apollo-selene-attendance-details';
 const CURRENT_USER_ID_STORAGE_KEY = 'apollo-selene-current-user-id';
 
+const EVENT_PHASES = {
+  apollo: 'apollo',
+  selene: 'selene'
+};
+
 const defaultEvents = [
   {
     id: 1,
-    title: 'Sunroom Sketch Night',
+    title: 'Sunroom Sketch Session',
     date: '2024-12-28',
     time: '2:00 PM - 5:00 PM',
     location: 'Apollo Selene Lounge',
-    description: 'A relaxed creative evening with sketch materials, soft music, and plenty of room to unwind before or after conversation.',
+    description: 'A bright afternoon sketch session with tea, open tables, and enough quiet structure to ease into conversation while the room is full of daylight.',
     poster: 'https://images.pexels.com/photos/1109541/pexels-photo-1109541.jpeg?auto=compress&cs=tinysrgb&w=400',
     attendees: 23,
-    maxAttendees: 50
+    maxAttendees: 50,
+    phase: EVENT_PHASES.apollo
   },
   {
     id: 2,
@@ -27,7 +33,8 @@ const defaultEvents = [
     description: 'A low-pressure gathering for listening, reflecting, and sharing stories at your own pace in a calm environment.',
     poster: 'https://images.pexels.com/photos/1708936/pexels-photo-1708936.jpeg?auto=compress&cs=tinysrgb&w=400',
     attendees: 15,
-    maxAttendees: 30
+    maxAttendees: 30,
+    phase: EVENT_PHASES.selene
   },
   {
     id: 3,
@@ -38,7 +45,8 @@ const defaultEvents = [
     description: 'Meet the community, explore upcoming plans, and enjoy a welcoming night designed for easy conversation and gentle connection.',
     poster: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400',
     attendees: 42,
-    maxAttendees: 100
+    maxAttendees: 100,
+    phase: EVENT_PHASES.selene
   }
 ];
 
@@ -115,33 +123,61 @@ const getStoredJson = (key, fallbackValue) => {
     }
 
     return JSON.parse(savedValue);
-  } catch (error) {
+  } catch {
     return fallbackValue;
   }
 };
 
-const Events = () => {
-  const [events, setEvents] = useState(() => getStoredJson(EVENTS_STORAGE_KEY, defaultEvents));
+const inferEventPhase = (timeRange = '') => {
+  const firstTime = timeRange.split('-')[0]?.trim() || timeRange.trim();
+  const match = firstTime.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+
+  if (!match) {
+    return EVENT_PHASES.selene;
+  }
+
+  const hour = Number(match[1]) % 12;
+  const minutes = Number(match[2] || 0);
+  const meridiem = match[3].toUpperCase();
+  const hour24 = meridiem === 'PM' ? hour + 12 : hour;
+  const startsAfterDaylight = hour24 > 17 || (hour24 === 17 && minutes > 30);
+
+  return startsAfterDaylight ? EVENT_PHASES.selene : EVENT_PHASES.apollo;
+};
+
+const normalizeEvent = (event) => ({
+  ...event,
+  phase: event?.phase || inferEventPhase(event?.time)
+});
+
+const normalizeEvents = (items) => (items || []).map(normalizeEvent);
+
+const createEventDraft = (theme) => ({
+  title: '',
+  date: '',
+  time: '',
+  phase: theme === EVENT_PHASES.apollo ? EVENT_PHASES.apollo : EVENT_PHASES.selene,
+  location: '',
+  description: '',
+  poster: '',
+  maxAttendees: 50
+});
+
+const Events = ({ theme }) => {
+  const [events, setEvents] = useState(() => normalizeEvents(getStoredJson(EVENTS_STORAGE_KEY, defaultEvents)));
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showEditEvent, setShowEditEvent] = useState(false);
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    date: '',
-    time: '',
-    location: '',
-    description: '',
-    poster: '',
-    maxAttendees: 50
-  });
+  const [newEvent, setNewEvent] = useState(() => createEventDraft(theme));
   const [editingEventId, setEditingEventId] = useState(null);
   const [editEventData, setEditEventData] = useState({
     title: '',
     date: '',
     time: '',
+    phase: EVENT_PHASES.selene,
     location: '',
     description: '',
     poster: '',
@@ -206,18 +242,11 @@ const Events = () => {
       ...newEvent,
       id: Date.now(),
       attendees: 0,
+      phase: newEvent.phase || inferEventPhase(newEvent.time),
       updatedAt: new Date().toISOString()
     };
     setEvents([...events, event]);
-    setNewEvent({
-      title: '',
-      date: '',
-      time: '',
-      location: '',
-      description: '',
-      poster: '',
-      maxAttendees: 50
-    });
+    setNewEvent(createEventDraft(theme));
     setEventGuestLists((prev) => ({ ...prev, [event.id]: [] }));
     setShowAddEvent(false);
   };
@@ -228,6 +257,7 @@ const Events = () => {
       title: event.title,
       date: event.date,
       time: event.time,
+      phase: event.phase || inferEventPhase(event.time),
       location: event.location,
       description: event.description,
       poster: event.poster,
@@ -243,6 +273,7 @@ const Events = () => {
       title: '',
       date: '',
       time: '',
+      phase: EVENT_PHASES.selene,
       location: '',
       description: '',
       poster: '',
@@ -267,6 +298,7 @@ const Events = () => {
           ? {
               ...event,
               ...editEventData,
+              phase: editEventData.phase || inferEventPhase(editEventData.time),
               maxAttendees: safeMaxAttendees,
               attendees: Math.min(event.attendees, safeMaxAttendees),
               updatedAt: new Date().toISOString()
@@ -549,6 +581,15 @@ const Events = () => {
     }
   };
 
+  const visibleEvents = events.filter((event) => (event.phase || inferEventPhase(event.time)) === theme);
+  const phaseTitle = theme === EVENT_PHASES.apollo ? 'Apollo daylight invitations' : 'Selene night invitations';
+  const phaseSummary = theme === EVENT_PHASES.apollo
+    ? 'Apollo mode reveals only daytime gatherings, salons, and afternoon invitations held in full light.'
+    : 'Selene mode reveals only night gatherings, after-dark circles, and invitations meant for the late-hour atmosphere.';
+  const emptyStateCopy = theme === EVENT_PHASES.apollo
+    ? 'No daytime invitations are unsealed right now. Switch to Selene to browse the night list.'
+    : 'No night invitations are unsealed right now. Switch to Apollo to browse the daytime list.';
+
   const selectedGuestEvent = events.find((event) => event.id === openGuestListForEvent);
 
   return (
@@ -578,11 +619,12 @@ const Events = () => {
 
       <div className="card events-intro-card">
         <p className="section-kicker">Invitation Circle</p>
+        <h2>{phaseTitle}</h2>
         <p>
           This is the private bulletin room of Apollo Selene. New gatherings appear here quietly, with limited seats and details shared only when each announcement is unsealed.
         </p>
         <p>
-          Each event is intentionally rare and carefully held, with attendance kept intimate so every invitation feels meaningful, precious, and worth arriving for.
+          {phaseSummary}
         </p>
       </div>
 
@@ -641,6 +683,14 @@ const Events = () => {
                 onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
                 required
               />
+              <select
+                value={newEvent.phase}
+                onChange={(e) => setNewEvent({ ...newEvent, phase: e.target.value })}
+                required
+              >
+                <option value={EVENT_PHASES.apollo}>Apollo Day Event</option>
+                <option value={EVENT_PHASES.selene}>Selene Night Event</option>
+              </select>
               <input
                 type="text"
                 placeholder="Location"
@@ -704,6 +754,14 @@ const Events = () => {
                 onChange={(e) => setEditEventData({ ...editEventData, time: e.target.value })}
                 required
               />
+              <select
+                value={editEventData.phase}
+                onChange={(e) => setEditEventData({ ...editEventData, phase: e.target.value })}
+                required
+              >
+                <option value={EVENT_PHASES.apollo}>Apollo Day Event</option>
+                <option value={EVENT_PHASES.selene}>Selene Night Event</option>
+              </select>
               <input
                 type="text"
                 placeholder="Location"
@@ -866,7 +924,13 @@ const Events = () => {
 
       {/* Events Grid */}
       <div className="events-grid">
-        {events.map(event => (
+        {visibleEvents.length === 0 ? (
+          <div className="card events-empty-state">
+            <p className="section-kicker">Nothing Unsealed</p>
+            <h3>{phaseTitle}</h3>
+            <p>{emptyStateCopy}</p>
+          </div>
+        ) : visibleEvents.map(event => (
           <div key={event.id} className="event-card">
             {event.poster && (
               <div className="event-poster">
@@ -876,7 +940,9 @@ const Events = () => {
             <div className="event-content">
               <div className="event-card-meta">
                 <p className="event-whisper">Sealed announcement</p>
-                <span className="event-seal">Exclusive</span>
+                <span className="event-seal">
+                  {event.phase === EVENT_PHASES.apollo ? 'Day Invitation' : 'Night Invitation'}
+                </span>
               </div>
               <h3>{event.title}</h3>
               {event.updatedAt && (

@@ -7,6 +7,8 @@ import Experiences from './pages/Experiences';
 import Merchandise from './pages/Merchandise';
 import Artwork from './pages/Artwork';
 import EmberRoom from './pages/EmberRoom';
+import ApolloDayVibe from './components/ApolloDayVibe';
+import SeleneNightVibe from './components/SeleneNightVibe';
 
 const THEME_STORAGE_KEY = 'apollo-selene-theme';
 
@@ -31,6 +33,7 @@ const App = () => {
 
   return (
     <div className="app-shell">
+      {theme === 'apollo' ? <ApolloDayVibe /> : <SeleneNightVibe />}
       <Router>
         <div className="layout-container">
           <aside className="Navbar">
@@ -39,7 +42,7 @@ const App = () => {
           <main className="content-container">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/events" element={<Events />} />
+              <Route path="/events" element={<Events theme={theme} />} />
               <Route path="/experiences" element={<Experiences />} />
               <Route path="/merchandise" element={<Merchandise />} />
               <Route path="/artwork" element={<Artwork />} />

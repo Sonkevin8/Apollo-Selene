@@ -90,12 +90,625 @@ body {
 
 .app-shell {
   min-height: 100vh;
+  position: relative;
+  isolation: isolate;
 }
 
 .layout-container {
   display: flex;
   min-height: 100vh;
   width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.apollo-daylight-bg,
+.selene-nightclub-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  transition: opacity 0.6s ease;
+}
+
+.apollo-daylight-bg {
+  opacity: 0;
+}
+
+[data-theme='apollo'] .apollo-daylight-bg {
+  opacity: 1;
+}
+
+.apollo-sun-wrap {
+  position: absolute;
+  top: 8%;
+  right: 12%;
+  width: clamp(160px, 24vw, 320px);
+  aspect-ratio: 1;
+  animation: apollo-sun-float 9s ease-in-out infinite;
+}
+
+.apollo-sun-glow,
+.apollo-sun-core,
+.apollo-sun-ray {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.apollo-sun-glow {
+  inset: -18%;
+  background: radial-gradient(circle, rgba(255, 229, 162, 0.62), rgba(255, 229, 162, 0));
+  filter: blur(10px);
+}
+
+.apollo-sun-core {
+  inset: 20%;
+  background: radial-gradient(circle at 30% 30%, #fff9dc 0%, #ffe28c 38%, #f4b54d 76%, rgba(244, 181, 77, 0.94) 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 243, 204, 0.46),
+    0 0 36px rgba(255, 200, 89, 0.36),
+    0 0 100px rgba(247, 184, 74, 0.24);
+}
+
+.apollo-sun-ray {
+  inset: 2%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 231, 164, 0.5) 0deg 12deg,
+    transparent 12deg 60deg,
+    rgba(255, 215, 132, 0.34) 60deg 74deg,
+    transparent 74deg 120deg,
+    rgba(255, 231, 164, 0.42) 120deg 132deg,
+    transparent 132deg 180deg,
+    rgba(255, 215, 132, 0.34) 180deg 194deg,
+    transparent 194deg 240deg,
+    rgba(255, 231, 164, 0.42) 240deg 254deg,
+    transparent 254deg 300deg,
+    rgba(255, 215, 132, 0.3) 300deg 314deg,
+    transparent 314deg 360deg
+  );
+  filter: blur(0.5px);
+}
+
+.apollo-sun-ray--one {
+  animation: apollo-ray-spin 24s linear infinite;
+}
+
+.apollo-sun-ray--two {
+  inset: 8%;
+  opacity: 0.62;
+  animation: apollo-ray-spin-reverse 18s linear infinite;
+}
+
+.apollo-sun-ray--three {
+  inset: 14%;
+  opacity: 0.4;
+  animation: apollo-ray-spin 13s linear infinite;
+}
+
+.apollo-clouds {
+  position: absolute;
+  inset: 0;
+}
+
+.apollo-cloud {
+  position: absolute;
+  height: clamp(48px, 7vw, 88px);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow:
+    22px 10px 0 6px rgba(255, 255, 255, 0.54),
+    56px 4px 0 10px rgba(255, 255, 255, 0.46),
+    88px 12px 0 2px rgba(255, 255, 255, 0.52);
+  filter: blur(1px);
+}
+
+.apollo-cloud--one {
+  top: 16%;
+  left: -10%;
+  width: clamp(110px, 15vw, 190px);
+  animation: apollo-cloud-drift 28s linear infinite;
+}
+
+.apollo-cloud--two {
+  top: 28%;
+  left: -18%;
+  width: clamp(130px, 19vw, 230px);
+  opacity: 0.74;
+  animation: apollo-cloud-drift 34s linear infinite 4s;
+}
+
+.apollo-cloud--three {
+  top: 10%;
+  left: 38%;
+  width: clamp(90px, 13vw, 160px);
+  opacity: 0.56;
+  animation: apollo-cloud-bob 12s ease-in-out infinite;
+}
+
+.apollo-haze {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(20px);
+  mix-blend-mode: soft-light;
+}
+
+.apollo-haze--one {
+  width: 42vw;
+  height: 42vw;
+  top: 12%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(255, 224, 157, 0.34), rgba(255, 224, 157, 0));
+  animation: apollo-haze-shift 18s ease-in-out infinite;
+}
+
+.apollo-haze--two {
+  width: 34vw;
+  height: 34vw;
+  bottom: -8%;
+  right: -8%;
+  background: radial-gradient(circle, rgba(157, 211, 255, 0.24), rgba(157, 211, 255, 0));
+  animation: apollo-haze-shift 22s ease-in-out infinite reverse;
+}
+
+.apollo-horizon {
+  position: absolute;
+  inset: auto 0 0;
+  height: 24vh;
+  background:
+    linear-gradient(180deg, rgba(255, 240, 202, 0), rgba(255, 217, 137, 0.3) 52%, rgba(255, 184, 92, 0.32) 100%),
+    radial-gradient(circle at 50% 0%, rgba(255, 250, 221, 0.5), transparent 54%);
+}
+
+.selene-nightclub-bg {
+  opacity: 0;
+}
+
+[data-theme='selene'] .selene-nightclub-bg {
+  opacity: 1;
+}
+
+.disco-orb {
+  position: absolute;
+  top: 5%;
+  left: 68%;
+  width: clamp(84px, 11vw, 146px);
+  aspect-ratio: 1;
+  transform-origin: center;
+  animation: disco-spin 10s linear infinite;
+}
+
+.disco-core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(223, 232, 255, 0.9) 0 6px,
+      rgba(107, 127, 165, 0.76) 6px 10px
+    );
+  box-shadow:
+    0 0 0 1px rgba(210, 224, 255, 0.44),
+    0 0 18px rgba(177, 202, 255, 0.5),
+    0 0 46px rgba(92, 123, 180, 0.3);
+}
+
+.disco-reflection {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(242, 247, 255, 0.8);
+  filter: blur(0.5px);
+}
+
+.disco-reflection--one {
+  width: 24%;
+  height: 9%;
+  top: 18%;
+  left: 18%;
+}
+
+.disco-reflection--two {
+  width: 12%;
+  height: 7%;
+  top: 31%;
+  left: 56%;
+}
+
+.disco-reflection--three {
+  width: 15%;
+  height: 6%;
+  top: 61%;
+  left: 24%;
+}
+
+.club-beams {
+  position: absolute;
+  inset: -12% -8% auto;
+  height: 92vh;
+  transform-origin: 68% 7%;
+  animation: beam-sweep 11s ease-in-out infinite alternate;
+}
+
+.club-beam {
+  position: absolute;
+  top: 0;
+  left: 68%;
+  width: clamp(180px, 24vw, 360px);
+  height: 95vh;
+  clip-path: polygon(46% 0%, 54% 0%, 100% 100%, 0% 100%);
+  transform-origin: 50% 0;
+  mix-blend-mode: screen;
+  opacity: 0.35;
+  filter: blur(1.5px);
+}
+
+.club-beam--one {
+  transform: rotate(-54deg);
+  background: linear-gradient(180deg, rgba(167, 205, 255, 0.5), rgba(95, 124, 190, 0));
+  animation: beam-pulse 3.6s ease-in-out infinite;
+}
+
+.club-beam--two {
+  transform: rotate(-24deg);
+  background: linear-gradient(180deg, rgba(236, 253, 255, 0.42), rgba(111, 161, 190, 0));
+  animation: beam-pulse 4.4s ease-in-out infinite 0.6s;
+}
+
+.club-beam--three {
+  transform: rotate(8deg);
+  background: linear-gradient(180deg, rgba(204, 214, 255, 0.46), rgba(117, 104, 190, 0));
+  animation: beam-pulse 4.2s ease-in-out infinite 1.2s;
+}
+
+.club-beam--four {
+  transform: rotate(34deg);
+  background: linear-gradient(180deg, rgba(228, 245, 255, 0.44), rgba(90, 130, 188, 0));
+  animation: beam-pulse 4.1s ease-in-out infinite 1.6s;
+}
+
+.club-beam--five {
+  transform: rotate(58deg);
+  background: linear-gradient(180deg, rgba(177, 207, 255, 0.54), rgba(95, 124, 190, 0));
+  animation: beam-pulse 3.8s ease-in-out infinite 2s;
+}
+
+.club-flares {
+  position: absolute;
+  inset: 0;
+}
+
+.club-dj-stage {
+  position: absolute;
+  inset: auto 0 0;
+  height: 32vh;
+}
+
+.club-dj-booth {
+  position: absolute;
+  left: 50%;
+  bottom: 9%;
+  width: min(34rem, 56vw);
+  height: clamp(88px, 10vw, 132px);
+  transform: translateX(-50%);
+  border-radius: 24px 24px 8px 8px;
+  background: linear-gradient(180deg, rgba(18, 28, 55, 0.92), rgba(7, 12, 28, 0.96));
+  border: 1px solid rgba(187, 207, 255, 0.2);
+  box-shadow: 0 0 40px rgba(93, 126, 210, 0.16);
+}
+
+.dj-console-light {
+  position: absolute;
+  top: 26%;
+  width: 16%;
+  height: 18%;
+  border-radius: 999px;
+  filter: blur(1px);
+  animation: dj-console-pulse 3.2s ease-in-out infinite;
+}
+
+.dj-console-light--one {
+  left: 14%;
+  background: rgba(118, 189, 255, 0.78);
+}
+
+.dj-console-light--two {
+  left: 42%;
+  background: rgba(214, 168, 255, 0.74);
+  animation-delay: 0.8s;
+}
+
+.dj-console-light--three {
+  right: 14%;
+  background: rgba(145, 231, 255, 0.76);
+  animation-delay: 1.6s;
+}
+
+.club-dj-silhouette {
+  position: absolute;
+  left: 50%;
+  bottom: calc(9% + clamp(62px, 7vw, 88px));
+  width: clamp(76px, 8vw, 120px);
+  height: clamp(120px, 13vw, 180px);
+  transform: translateX(-50%);
+  animation: dj-bob 4.8s ease-in-out infinite;
+}
+
+.dj-head,
+.dj-body {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(8, 13, 28, 0.92);
+}
+
+.dj-head {
+  top: 0;
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: 0 0 16px rgba(160, 195, 255, 0.08);
+}
+
+.dj-body {
+  top: 22%;
+  width: 58%;
+  height: 56%;
+  border-radius: 24px 24px 12px 12px;
+}
+
+.club-crowd {
+  position: absolute;
+  inset: auto 0 0;
+  height: 24vh;
+}
+
+.club-crowd-wave {
+  position: absolute;
+  inset: auto -8% 0;
+  height: 88%;
+  background: rgba(6, 11, 24, 0.94);
+  clip-path: polygon(0 100%, 0 72%, 6% 58%, 11% 74%, 16% 46%, 22% 76%, 28% 52%, 34% 78%, 40% 42%, 46% 76%, 52% 50%, 58% 82%, 64% 48%, 70% 74%, 76% 40%, 82% 72%, 88% 56%, 94% 78%, 100% 62%, 100% 100%);
+}
+
+.club-crowd-wave--one {
+  opacity: 0.94;
+  animation: crowd-bounce 3.4s ease-in-out infinite;
+}
+
+.club-crowd-wave--two {
+  bottom: -4%;
+  opacity: 0.82;
+  transform: scaleX(1.02);
+  animation: crowd-bounce 4.3s ease-in-out infinite 0.9s;
+}
+
+.club-flare {
+  position: absolute;
+  width: clamp(130px, 24vw, 270px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(14px);
+  mix-blend-mode: screen;
+  opacity: 0.28;
+  animation: flare-drift 12s ease-in-out infinite;
+}
+
+.club-flare--one {
+  top: 28%;
+  left: -4%;
+  background: radial-gradient(circle, rgba(113, 146, 210, 0.42), rgba(113, 146, 210, 0));
+}
+
+.club-flare--two {
+  top: 46%;
+  right: -7%;
+  background: radial-gradient(circle, rgba(163, 122, 196, 0.38), rgba(163, 122, 196, 0));
+  animation-delay: 2.8s;
+}
+
+.club-flare--three {
+  bottom: -14%;
+  left: 36%;
+  background: radial-gradient(circle, rgba(102, 158, 200, 0.4), rgba(102, 158, 200, 0));
+  animation-delay: 5.1s;
+}
+
+@keyframes disco-spin {
+  from {
+    transform: rotate(0deg) translateY(0px);
+  }
+
+  50% {
+    transform: rotate(180deg) translateY(3px);
+  }
+
+  to {
+    transform: rotate(360deg) translateY(0px);
+  }
+}
+
+@keyframes beam-sweep {
+  from {
+    transform: rotate(-8deg);
+  }
+
+  to {
+    transform: rotate(7deg);
+  }
+}
+
+@keyframes beam-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+
+  45% {
+    opacity: 0.46;
+  }
+}
+
+@keyframes flare-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.94);
+    opacity: 0.2;
+  }
+
+  50% {
+    transform: translate3d(16px, -18px, 0) scale(1.08);
+    opacity: 0.34;
+  }
+}
+
+@keyframes apollo-sun-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, 6px, 0);
+  }
+}
+
+@keyframes apollo-ray-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes apollo-ray-spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes apollo-cloud-drift {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(118vw);
+  }
+}
+
+@keyframes apollo-cloud-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(14px, -6px, 0);
+  }
+}
+
+@keyframes apollo-haze-shift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(16px, -12px, 0) scale(1.06);
+  }
+}
+
+@keyframes dj-console-pulse {
+  0%,
+  100% {
+    opacity: 0.36;
+    transform: scaleX(1);
+  }
+
+  50% {
+    opacity: 0.88;
+    transform: scaleX(1.08);
+  }
+}
+
+@keyframes dj-bob {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(5px);
+  }
+}
+
+@keyframes crowd-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (max-width: 900px) {
+  .apollo-sun-wrap {
+    right: 6%;
+    top: 10%;
+    width: clamp(132px, 30vw, 220px);
+  }
+
+  .apollo-cloud--three {
+    left: 16%;
+  }
+
+  .disco-orb {
+    left: 50%;
+    top: 4%;
+  }
+
+  .club-beams {
+    transform-origin: 50% 6%;
+  }
+
+  .club-beam {
+    left: 50%;
+    height: 84vh;
+  }
+
+  .club-flare {
+    opacity: 0.22;
+  }
+
+  .club-dj-booth {
+    width: min(27rem, 82vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apollo-sun-wrap,
+  .apollo-sun-ray,
+  .apollo-cloud,
+  .apollo-haze,
+  .disco-orb,
+  .club-beams,
+  .club-beam,
+  .club-flare,
+  .club-dj-silhouette,
+  .dj-console-light,
+  .club-crowd-wave {
+    animation: none;
+  }
 }
 
 .Navbar {
@@ -604,6 +1217,18 @@ select:focus {
   grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 1fr));
   gap: clamp(1.5rem, 3vw, 2rem);
   margin-top: 2rem;
+}
+
+.events-empty-state {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.events-empty-state h3,
+.events-empty-state p:last-child {
+  max-width: 32rem;
 }
 
 .events-intro-card {

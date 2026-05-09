@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import MobileScrollGuide from './MobileScrollGuide';
 import '../styles/Navbar.css';
 
@@ -7,14 +7,12 @@ const navigationItems = [
   { to: '/', label: 'Home' },
   { to: '/events', label: 'Events' },
   { to: '/experiences', label: 'Reflections' },
-  { to: '/merchandise', label: 'Shop', disabled: true, note: 'Coming Soon' },
+  { to: '/merchandise', label: 'Coming Soon', disabled: true },
   { to: '/artwork', label: 'Gallery' },
   { to: '/ember-room', label: 'Ember Room' },
 ];
 
 const Navbar = ({ theme, onToggleTheme }) => {
-  const location = useLocation();
-
   return (
     <nav className="navbar">
       <div className="navbar-brand-block">
@@ -30,14 +28,13 @@ const Navbar = ({ theme, onToggleTheme }) => {
         </button>
       </div>
       <ul className="navbar-menu">
-        {navigationItems.map(({ to, label, disabled, note }) => (
+        {navigationItems.map(({ to, label, disabled }) => (
           <li key={to}>
             {disabled ? (
               <span className="navbar-link-disabled" aria-disabled="true">
                 <span className="navbar-link-inner">
                   <span className="navbar-link-label">{label}</span>
                 </span>
-                <span className="navbar-link-note">{note}</span>
               </span>
             ) : (
               <NavLink to={to} className={({ isActive }) => (isActive ? 'active' : '')}>

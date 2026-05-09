@@ -8,5 +8,18 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      onwarn(warning, defaultHandler) {
+        const isReactRouterDirectiveWarning =
+          warning.code === 'MODULE_LEVEL_DIRECTIVE' &&
+          /node_modules[\\/](react-router|react-router-dom)[\\/]/.test(warning.id || '');
+
+        if (isReactRouterDirectiveWarning) {
+          return;
+        }
+
+        defaultHandler(warning);
+      },
+    },
   },
 });
