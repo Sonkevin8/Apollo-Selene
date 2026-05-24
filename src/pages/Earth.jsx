@@ -79,8 +79,8 @@ const createLowPolyTexture = (imageUrl) =>
 
     image.onload = () => {
       const sampleCanvas = document.createElement('canvas');
-      sampleCanvas.width = 128;
-      sampleCanvas.height = 64;
+      sampleCanvas.width = 256;
+      sampleCanvas.height = 128;
 
       const sampleContext = sampleCanvas.getContext('2d');
       if (!sampleContext) {
@@ -95,19 +95,24 @@ const createLowPolyTexture = (imageUrl) =>
 
       const oceanBands = [
         [24, 67, 120],
-        [38, 97, 155],
-        [63, 134, 193],
-        [92, 176, 225],
+        [31, 84, 136],
+        [42, 104, 160],
+        [58, 126, 182],
+        [79, 151, 206],
+        [103, 182, 227],
       ];
 
       const landBands = [
         [66, 117, 67],
-        [96, 148, 86],
-        [138, 172, 108],
-        [189, 200, 132],
+        [82, 133, 75],
+        [100, 149, 84],
+        [123, 163, 96],
+        [149, 177, 113],
+        [186, 198, 133],
       ];
 
-      const blockSize = 2;
+      const bandCount = oceanBands.length;
+      const blockSize = 1;
       for (let y = 0; y < sampleCanvas.height; y += blockSize) {
         for (let x = 0; x < sampleCanvas.width; x += blockSize) {
           const index = (y * sampleCanvas.width + x) * 4;
@@ -116,7 +121,7 @@ const createLowPolyTexture = (imageUrl) =>
           const blue = pixels[index + 2];
 
           const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
-          const bandIndex = Math.min(3, Math.floor(luminance * 4));
+          const bandIndex = Math.min(bandCount - 1, Math.floor(luminance * bandCount));
           const isOcean = blue > red && blue > green;
           const [r, g, b] = isOcean ? oceanBands[bandIndex] : landBands[bandIndex];
 
@@ -140,8 +145,8 @@ const createLowPolyTexture = (imageUrl) =>
       sampleContext.putImageData(imageData, 0, 0);
 
       const finalCanvas = document.createElement('canvas');
-      finalCanvas.width = 1024;
-      finalCanvas.height = 512;
+      finalCanvas.width = 2048;
+      finalCanvas.height = 1024;
 
       const finalContext = finalCanvas.getContext('2d');
       if (!finalContext) {
@@ -149,14 +154,14 @@ const createLowPolyTexture = (imageUrl) =>
         return;
       }
 
-      finalContext.imageSmoothingEnabled = false;
+      finalContext.imageSmoothingEnabled = true;
       finalContext.drawImage(sampleCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
 
       const texture = new THREE.CanvasTexture(finalCanvas);
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.minFilter = THREE.NearestFilter;
-      texture.magFilter = THREE.NearestFilter;
-      texture.generateMipmaps = false;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = true;
       resolve(texture);
     };
 
@@ -274,7 +279,7 @@ function Earth() {
       color: '#a3dcff',
       emissive: '#10274a',
       emissiveIntensity: 0.2,
-      flatShading: true,
+      flatShading: false,
     });
 
     const realisticMaterial = new THREE.MeshPhongMaterial({
