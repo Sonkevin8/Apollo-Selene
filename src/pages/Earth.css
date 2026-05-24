@@ -27,9 +27,50 @@
   gap: 0.6rem;
 }
 
+.earth-visual-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.earth-palette-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
 .earth-actions .button-link {
   border: 1px solid var(--button-secondary-border);
   border-radius: 999px;
+}
+
+.earth-visual-toggle .button-link {
+  min-width: 140px;
+  border: 1px solid var(--button-secondary-border);
+  border-radius: 999px;
+}
+
+.earth-palette-toggle .button-link {
+  min-width: 140px;
+  border: 1px solid var(--button-secondary-border);
+  border-radius: 999px;
+}
+
+.earth-visual-toggle .button-link.is-active {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border-color: transparent;
+}
+
+.earth-palette-toggle .button-link.is-active {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border-color: transparent;
+}
+
+.earth-palette-toggle .button-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .earth-globe-wrap {
@@ -59,6 +100,16 @@
   }
 
   .earth-actions .button-link {
+    flex: 1 1 calc(50% - 0.6rem);
+    justify-content: center;
+  }
+
+  .earth-visual-toggle .button-link {
+    flex: 1 1 calc(50% - 0.6rem);
+    justify-content: center;
+  }
+
+  .earth-palette-toggle .button-link {
     flex: 1 1 calc(50% - 0.6rem);
     justify-content: center;
   }
