@@ -7,6 +7,8 @@ import Experiences from './pages/Experiences';
 import Merchandise from './pages/Merchandise';
 import Artwork from './pages/Artwork';
 import EmberRoom from './pages/EmberRoom';
+import MixtapeExchange from './pages/MixtapeExchange';
+import Account from './pages/Account';
 import ApolloDayVibe from './components/ApolloDayVibe';
 import SeleneNightVibe from './components/SeleneNightVibe';
 
@@ -46,8 +48,10 @@ const App = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/events" element={<Events theme={theme} />} />
                 <Route path="/experiences" element={<Experiences />} />
+                <Route path="/account" element={<Account />} />
                 <Route path="/merchandise" element={<Merchandise />} />
                 <Route path="/artwork" element={<Artwork />} />
+                <Route path="/mixtape-exchange" element={<MixtapeExchange />} />
                 <Route path="/ember-room" element={<EmberRoom />} />
                 <Route path="/earth" element={<Earth />} />
               </Routes>

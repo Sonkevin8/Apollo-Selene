@@ -7,6 +7,7 @@
 - **Navigation Bar**: Easily navigate through different sections of the website.
 - **Events**: Stay updated with upcoming Apollo Selene gatherings and announcements.
 - **Reflections**: Share and read personal reflections about the space and its events.
+- **Account Profiles**: Sign in and manage user profile details for tape exchange identity.
 - **Shop**: Browse merchandise that helps support future gatherings.
 - **Gallery**: Explore artwork that shapes the tone and identity of Apollo Selene.
 
@@ -81,6 +82,35 @@ Apollo-Selene
    ```
 4. Add policies for your intended access pattern (public upload or authenticated users).
 5. Restart the Vite dev server after adding environment variables.
+
+## Supabase Setup For Auth + Mixtape Exchange
+1. Ensure your env values are present:
+   ```
+   VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+   VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+   VITE_DELIVERY_TABLE=mixtape_exchanges
+   ```
+2. In Supabase SQL Editor, run [supabase/mixtape_exchange_schema.sql](supabase/mixtape_exchange_schema.sql).
+3. In Supabase Authentication settings:
+   ```
+   Enable Email auth provider.
+   Configure your site URL and redirect URL for local/dev and production.
+   ```
+4. Restart the Vite server after env changes.
+5. Open the new route [src/pages/MixtapeExchange.jsx](src/pages/MixtapeExchange.jsx) through the Mixtape Exchange nav link to sign up/sign in and start creating exchanges.
+
+### Optional: Invite Emails via Edge Function
+1. Deploy the function in [supabase/functions/send-mixtape-invite/index.ts](supabase/functions/send-mixtape-invite/index.ts):
+   ```
+   supabase functions deploy send-mixtape-invite
+   ```
+2. Set required function secrets:
+   ```
+   supabase secrets set RESEND_API_KEY=YOUR_RESEND_API_KEY
+   supabase secrets set INVITES_FROM_EMAIL="Mixtape Exchange <onboarding@resend.dev>"
+   supabase secrets set APP_URL="https://your-site-url"
+   ```
+3. If the function is not deployed yet, invites are still stored in DB as pending and can be retried.
 
 ## Contributing
 Contributions are welcome! Please feel free to submit a pull request or open an issue for any suggestions or improvements.

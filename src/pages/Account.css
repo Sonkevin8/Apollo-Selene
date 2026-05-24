@@ -1,0 +1,107 @@
+.account-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-card {
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.account-card h2 {
+  margin-top: 0;
+}
+
+.account-plan-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.5rem 0 0.95rem;
+}
+
+.account-plan-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.24rem 0.62rem;
+  border: 1px solid var(--border-color-strong);
+  background: var(--tag-bg);
+  color: var(--tag-text);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.account-plan-note {
+  font-size: 0.82rem;
+  color: var(--muted-color);
+}
+
+.account-subscription-status {
+  margin: 0 0 0.85rem;
+  color: var(--muted-color);
+  font-size: 0.82rem;
+}
+
+.account-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.account-field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.account-field label {
+  font-size: 0.82rem;
+  color: var(--muted-color);
+}
+
+.account-field input,
+.account-field textarea {
+  width: 100%;
+  border: 1px solid var(--border-color-strong);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--text-color);
+  padding: 0.65rem 0.72rem;
+  font: inherit;
+}
+
+.account-field textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.account-upgrade-disabled {
+  background: color-mix(in srgb, var(--button-secondary-bg) 80%, transparent);
+  color: var(--muted-color);
+  border: 1px dashed var(--border-color-strong);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.account-upgrade-note {
+  margin: 0.65rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted-color);
+}
+
+.account-message {
+  margin-top: 0.7rem;
+  font-size: 0.88rem;
+  color: var(--muted-color);
+}

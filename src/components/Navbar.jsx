@@ -7,6 +7,8 @@ const navigationItems = [
   { to: '/', label: 'Home' },
   { to: '/events', label: 'Events' },
   { to: '/experiences', label: 'Reflections' },
+  { to: '/account', label: 'Account' },
+  { to: '/mixtape-exchange', label: 'Mixtape Exchange' },
   { to: '/merchandise', label: 'Coming Soon', disabled: true },
   { to: '/artwork', label: 'Gallery' },
   { to: '/earth', label: 'Earth' },
