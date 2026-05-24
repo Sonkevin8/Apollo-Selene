@@ -19,6 +19,89 @@ const hotspots = [
   { lat: -23.5505, lng: -46.6333, size: 0.32, label: 'Sao Paulo' },
 ];
 
+const DETAIL_ZOOM_DISTANCE = 180;
+
+const airRoutes = [
+  {
+    startLat: 40.7128,
+    startLng: -74.006,
+    endLat: 51.5072,
+    endLng: -0.1276,
+    altitude: 0.27,
+    label: 'NYC to London',
+  },
+  {
+    startLat: 51.5072,
+    startLng: -0.1276,
+    endLat: 35.6764,
+    endLng: 139.65,
+    altitude: 0.31,
+    label: 'London to Tokyo',
+  },
+  {
+    startLat: 35.6764,
+    startLng: 139.65,
+    endLat: -33.8688,
+    endLng: 151.2093,
+    altitude: 0.21,
+    label: 'Tokyo to Sydney',
+  },
+  {
+    startLat: 6.5244,
+    startLng: 3.3792,
+    endLat: -23.5505,
+    endLng: -46.6333,
+    altitude: 0.29,
+    label: 'Lagos to Sao Paulo',
+  },
+];
+
+const windStreams = [
+  { lat: 16, lng: -46, maxRadius: 8, propagationSpeed: 2.4, repeatPeriod: 900 },
+  { lat: 38, lng: -140, maxRadius: 10, propagationSpeed: 2.1, repeatPeriod: 1100 },
+  { lat: -22, lng: 80, maxRadius: 9, propagationSpeed: 1.8, repeatPeriod: 1250 },
+  { lat: 54, lng: 35, maxRadius: 7, propagationSpeed: 2.6, repeatPeriod: 980 },
+  { lat: -36, lng: -12, maxRadius: 11, propagationSpeed: 1.7, repeatPeriod: 1320 },
+];
+
+const pseudoRandom = (seed) => {
+  const value = Math.sin(seed * 43758.5453123) * 143758.5453;
+  return value - Math.floor(value);
+};
+
+const createTerrainPoints = () => {
+  const clusters = [
+    { lat: 27.98, lng: 86.92, count: 42, spread: 3.6, minAlt: 0.07, maxAlt: 0.14, type: 'terrain-mountain' },
+    { lat: -32.65, lng: -70.01, count: 36, spread: 4.2, minAlt: 0.065, maxAlt: 0.13, type: 'terrain-mountain' },
+    { lat: 46.57, lng: 10.25, count: 26, spread: 2.8, minAlt: 0.052, maxAlt: 0.11, type: 'terrain-mountain' },
+    { lat: 39.12, lng: -105.67, count: 30, spread: 4.4, minAlt: 0.045, maxAlt: 0.095, type: 'terrain-hill' },
+    { lat: 43.64, lng: 142.9, count: 22, spread: 2.7, minAlt: 0.042, maxAlt: 0.085, type: 'terrain-hill' },
+    { lat: -6.62, lng: 146.84, count: 24, spread: 3.1, minAlt: 0.05, maxAlt: 0.1, type: 'terrain-hill' },
+  ];
+
+  const terrainPoints = [];
+
+  clusters.forEach((cluster, clusterIndex) => {
+    for (let index = 0; index < cluster.count; index += 1) {
+      const seed = (clusterIndex + 1) * 1000 + index * 13.37;
+      const angle = pseudoRandom(seed) * Math.PI * 2;
+      const distance = Math.sqrt(pseudoRandom(seed + 1.97)) * cluster.spread;
+      const altitude = cluster.minAlt + pseudoRandom(seed + 9.13) * (cluster.maxAlt - cluster.minAlt);
+
+      terrainPoints.push({
+        lat: cluster.lat + Math.cos(angle) * distance,
+        lng: cluster.lng + Math.sin(angle) * distance,
+        altitude,
+        type: cluster.type,
+      });
+    }
+  });
+
+  return terrainPoints;
+};
+
+const terrainPoints = createTerrainPoints();
+
 const cartoonPalettes = {
   classic: {
     label: 'Classic',
@@ -173,9 +256,100 @@ function Earth() {
   const globeContainerRef = useRef(null);
   const globeRef = useRef(null);
   const materialCacheRef = useRef(null);
+  const detailStateRef = useRef({ terrainVisible: false });
   const accentLayersRef = useRef({ outlineMesh: null, cloudMesh: null, scene: null, animationId: null });
   const [visualMode, setVisualMode] = useState('cartoon');
   const [cartoonPalette, setCartoonPalette] = useState('classic');
+
+  const getHotspotAndTerrainPoints = (includeTerrain) =>
+    includeTerrain ? [...hotspots, ...terrainPoints] : hotspots;
+
+  const applyPointStyles = (globe, mode, paletteKey) => {
+    if (mode === 'cartoon') {
+      const palette = cartoonPalettes[paletteKey] || cartoonPalettes.classic;
+      globe
+        .pointRadius((point) => {
+          if (point.type === 'terrain-mountain') {
+            return 0.1;
+          }
+
+          if (point.type === 'terrain-hill') {
+            return 0.075;
+          }
+
+          return 0.24;
+        })
+        .pointColor((point) => {
+          if (point.type === 'terrain-mountain') {
+            return '#f7eee2';
+          }
+
+          if (point.type === 'terrain-hill') {
+            return '#cadc9b';
+          }
+
+          return palette.pointColor;
+        });
+      return;
+    }
+
+    globe
+      .pointRadius((point) => {
+        if (point.type === 'terrain-mountain') {
+          return 0.075;
+        }
+
+        if (point.type === 'terrain-hill') {
+          return 0.058;
+        }
+
+        return 0.2;
+      })
+      .pointColor((point) => {
+        if (point.type === 'terrain-mountain') {
+          return '#e4ecf6';
+        }
+
+        if (point.type === 'terrain-hill') {
+          return '#8dac7b';
+        }
+
+        return '#ffb656';
+      });
+  };
+
+  const applyLayerStyles = (globe, mode, paletteKey) => {
+    if (mode === 'cartoon') {
+      const palette = cartoonPalettes[paletteKey] || cartoonPalettes.classic;
+      globe
+        .arcColor(() => ['#fff2ca', '#ffab73'])
+        .arcDashLength(0.42)
+        .arcDashGap(0.88)
+        .arcDashAnimateTime(2800)
+        .ringColor(() => palette.atmosphereColor);
+      return;
+    }
+
+    globe
+      .arcColor(() => ['#8ec6ff', '#f6fbff'])
+      .arcDashLength(0.32)
+      .arcDashGap(1.02)
+      .arcDashAnimateTime(3600)
+      .ringColor(() => '#8ab7ff');
+  };
+
+  const applyZoomDetail = (globe, force = false) => {
+    const controls = globe.controls();
+    const distance = typeof controls.getDistance === 'function' ? controls.getDistance() : Number.MAX_VALUE;
+    const shouldShowTerrain = distance <= DETAIL_ZOOM_DISTANCE;
+
+    if (!force && detailStateRef.current.terrainVisible === shouldShowTerrain) {
+      return;
+    }
+
+    detailStateRef.current.terrainVisible = shouldShowTerrain;
+    globe.pointsData(getHotspotAndTerrainPoints(shouldShowTerrain));
+  };
 
   const applyCartoonPalette = (globe, paletteKey) => {
     const materials = materialCacheRef.current;
@@ -254,13 +428,33 @@ function Earth() {
       .showAtmosphere(true)
       .atmosphereColor('#8fe1ff')
       .atmosphereAltitude(0.34)
-      .pointsData(hotspots)
+      .pointsData(getHotspotAndTerrainPoints(false))
       .pointLat('lat')
       .pointLng('lng')
-      .pointAltitude('size')
+      .pointAltitude((point) => point.altitude ?? point.size)
       .pointRadius(0.25)
       .pointColor(() => '#ffe173')
-      .pointLabel((d) => d.label);
+      .pointLabel((point) => point.label || '')
+      .arcsData(airRoutes)
+      .arcStartLat('startLat')
+      .arcStartLng('startLng')
+      .arcEndLat('endLat')
+      .arcEndLng('endLng')
+      .arcAltitude('altitude')
+      .arcStroke(0.95)
+      .arcLabel((route) => `Air Route: ${route.label}`)
+      .arcDashLength(0.42)
+      .arcDashGap(0.88)
+      .arcDashInitialGap(() => Math.random())
+      .arcDashAnimateTime(2800)
+      .arcsTransitionDuration(0)
+      .ringsData(windStreams)
+      .ringLat('lat')
+      .ringLng('lng')
+      .ringMaxRadius('maxRadius')
+      .ringPropagationSpeed('propagationSpeed')
+      .ringRepeatPeriod('repeatPeriod')
+      .ringColor(() => '#8fe1ff');
 
     const toonGradientTexture = createToonGradientTexture();
     const topologyTexture = new THREE.TextureLoader().load(
@@ -354,6 +548,8 @@ function Earth() {
     );
 
     applyVisualMode(globe, 'cartoon');
+    applyPointStyles(globe, 'cartoon', cartoonPalette);
+    applyLayerStyles(globe, 'cartoon', cartoonPalette);
 
     globe.controls().autoRotate = true;
     globe.controls().autoRotateSpeed = 0.45;
@@ -361,7 +557,14 @@ function Earth() {
     globe.controls().minDistance = 130;
     globe.controls().maxDistance = 370;
 
+    const syncZoomDetail = () => {
+      applyZoomDetail(globe);
+    };
+
+    globe.controls().addEventListener('change', syncZoomDetail);
+
     globe.pointOfView(viewpoints.global, 0);
+    applyZoomDetail(globe, true);
 
     const updateGlobeSize = () => {
       if (!globeContainerRef.current) {
@@ -380,6 +583,7 @@ function Earth() {
 
     return () => {
       window.removeEventListener('resize', updateGlobeSize);
+      globe.controls().removeEventListener('change', syncZoomDetail);
       globe.pauseAnimation();
       if (accentLayersRef.current.animationId) {
         window.cancelAnimationFrame(accentLayersRef.current.animationId);
@@ -418,6 +622,7 @@ function Earth() {
         globeContainerRef.current.innerHTML = '';
       }
       materialCacheRef.current = null;
+      detailStateRef.current = { terrainVisible: false };
       globeRef.current = null;
     };
   }, []);
@@ -428,6 +633,8 @@ function Earth() {
     }
 
     applyVisualMode(globeRef.current, visualMode);
+    applyPointStyles(globeRef.current, visualMode, cartoonPalette);
+    applyLayerStyles(globeRef.current, visualMode, cartoonPalette);
   }, [visualMode, cartoonPalette]);
 
   const moveCamera = (viewKey) => {
@@ -448,7 +655,8 @@ function Earth() {
           <p>
             Drag to orbit, scroll to zoom, and jump to key regions. Use the visual toggle to switch
             between a realistic look and a cel-shaded cartoon planet with a low-poly land and ocean
-            map.
+            map. Air routes, wind currents, and cloud layers keep it lively. Zoom in to reveal
+            mountain and hill terrain details.
           </p>
         </div>
 
