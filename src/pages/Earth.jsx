@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Globe from 'globe.gl';
 import * as THREE from 'three';
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import './Earth.css';
 
 const viewpoints = {
@@ -10,51 +11,139 @@ const viewpoints = {
   asia: { lat: 35.68, lng: 139.69, altitude: 1.3 },
 };
 
-const hotspots = [
-  { lat: 40.7128, lng: -74.006, size: 0.4, label: 'New York' },
-  { lat: 51.5072, lng: -0.1276, size: 0.34, label: 'London' },
-  { lat: 35.6764, lng: 139.65, size: 0.35, label: 'Tokyo' },
-  { lat: -33.8688, lng: 151.2093, size: 0.33, label: 'Sydney' },
-  { lat: 6.5244, lng: 3.3792, size: 0.29, label: 'Lagos' },
-  { lat: -23.5505, lng: -46.6333, size: 0.32, label: 'Sao Paulo' },
-];
+const DELIVERY_TABLE_NAME = import.meta.env.VITE_DELIVERY_TABLE || 'dj_set_deliveries';
 
-const DETAIL_ZOOM_DISTANCE = 180;
-
-const airRoutes = [
+const demoDeliveryRoutes = [
   {
-    startLat: 40.7128,
-    startLng: -74.006,
-    endLat: 51.5072,
-    endLng: -0.1276,
-    altitude: 0.27,
-    label: 'NYC to London',
+    id: 'route-1',
+    sender: 'Moonwax Pressing, Detroit',
+    receiver: 'DJ Solara, Berlin',
+    startLat: 42.3314,
+    startLng: -83.0458,
+    endLat: 52.52,
+    endLng: 13.405,
+    altitude: 0.29,
+    duration: 26,
+    offset: 0,
   },
   {
+    id: 'route-2',
+    sender: 'Pulse Crate Studio, London',
+    receiver: 'DJ Kairo, Lagos',
     startLat: 51.5072,
     startLng: -0.1276,
-    endLat: 35.6764,
-    endLng: 139.65,
-    altitude: 0.31,
-    label: 'London to Tokyo',
+    endLat: 6.5244,
+    endLng: 3.3792,
+    altitude: 0.24,
+    duration: 22,
+    offset: 7,
   },
   {
+    id: 'route-3',
+    sender: 'Neon Tape Works, Tokyo',
+    receiver: 'DJ Noctis, Sydney',
     startLat: 35.6764,
     startLng: 139.65,
     endLat: -33.8688,
     endLng: 151.2093,
-    altitude: 0.21,
-    label: 'Tokyo to Sydney',
+    altitude: 0.22,
+    duration: 19,
+    offset: 13,
   },
   {
-    startLat: 6.5244,
-    startLng: 3.3792,
-    endLat: -23.5505,
-    endLng: -46.6333,
-    altitude: 0.29,
-    label: 'Lagos to Sao Paulo',
+    id: 'route-4',
+    sender: 'Solar Groove Lab, Sao Paulo',
+    receiver: 'DJ Orpheus, New York',
+    startLat: -23.5505,
+    startLng: -46.6333,
+    endLat: 40.7128,
+    endLng: -74.006,
+    altitude: 0.28,
+    duration: 28,
+    offset: 3,
   },
 ];
+
+const createHubPoints = (routes) => {
+  const uniqueHubs = new Map();
+
+  routes.forEach((route) => {
+    const senderKey = `${route.startLat}:${route.startLng}`;
+    if (!uniqueHubs.has(senderKey)) {
+      uniqueHubs.set(senderKey, {
+        lat: route.startLat,
+        lng: route.startLng,
+        size: 0.35,
+        label: `Sender Hub: ${route.sender}`,
+        type: 'sender',
+      });
+    }
+
+    const receiverKey = `${route.endLat}:${route.endLng}`;
+    if (!uniqueHubs.has(receiverKey)) {
+      uniqueHubs.set(receiverKey, {
+        lat: route.endLat,
+        lng: route.endLng,
+        size: 0.35,
+        label: `Receiver Hub: ${route.receiver}`,
+        type: 'receiver',
+      });
+    }
+  });
+
+  return Array.from(uniqueHubs.values());
+};
+
+const numberFrom = (...values) => {
+  for (const value of values) {
+    const parsed = typeof value === 'number' ? value : Number.parseFloat(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
+const stringFrom = (...values) => {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return null;
+};
+
+const mapRowToDeliveryRoute = (row, index) => {
+  const startLat = numberFrom(row.sender_lat, row.origin_lat, row.from_lat, row.start_lat);
+  const startLng = numberFrom(row.sender_lng, row.origin_lng, row.from_lng, row.start_lng);
+  const endLat = numberFrom(row.receiver_lat, row.destination_lat, row.to_lat, row.end_lat);
+  const endLng = numberFrom(row.receiver_lng, row.destination_lng, row.to_lng, row.end_lng);
+
+  if ([startLat, startLng, endLat, endLng].some((value) => value === null)) {
+    return null;
+  }
+
+  return {
+    id: String(row.id || row.order_id || `live-${index}`),
+    sender:
+      stringFrom(row.sender_name, row.sender, row.origin_name, row.from_name) ||
+      `Sender ${index + 1}`,
+    receiver:
+      stringFrom(row.receiver_name, row.receiver, row.destination_name, row.to_name) ||
+      `Receiver ${index + 1}`,
+    startLat,
+    startLng,
+    endLat,
+    endLng,
+    altitude: numberFrom(row.altitude, row.route_altitude, row.flight_altitude, 0.25),
+    duration: Math.max(12, numberFrom(row.duration_seconds, row.duration, row.travel_time, 24)),
+    offset: numberFrom(row.offset_seconds, row.offset, index * 5, 0),
+  };
+};
+
+const DETAIL_ZOOM_DISTANCE = 180;
 
 const windStreams = [
   { lat: 16, lng: -46, maxRadius: 8, propagationSpeed: 2.4, repeatPeriod: 900 },
@@ -101,6 +190,49 @@ const createTerrainPoints = () => {
 };
 
 const terrainPoints = createTerrainPoints();
+
+const degreesToRadians = (degrees) => (degrees * Math.PI) / 180;
+const radiansToDegrees = (radians) => (radians * 180) / Math.PI;
+
+const interpolateGreatCircle = (startLat, startLng, endLat, endLng, progress) => {
+  const startLatRadians = degreesToRadians(startLat);
+  const startLngRadians = degreesToRadians(startLng);
+  const endLatRadians = degreesToRadians(endLat);
+  const endLngRadians = degreesToRadians(endLng);
+
+  const startVector = new THREE.Vector3(
+    Math.cos(startLatRadians) * Math.cos(startLngRadians),
+    Math.sin(startLatRadians),
+    Math.cos(startLatRadians) * Math.sin(startLngRadians)
+  );
+
+  const endVector = new THREE.Vector3(
+    Math.cos(endLatRadians) * Math.cos(endLngRadians),
+    Math.sin(endLatRadians),
+    Math.cos(endLatRadians) * Math.sin(endLngRadians)
+  );
+
+  const dotValue = THREE.MathUtils.clamp(startVector.dot(endVector), -1, 1);
+  const omega = Math.acos(dotValue);
+
+  if (omega < 1e-6) {
+    return { lat: startLat, lng: startLng };
+  }
+
+  const sinOmega = Math.sin(omega);
+  const scaleStart = Math.sin((1 - progress) * omega) / sinOmega;
+  const scaleEnd = Math.sin(progress * omega) / sinOmega;
+
+  const interpolated = startVector.clone().multiplyScalar(scaleStart).add(endVector.clone().multiplyScalar(scaleEnd)).normalize();
+
+  const latitude = Math.asin(interpolated.y);
+  const longitude = Math.atan2(interpolated.z, interpolated.x);
+
+  return {
+    lat: radiansToDegrees(latitude),
+    lng: radiansToDegrees(longitude),
+  };
+};
 
 const cartoonPalettes = {
   classic: {
@@ -255,20 +387,42 @@ const createLowPolyTexture = (imageUrl) =>
 function Earth() {
   const globeContainerRef = useRef(null);
   const globeRef = useRef(null);
+  const deliveryRoutesRef = useRef(demoDeliveryRoutes);
+  const hubPointsRef = useRef(createHubPoints(demoDeliveryRoutes));
+  const supabaseChannelRef = useRef(null);
   const materialCacheRef = useRef(null);
   const detailStateRef = useRef({ terrainVisible: false });
+  const deliveryAnimationRef = useRef({ animationId: null, startedAt: 0, lastUiUpdate: 0 });
   const accentLayersRef = useRef({ outlineMesh: null, cloudMesh: null, scene: null, animationId: null });
   const [visualMode, setVisualMode] = useState('cartoon');
   const [cartoonPalette, setCartoonPalette] = useState('classic');
+  const [dataSourceLabel, setDataSourceLabel] = useState('Demo Routes');
+  const [routeCount, setRouteCount] = useState(demoDeliveryRoutes.length);
+  const [deliveryRoutesData, setDeliveryRoutesData] = useState(demoDeliveryRoutes);
+  const [liveDeliveries, setLiveDeliveries] = useState([]);
 
   const getHotspotAndTerrainPoints = (includeTerrain) =>
-    includeTerrain ? [...hotspots, ...terrainPoints] : hotspots;
+    includeTerrain ? [...hubPointsRef.current, ...terrainPoints] : hubPointsRef.current;
+
+  const applyDeliveryRoutes = (routes, sourceLabel) => {
+    const safeRoutes = routes.length ? routes : demoDeliveryRoutes;
+
+    deliveryRoutesRef.current = safeRoutes;
+    hubPointsRef.current = createHubPoints(safeRoutes);
+    setDeliveryRoutesData(safeRoutes);
+    setRouteCount(safeRoutes.length);
+    setDataSourceLabel(sourceLabel || (routes.length ? 'Live Orders' : 'Demo Routes'));
+  };
 
   const applyPointStyles = (globe, mode, paletteKey) => {
     if (mode === 'cartoon') {
       const palette = cartoonPalettes[paletteKey] || cartoonPalettes.classic;
       globe
         .pointRadius((point) => {
+          if (point.type === 'sender' || point.type === 'receiver') {
+            return 0.29;
+          }
+
           if (point.type === 'terrain-mountain') {
             return 0.1;
           }
@@ -280,6 +434,14 @@ function Earth() {
           return 0.24;
         })
         .pointColor((point) => {
+          if (point.type === 'sender') {
+            return '#ffd98d';
+          }
+
+          if (point.type === 'receiver') {
+            return '#f5ffbe';
+          }
+
           if (point.type === 'terrain-mountain') {
             return '#f7eee2';
           }
@@ -295,6 +457,10 @@ function Earth() {
 
     globe
       .pointRadius((point) => {
+        if (point.type === 'sender' || point.type === 'receiver') {
+          return 0.25;
+        }
+
         if (point.type === 'terrain-mountain') {
           return 0.075;
         }
@@ -306,6 +472,14 @@ function Earth() {
         return 0.2;
       })
       .pointColor((point) => {
+        if (point.type === 'sender') {
+          return '#ffc777';
+        }
+
+        if (point.type === 'receiver') {
+          return '#d8f4a1';
+        }
+
         if (point.type === 'terrain-mountain') {
           return '#e4ecf6';
         }
@@ -322,7 +496,7 @@ function Earth() {
     if (mode === 'cartoon') {
       const palette = cartoonPalettes[paletteKey] || cartoonPalettes.classic;
       globe
-        .arcColor(() => ['#fff2ca', '#ffab73'])
+        .arcColor(() => ['#fff0c4', '#ff9a6b'])
         .arcDashLength(0.42)
         .arcDashGap(0.88)
         .arcDashAnimateTime(2800)
@@ -435,14 +609,14 @@ function Earth() {
       .pointRadius(0.25)
       .pointColor(() => '#ffe173')
       .pointLabel((point) => point.label || '')
-      .arcsData(airRoutes)
+      .arcsData(deliveryRoutesRef.current)
       .arcStartLat('startLat')
       .arcStartLng('startLng')
       .arcEndLat('endLat')
       .arcEndLng('endLng')
       .arcAltitude('altitude')
       .arcStroke(0.95)
-      .arcLabel((route) => `Air Route: ${route.label}`)
+      .arcLabel((route) => `Stork Route: ${route.sender} -> ${route.receiver}`)
       .arcDashLength(0.42)
       .arcDashGap(0.88)
       .arcDashInitialGap(() => Math.random())
@@ -454,7 +628,18 @@ function Earth() {
       .ringMaxRadius('maxRadius')
       .ringPropagationSpeed('propagationSpeed')
       .ringRepeatPeriod('repeatPeriod')
-      .ringColor(() => '#8fe1ff');
+      .ringColor(() => '#8fe1ff')
+      .htmlElementsData([])
+      .htmlLat('lat')
+      .htmlLng('lng')
+      .htmlAltitude('altitude')
+      .htmlElement((delivery) => {
+        const marker = document.createElement('div');
+        marker.className = 'stork-courier';
+        marker.innerHTML = '<span class="stork-wing">stork</span><span class="stork-cassette">cassette</span>';
+        marker.setAttribute('title', `${delivery.sender} to ${delivery.receiver}`);
+        return marker;
+      });
 
     const toonGradientTexture = createToonGradientTexture();
     const topologyTexture = new THREE.TextureLoader().load(
@@ -563,6 +748,57 @@ function Earth() {
 
     globe.controls().addEventListener('change', syncZoomDetail);
 
+    const updateDeliveries = (timeStamp) => {
+      if (!deliveryAnimationRef.current.startedAt) {
+        deliveryAnimationRef.current.startedAt = timeStamp;
+      }
+
+      const elapsedSeconds = (timeStamp - deliveryAnimationRef.current.startedAt) / 1000;
+
+      const courierPositions = deliveryRoutesRef.current.map((route) => {
+        const routeProgress = ((elapsedSeconds + route.offset) % route.duration) / route.duration;
+        const currentPosition = interpolateGreatCircle(
+          route.startLat,
+          route.startLng,
+          route.endLat,
+          route.endLng,
+          routeProgress
+        );
+
+        return {
+          id: route.id,
+          sender: route.sender,
+          receiver: route.receiver,
+          lat: currentPosition.lat,
+          lng: currentPosition.lng,
+          altitude: route.altitude + 0.05 + Math.sin(routeProgress * Math.PI) * 0.03,
+          progress: routeProgress,
+        };
+      });
+
+      globe.htmlElementsData(courierPositions);
+
+      if (timeStamp - deliveryAnimationRef.current.lastUiUpdate > 350) {
+        setLiveDeliveries(
+          courierPositions.map((courier) => {
+            const percentage = Math.round(courier.progress * 100);
+            return {
+              id: courier.id,
+              sender: courier.sender,
+              receiver: courier.receiver,
+              progress: percentage,
+              status: percentage >= 94 ? 'Arriving Now' : 'In Flight',
+            };
+          })
+        );
+        deliveryAnimationRef.current.lastUiUpdate = timeStamp;
+      }
+
+      deliveryAnimationRef.current.animationId = window.requestAnimationFrame(updateDeliveries);
+    };
+
+    deliveryAnimationRef.current.animationId = window.requestAnimationFrame(updateDeliveries);
+
     globe.pointOfView(viewpoints.global, 0);
     applyZoomDetail(globe, true);
 
@@ -585,6 +821,12 @@ function Earth() {
       window.removeEventListener('resize', updateGlobeSize);
       globe.controls().removeEventListener('change', syncZoomDetail);
       globe.pauseAnimation();
+      if (supabaseChannelRef.current && supabase) {
+        supabase.removeChannel(supabaseChannelRef.current);
+      }
+      if (deliveryAnimationRef.current.animationId) {
+        window.cancelAnimationFrame(deliveryAnimationRef.current.animationId);
+      }
       if (accentLayersRef.current.animationId) {
         window.cancelAnimationFrame(accentLayersRef.current.animationId);
       }
@@ -623,7 +865,74 @@ function Earth() {
       }
       materialCacheRef.current = null;
       detailStateRef.current = { terrainVisible: false };
+      deliveryAnimationRef.current = { animationId: null, startedAt: 0, lastUiUpdate: 0 };
+      supabaseChannelRef.current = null;
       globeRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!globeRef.current) {
+      return;
+    }
+
+    globeRef.current.arcsData(deliveryRoutesData);
+    applyZoomDetail(globeRef.current, true);
+  }, [deliveryRoutesData]);
+
+  useEffect(() => {
+    const loadLiveDeliveries = async () => {
+      if (!isSupabaseConfigured || !supabase) {
+        applyDeliveryRoutes(demoDeliveryRoutes, 'Demo Routes');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from(DELIVERY_TABLE_NAME)
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(60);
+
+      if (error) {
+        applyDeliveryRoutes(demoDeliveryRoutes, 'Demo Routes');
+        return;
+      }
+
+      const mappedRoutes = (data || [])
+        .map((row, index) => mapRowToDeliveryRoute(row, index))
+        .filter(Boolean);
+
+      applyDeliveryRoutes(mappedRoutes, mappedRoutes.length ? 'Live Orders' : 'Demo Routes');
+    };
+
+    loadLiveDeliveries();
+
+    if (!isSupabaseConfigured || !supabase) {
+      return;
+    }
+
+    const channel = supabase
+      .channel(`delivery-orders-${DELIVERY_TABLE_NAME}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: DELIVERY_TABLE_NAME,
+        },
+        () => {
+          loadLiveDeliveries();
+        }
+      )
+      .subscribe();
+
+    supabaseChannelRef.current = channel;
+
+    return () => {
+      if (supabaseChannelRef.current && supabase) {
+        supabase.removeChannel(supabaseChannelRef.current);
+      }
+      supabaseChannelRef.current = null;
     };
   }, []);
 
@@ -651,12 +960,14 @@ function Earth() {
       <section className="earth-card">
         <div className="earth-header">
           <p className="section-kicker">Interactive Planet View</p>
-          <h1>Cartoon Earth Explorer</h1>
+          <h1>Stork Cassette Delivery Globe</h1>
           <p>
-            Drag to orbit, scroll to zoom, and jump to key regions. Use the visual toggle to switch
-            between a realistic look and a cel-shaded cartoon planet with a low-poly land and ocean
-            map. Air routes, wind currents, and cloud layers keep it lively. Zoom in to reveal
-            mountain and hill terrain details.
+            Track music sets in a playful global simulation where storks carry cassette orders from
+            sender studios to DJ receivers in real time. Drag to orbit, scroll to zoom, and zoom in
+            for terrain detail.
+          </p>
+          <p className="earth-data-source">
+            Data Source: {dataSourceLabel} | Active Routes: {routeCount}
           </p>
         </div>
 
@@ -710,6 +1021,29 @@ function Earth() {
             Asia
           </button>
         </div>
+
+        <section className="delivery-panel" aria-label="Live delivery status">
+          <h3>Live Stork Dispatch Board</h3>
+          <p>Real-time simulation of cassette set shipments for musicians and DJs.</p>
+          <div className="delivery-list">
+            {liveDeliveries.map((delivery) => (
+              <article key={delivery.id} className="delivery-item">
+                <div className="delivery-headline">
+                  <strong>{delivery.sender}</strong>
+                  <span>to</span>
+                  <strong>{delivery.receiver}</strong>
+                </div>
+                <div className="delivery-meta">
+                  <span>{delivery.status}</span>
+                  <span>{delivery.progress}%</span>
+                </div>
+                <div className="delivery-progress-track" aria-hidden="true">
+                  <span className="delivery-progress-fill" style={{ width: `${delivery.progress}%` }} />
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <div className="earth-globe-wrap">
           <div className="earth-globe" ref={globeContainerRef} aria-label="3D Earth globe simulation" />

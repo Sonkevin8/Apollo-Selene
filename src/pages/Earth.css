@@ -21,6 +21,14 @@
   color: var(--muted-color);
 }
 
+.earth-data-source {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
 .earth-actions {
   display: flex;
   flex-wrap: wrap;
@@ -94,6 +102,103 @@
   display: block;
 }
 
+.stork-courier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.22rem 0.42rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 239, 198, 0.7);
+  background: rgba(33, 24, 13, 0.82);
+  color: #fff8e8;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+
+.stork-wing {
+  font-weight: 700;
+}
+
+.stork-cassette {
+  padding: 0.05rem 0.3rem;
+  border-radius: 999px;
+  background: rgba(255, 181, 102, 0.25);
+  border: 1px solid rgba(255, 202, 122, 0.45);
+}
+
+.delivery-panel {
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--surface-color-strong) 80%, transparent);
+}
+
+.delivery-panel h3 {
+  margin: 0;
+  color: var(--heading-color);
+}
+
+.delivery-panel p {
+  margin: 0.35rem 0 0.9rem;
+  color: var(--muted-color);
+}
+
+.delivery-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.delivery-item {
+  padding: 0.7rem;
+  border-radius: 14px;
+  border: 1px solid var(--border-color-strong);
+  background: color-mix(in srgb, var(--surface-color) 88%, transparent);
+}
+
+.delivery-headline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  font-size: 0.86rem;
+}
+
+.delivery-headline span {
+  color: var(--muted-color);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.delivery-meta {
+  margin-top: 0.35rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  color: var(--muted-color);
+}
+
+.delivery-progress-track {
+  margin-top: 0.55rem;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--button-secondary-bg) 76%, transparent);
+  overflow: hidden;
+}
+
+.delivery-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--button-bg);
+  transition: width 0.3s ease;
+}
+
 @media (max-width: 700px) {
   .earth-globe-wrap {
     min-height: 62vh;
@@ -112,5 +217,9 @@
   .earth-palette-toggle .button-link {
     flex: 1 1 calc(50% - 0.6rem);
     justify-content: center;
+  }
+
+  .stork-courier {
+    font-size: 0.52rem;
   }
 }
