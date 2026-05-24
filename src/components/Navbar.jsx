@@ -9,6 +9,7 @@ const navigationItems = [
   { to: '/experiences', label: 'Reflections' },
   { to: '/merchandise', label: 'Coming Soon', disabled: true },
   { to: '/artwork', label: 'Gallery' },
+  { to: '/earth', label: 'Earth' },
   { to: '/ember-room', label: 'Ember Room' },
 ];
 

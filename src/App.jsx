@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -11,6 +11,7 @@ import ApolloDayVibe from './components/ApolloDayVibe';
 import SeleneNightVibe from './components/SeleneNightVibe';
 
 const THEME_STORAGE_KEY = 'apollo-selene-theme';
+const Earth = lazy(() => import('./pages/Earth'));
 
 const App = () => {
   const [theme, setTheme] = useState(() => {
@@ -40,14 +41,17 @@ const App = () => {
             <Navbar theme={theme} onToggleTheme={toggleTheme} />
           </aside>
           <main className="content-container">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/events" element={<Events theme={theme} />} />
-              <Route path="/experiences" element={<Experiences />} />
-              <Route path="/merchandise" element={<Merchandise />} />
-              <Route path="/artwork" element={<Artwork />} />
-              <Route path="/ember-room" element={<EmberRoom />} />
-            </Routes>
+            <Suspense fallback={<div className="card">Loading Earth Explorer...</div>}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/events" element={<Events theme={theme} />} />
+                <Route path="/experiences" element={<Experiences />} />
+                <Route path="/merchandise" element={<Merchandise />} />
+                <Route path="/artwork" element={<Artwork />} />
+                <Route path="/ember-room" element={<EmberRoom />} />
+                <Route path="/earth" element={<Earth />} />
+              </Routes>
+            </Suspense>
           </main>
         </div>
       </Router>

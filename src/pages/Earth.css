@@ -1,0 +1,65 @@
+.earth-page {
+  width: 100%;
+}
+
+.earth-card {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 2vw, 1.4rem);
+  border-radius: 24px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.earth-header h1 {
+  margin: 0.2rem 0 0.55rem;
+}
+
+.earth-header p {
+  margin: 0;
+  color: var(--muted-color);
+}
+
+.earth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.earth-actions .button-link {
+  border: 1px solid var(--button-secondary-border);
+  border-radius: 999px;
+}
+
+.earth-globe-wrap {
+  width: 100%;
+  min-height: clamp(420px, 68vh, 760px);
+  border-radius: 20px;
+  border: 1px solid var(--border-color-strong);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 10%, rgba(125, 172, 227, 0.2), transparent 44%),
+    radial-gradient(circle at 70% 75%, rgba(255, 199, 125, 0.16), transparent 40%),
+    linear-gradient(145deg, rgba(7, 16, 32, 0.94), rgba(5, 8, 18, 0.98));
+}
+
+.earth-globe {
+  width: 100%;
+  height: 100%;
+}
+
+.earth-globe canvas {
+  display: block;
+}
+
+@media (max-width: 700px) {
+  .earth-globe-wrap {
+    min-height: 62vh;
+  }
+
+  .earth-actions .button-link {
+    flex: 1 1 calc(50% - 0.6rem);
+    justify-content: center;
+  }
+}
