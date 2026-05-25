@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Globe from 'globe.gl';
 import * as THREE from 'three';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
@@ -144,6 +144,7 @@ const mapRowToDeliveryRoute = (row, index) => {
 };
 
 const DETAIL_ZOOM_DISTANCE = 180;
+const MAP_SYSTEM_DISTANCE = 145;
 
 const windStreams = [
   { lat: 16, lng: -46, maxRadius: 8, propagationSpeed: 2.4, repeatPeriod: 900 },
@@ -193,6 +194,27 @@ const terrainPoints = createTerrainPoints();
 
 const degreesToRadians = (degrees) => (degrees * Math.PI) / 180;
 const radiansToDegrees = (radians) => (radians * 180) / Math.PI;
+
+const earthDistanceKm = (latOne, lngOne, latTwo, lngTwo) => {
+  const radiusKm = 6371;
+  const deltaLat = degreesToRadians(latTwo - latOne);
+  const deltaLng = degreesToRadians(lngTwo - lngOne);
+
+  const latOneRadians = degreesToRadians(latOne);
+  const latTwoRadians = degreesToRadians(latTwo);
+
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(latOneRadians) * Math.cos(latTwoRadians) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return radiusKm * c;
+};
+
+const toMapCoordinate = (lat, lng) => ({
+  x: ((lng + 180) / 360) * 100,
+  y: ((90 - lat) / 180) * 100,
+});
 
 const interpolateGreatCircle = (startLat, startLng, endLat, endLng, progress) => {
   const startLatRadians = degreesToRadians(startLat);
@@ -392,6 +414,11 @@ function Earth() {
   const supabaseChannelRef = useRef(null);
   const materialCacheRef = useRef(null);
   const detailStateRef = useRef({ terrainVisible: false });
+  const mapSystemStateRef = useRef({
+    active: false,
+    lastUpdateTime: 0,
+    lastFocus: { lat: viewpoints.global.lat, lng: viewpoints.global.lng },
+  });
   const deliveryAnimationRef = useRef({ animationId: null, startedAt: 0, lastUiUpdate: 0 });
   const accentLayersRef = useRef({ outlineMesh: null, cloudMesh: null, scene: null, animationId: null });
   const [visualMode, setVisualMode] = useState('cartoon');
@@ -399,6 +426,9 @@ function Earth() {
   const [dataSourceLabel, setDataSourceLabel] = useState('Demo Routes');
   const [routeCount, setRouteCount] = useState(demoDeliveryRoutes.length);
   const [deliveryRoutesData, setDeliveryRoutesData] = useState(demoDeliveryRoutes);
+  const [mapSystemActive, setMapSystemActive] = useState(false);
+  const [mapFocus, setMapFocus] = useState({ lat: viewpoints.global.lat, lng: viewpoints.global.lng });
+  const [mapZoomDistance, setMapZoomDistance] = useState(null);
   const [liveDeliveries, setLiveDeliveries] = useState([]);
 
   const getHotspotAndTerrainPoints = (includeTerrain) =>
@@ -524,6 +554,66 @@ function Earth() {
     detailStateRef.current.terrainVisible = shouldShowTerrain;
     globe.pointsData(getHotspotAndTerrainPoints(shouldShowTerrain));
   };
+
+  const updateMapSystemMode = (globe, force = false) => {
+    const controls = globe.controls();
+    const distance = typeof controls.getDistance === 'function' ? controls.getDistance() : Number.MAX_VALUE;
+    const shouldActivateMap = distance <= MAP_SYSTEM_DISTANCE;
+    const now = Date.now();
+    const camera = globe.pointOfView();
+
+    if (force || mapSystemStateRef.current.active !== shouldActivateMap) {
+      mapSystemStateRef.current.active = shouldActivateMap;
+      setMapSystemActive(shouldActivateMap);
+    }
+
+    if (!shouldActivateMap || !camera) {
+      return;
+    }
+
+    const focusDelta = earthDistanceKm(
+      mapSystemStateRef.current.lastFocus.lat,
+      mapSystemStateRef.current.lastFocus.lng,
+      camera.lat,
+      camera.lng
+    );
+
+    if (force || now - mapSystemStateRef.current.lastUpdateTime > 180 || focusDelta > 35) {
+      setMapFocus({ lat: camera.lat, lng: camera.lng });
+      setMapZoomDistance(Math.round(distance));
+      mapSystemStateRef.current.lastUpdateTime = now;
+      mapSystemStateRef.current.lastFocus = { lat: camera.lat, lng: camera.lng };
+    }
+  };
+
+  const nearbyHubPoints = useMemo(() => {
+    if (!mapSystemActive) {
+      return [];
+    }
+
+    return [...hubPointsRef.current]
+      .map((hub) => ({
+        ...hub,
+        distanceKm: earthDistanceKm(mapFocus.lat, mapFocus.lng, hub.lat, hub.lng),
+      }))
+      .sort((first, second) => first.distanceKm - second.distanceKm)
+      .slice(0, 8);
+  }, [mapFocus, mapSystemActive, routeCount]);
+
+  const nearbyCouriers = useMemo(() => {
+    if (!mapSystemActive) {
+      return [];
+    }
+
+    return [...liveDeliveries]
+      .filter((delivery) => typeof delivery.lat === 'number' && typeof delivery.lng === 'number')
+      .map((delivery) => ({
+        ...delivery,
+        distanceKm: earthDistanceKm(mapFocus.lat, mapFocus.lng, delivery.lat, delivery.lng),
+      }))
+      .sort((first, second) => first.distanceKm - second.distanceKm)
+      .slice(0, 6);
+  }, [liveDeliveries, mapFocus, mapSystemActive]);
 
   const applyCartoonPalette = (globe, paletteKey) => {
     const materials = materialCacheRef.current;
@@ -744,6 +834,7 @@ function Earth() {
 
     const syncZoomDetail = () => {
       applyZoomDetail(globe);
+      updateMapSystemMode(globe);
     };
 
     globe.controls().addEventListener('change', syncZoomDetail);
@@ -788,6 +879,8 @@ function Earth() {
               receiver: courier.receiver,
               progress: percentage,
               status: percentage >= 94 ? 'Arriving Now' : 'In Flight',
+              lat: courier.lat,
+              lng: courier.lng,
             };
           })
         );
@@ -801,6 +894,7 @@ function Earth() {
 
     globe.pointOfView(viewpoints.global, 0);
     applyZoomDetail(globe, true);
+    updateMapSystemMode(globe, true);
 
     const updateGlobeSize = () => {
       if (!globeContainerRef.current) {
@@ -865,6 +959,11 @@ function Earth() {
       }
       materialCacheRef.current = null;
       detailStateRef.current = { terrainVisible: false };
+      mapSystemStateRef.current = {
+        active: false,
+        lastUpdateTime: 0,
+        lastFocus: { lat: viewpoints.global.lat, lng: viewpoints.global.lng },
+      };
       deliveryAnimationRef.current = { animationId: null, startedAt: 0, lastUiUpdate: 0 };
       supabaseChannelRef.current = null;
       globeRef.current = null;
@@ -878,6 +977,7 @@ function Earth() {
 
     globeRef.current.arcsData(deliveryRoutesData);
     applyZoomDetail(globeRef.current, true);
+    updateMapSystemMode(globeRef.current, true);
   }, [deliveryRoutesData]);
 
   useEffect(() => {
@@ -955,9 +1055,35 @@ function Earth() {
     globeRef.current.pointOfView(view, 1200);
   };
 
+  const exitMapSystem = () => {
+    if (!globeRef.current) {
+      return;
+    }
+
+    globeRef.current.pointOfView(viewpoints.global, 1100);
+  };
+
+  const focusNearestHub = () => {
+    if (!globeRef.current || !nearbyHubPoints.length) {
+      return;
+    }
+
+    const nearest = nearbyHubPoints[0];
+    globeRef.current.pointOfView({ lat: nearest.lat, lng: nearest.lng, altitude: 1.08 }, 950);
+  };
+
+  const focusNearestCourier = () => {
+    if (!globeRef.current || !nearbyCouriers.length) {
+      return;
+    }
+
+    const nearest = nearbyCouriers[0];
+    globeRef.current.pointOfView({ lat: nearest.lat, lng: nearest.lng, altitude: 1.02 }, 900);
+  };
+
   return (
     <div className="content-section earth-page">
-      <section className="earth-card">
+      <section className={`earth-card ${mapSystemActive ? 'earth-card--map-mode' : ''}`}>
         <div className="earth-header">
           <p className="section-kicker">Interactive Planet View</p>
           <h1>Stork Cassette Delivery Globe</h1>
@@ -971,83 +1097,166 @@ function Earth() {
           </p>
         </div>
 
-        <div className="earth-visual-toggle" role="group" aria-label="Earth visual mode">
-          <button
-            type="button"
-            className={`button-link secondary-link ${visualMode === 'realistic' ? 'is-active' : ''}`}
-            onClick={() => setVisualMode('realistic')}
-          >
-            Realistic
-          </button>
-          <button
-            type="button"
-            className={`button-link secondary-link ${visualMode === 'cartoon' ? 'is-active' : ''}`}
-            onClick={() => setVisualMode('cartoon')}
-          >
-            Cartoon
-          </button>
-        </div>
-
-        <div className="earth-palette-toggle" role="group" aria-label="Cartoon palette">
-          {Object.entries(cartoonPalettes).map(([key, palette]) => (
+        {!mapSystemActive ? (
+          <div className="earth-visual-toggle" role="group" aria-label="Earth visual mode">
             <button
-              key={key}
               type="button"
-              className={`button-link secondary-link ${cartoonPalette === key ? 'is-active' : ''}`}
-              onClick={() => setCartoonPalette(key)}
-              disabled={visualMode !== 'cartoon'}
-              aria-pressed={cartoonPalette === key}
+              className={`button-link secondary-link ${visualMode === 'realistic' ? 'is-active' : ''}`}
+              onClick={() => setVisualMode('realistic')}
             >
-              {palette.label}
+              Realistic
             </button>
-          ))}
-        </div>
+            <button
+              type="button"
+              className={`button-link secondary-link ${visualMode === 'cartoon' ? 'is-active' : ''}`}
+              onClick={() => setVisualMode('cartoon')}
+            >
+              Cartoon
+            </button>
+          </div>
+        ) : null}
 
-        <div className="earth-actions" role="group" aria-label="Jump to regions">
-          <button type="button" className="button-link secondary-link" onClick={() => moveCamera('global')}>
-            Global
-          </button>
-          <button
-            type="button"
-            className="button-link secondary-link"
-            onClick={() => moveCamera('northAmerica')}
-          >
-            North America
-          </button>
-          <button type="button" className="button-link secondary-link" onClick={() => moveCamera('europe')}>
-            Europe
-          </button>
-          <button type="button" className="button-link secondary-link" onClick={() => moveCamera('asia')}>
-            Asia
-          </button>
-        </div>
-
-        <section className="delivery-panel" aria-label="Live delivery status">
-          <h3>Live Stork Dispatch Board</h3>
-          <p>Real-time simulation of cassette set shipments for musicians and DJs.</p>
-          <div className="delivery-list">
-            {liveDeliveries.map((delivery) => (
-              <article key={delivery.id} className="delivery-item">
-                <div className="delivery-headline">
-                  <strong>{delivery.sender}</strong>
-                  <span>to</span>
-                  <strong>{delivery.receiver}</strong>
-                </div>
-                <div className="delivery-meta">
-                  <span>{delivery.status}</span>
-                  <span>{delivery.progress}%</span>
-                </div>
-                <div className="delivery-progress-track" aria-hidden="true">
-                  <span className="delivery-progress-fill" style={{ width: `${delivery.progress}%` }} />
-                </div>
-              </article>
+        {!mapSystemActive ? (
+          <div className="earth-palette-toggle" role="group" aria-label="Cartoon palette">
+            {Object.entries(cartoonPalettes).map(([key, palette]) => (
+              <button
+                key={key}
+                type="button"
+                className={`button-link secondary-link ${cartoonPalette === key ? 'is-active' : ''}`}
+                onClick={() => setCartoonPalette(key)}
+                disabled={visualMode !== 'cartoon'}
+                aria-pressed={cartoonPalette === key}
+              >
+                {palette.label}
+              </button>
             ))}
           </div>
-        </section>
+        ) : null}
 
-        <div className="earth-globe-wrap">
+        {!mapSystemActive ? (
+          <div className="earth-actions" role="group" aria-label="Jump to regions">
+            <button type="button" className="button-link secondary-link" onClick={() => moveCamera('global')}>
+              Global
+            </button>
+            <button
+              type="button"
+              className="button-link secondary-link"
+              onClick={() => moveCamera('northAmerica')}
+            >
+              North America
+            </button>
+            <button type="button" className="button-link secondary-link" onClick={() => moveCamera('europe')}>
+              Europe
+            </button>
+            <button type="button" className="button-link secondary-link" onClick={() => moveCamera('asia')}>
+              Asia
+            </button>
+          </div>
+        ) : null}
+
+        {!mapSystemActive ? (
+          <section className="delivery-panel" aria-label="Live delivery status">
+            <h3>Live Stork Dispatch Board</h3>
+            <p>Real-time simulation of cassette set shipments for musicians and DJs.</p>
+            <div className="delivery-list">
+              {liveDeliveries.map((delivery) => (
+                <article key={delivery.id} className="delivery-item">
+                  <div className="delivery-headline">
+                    <strong>{delivery.sender}</strong>
+                    <span>to</span>
+                    <strong>{delivery.receiver}</strong>
+                  </div>
+                  <div className="delivery-meta">
+                    <span>{delivery.status}</span>
+                    <span>{delivery.progress}%</span>
+                  </div>
+                  <div className="delivery-progress-track" aria-hidden="true">
+                    <span className="delivery-progress-fill" style={{ width: `${delivery.progress}%` }} />
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <div className={`earth-globe-wrap ${mapSystemActive ? 'earth-globe-wrap--map-mode' : ''}`}>
           <div className="earth-globe" ref={globeContainerRef} aria-label="3D Earth globe simulation" />
         </div>
+
+        {mapSystemActive ? (
+          <section className="earth-map-system" aria-label="Local 3D map system">
+            <div className="earth-map-system-header">
+              <h3>3D Map System</h3>
+              <p>
+                Zoom lock engaged near {mapFocus.lat.toFixed(2)}, {mapFocus.lng.toFixed(2)} at distance{' '}
+                {mapZoomDistance ?? '--'}
+              </p>
+              <div className="earth-map-controls" role="group" aria-label="Map system controls">
+                <button type="button" className="button-link secondary-link" onClick={exitMapSystem}>
+                  Return to Globe
+                </button>
+                <button type="button" className="button-link secondary-link" onClick={focusNearestHub}>
+                  Focus Nearest Hub
+                </button>
+                <button type="button" className="button-link secondary-link" onClick={focusNearestCourier}>
+                  Focus Nearest Courier
+                </button>
+              </div>
+            </div>
+
+            <div className="earth-map-plane" aria-hidden="true">
+              {nearbyHubPoints.map((hub) => {
+                const coordinate = toMapCoordinate(hub.lat, hub.lng);
+                return (
+                  <span
+                    key={`${hub.label}-${hub.lat}-${hub.lng}`}
+                    className={`earth-map-node earth-map-node--${hub.type}`}
+                    style={{ '--map-x': `${coordinate.x}%`, '--map-y': `${coordinate.y}%` }}
+                  />
+                );
+              })}
+
+              {nearbyCouriers.map((courier) => {
+                const coordinate = toMapCoordinate(courier.lat, courier.lng);
+                return (
+                  <span
+                    key={`courier-${courier.id}`}
+                    className="earth-map-node earth-map-node--courier"
+                    style={{ '--map-x': `${coordinate.x}%`, '--map-y': `${coordinate.y}%` }}
+                  />
+                );
+              })}
+            </div>
+
+            <div className="earth-map-grid">
+              <article className="earth-map-card">
+                <h4>Nearby Hubs</h4>
+                {nearbyHubPoints.length ? (
+                  nearbyHubPoints.slice(0, 4).map((hub) => (
+                    <p key={`hub-row-${hub.label}-${hub.distanceKm.toFixed(0)}`}>
+                      {hub.label} • {Math.round(hub.distanceKm)} km
+                    </p>
+                  ))
+                ) : (
+                  <p>No hubs in local radius.</p>
+                )}
+              </article>
+
+              <article className="earth-map-card">
+                <h4>Nearest Couriers</h4>
+                {nearbyCouriers.length ? (
+                  nearbyCouriers.slice(0, 4).map((courier) => (
+                    <p key={`courier-row-${courier.id}`}>
+                      {courier.sender} to {courier.receiver} • {courier.progress}%
+                    </p>
+                  ))
+                ) : (
+                  <p>No storks currently in local radius.</p>
+                )}
+              </article>
+            </div>
+          </section>
+        ) : null}
       </section>
     </div>
   );

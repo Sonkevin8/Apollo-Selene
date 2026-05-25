@@ -12,6 +12,10 @@
   box-shadow: var(--shadow-soft);
 }
 
+.earth-card--map-mode {
+  gap: 0.8rem;
+}
+
 .earth-header h1 {
   margin: 0.2rem 0 0.55rem;
 }
@@ -91,6 +95,10 @@
     radial-gradient(circle at 30% 10%, rgba(125, 172, 227, 0.2), transparent 44%),
     radial-gradient(circle at 70% 75%, rgba(255, 199, 125, 0.16), transparent 40%),
     linear-gradient(145deg, rgba(7, 16, 32, 0.94), rgba(5, 8, 18, 0.98));
+}
+
+.earth-globe-wrap--map-mode {
+  box-shadow: inset 0 0 0 1px rgba(143, 225, 255, 0.4), 0 12px 40px rgba(14, 32, 68, 0.35);
 }
 
 .earth-globe {
@@ -199,9 +207,126 @@
   transition: width 0.3s ease;
 }
 
+.earth-map-system {
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--surface-color-strong) 86%, transparent);
+  box-shadow: var(--shadow-soft);
+}
+
+.earth-map-system-header h3 {
+  margin: 0;
+  color: var(--heading-color);
+}
+
+.earth-map-system-header p {
+  margin: 0.35rem 0 0.9rem;
+  color: var(--muted-color);
+}
+
+.earth-map-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 0.7rem;
+}
+
+.earth-map-controls .button-link {
+  border: 1px solid var(--button-secondary-border);
+  border-radius: 999px;
+}
+
+.earth-map-plane {
+  position: relative;
+  height: 240px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color-strong);
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(0deg, rgba(138, 184, 255, 0.1) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(90deg, rgba(138, 184, 255, 0.1) 0 1px, transparent 1px 24px),
+    radial-gradient(circle at 50% 10%, rgba(102, 189, 255, 0.22), transparent 60%),
+    linear-gradient(170deg, rgba(8, 20, 43, 0.92), rgba(5, 11, 24, 0.96));
+  transform: perspective(880px) rotateX(24deg);
+  transform-origin: center top;
+}
+
+.earth-map-node {
+  position: absolute;
+  left: var(--map-x);
+  top: var(--map-y);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1), 0 0 16px currentColor;
+}
+
+.earth-map-node--sender {
+  color: #ffc777;
+  background: #ffd89f;
+}
+
+.earth-map-node--receiver {
+  color: #cbf9a7;
+  background: #dfffc1;
+}
+
+.earth-map-node--courier {
+  color: #9ed8ff;
+  background: #d7efff;
+  animation: earth-map-node-pulse 1.4s ease-in-out infinite;
+}
+
+.earth-map-grid {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.7rem;
+}
+
+.earth-map-card {
+  padding: 0.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color-strong);
+  background: color-mix(in srgb, var(--surface-color) 88%, transparent);
+}
+
+.earth-map-card h4 {
+  margin: 0 0 0.45rem;
+}
+
+.earth-map-card p {
+  margin: 0.28rem 0;
+  color: var(--muted-color);
+  font-size: 0.84rem;
+}
+
+@keyframes earth-map-node-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.25);
+  }
+}
+
 @media (max-width: 700px) {
   .earth-globe-wrap {
     min-height: 62vh;
+  }
+
+  .earth-map-plane {
+    height: 180px;
+    transform: perspective(800px) rotateX(18deg);
+  }
+
+  .earth-map-controls .button-link {
+    flex: 1 1 calc(50% - 0.55rem);
+    justify-content: center;
   }
 
   .earth-actions .button-link {
