@@ -445,4 +445,36 @@ on public.mixtape_invites
 for delete
 using (auth.uid() = sender_id);
 
+-- Public-safe route feed for the Earth globe.
+-- Exposes only non-sensitive delivery route fields.
+create or replace view public.mixtape_routes_public as
+select
+  id,
+  created_at,
+  sender_airport_code,
+  sender_airport_name,
+  sender_airport_lat,
+  sender_airport_lng,
+  receiver_airport_code,
+  receiver_airport_name,
+  receiver_airport_lat,
+  receiver_airport_lng,
+  sender_address,
+  receiver_address,
+  flight_distance_km,
+  flight_duration_minutes,
+  sender_vehicle_minutes,
+  receiver_vehicle_minutes,
+  total_vehicle_minutes,
+  total_delivery_minutes,
+  altitude,
+  duration_seconds,
+  offset_seconds,
+  status
+from public.mixtape_exchanges
+where status in ('in_flight', 'delivered');
+
+grant select on public.mixtape_routes_public to anon;
+grant select on public.mixtape_routes_public to authenticated;
+
 -- Optional: Earth page can point to this table directly with VITE_DELIVERY_TABLE=mixtape_exchanges.
