@@ -1,15 +1,20 @@
-// Helper to check ticket purchase status from Supabase
-const checkTicketPurchase = async (sessionId) => {
-  // Query the event_ticket_purchases table for this session
-  const { data, error } = await supabase
-    .from('event_ticket_purchases')
-    .select('*')
-    .eq('stripe_checkout_session_id', sessionId)
-    .maybeSingle();
-  if (error || !data) return null;
-  if (data.payment_status !== 'paid') return null;
-  return data;
-};
+// ...existing code...
+
+const Events = ({ theme }) => {
+  // ...existing code...
+
+  // Helper to check ticket purchase status from Supabase
+  const checkTicketPurchase = async (sessionId) => {
+    const { data, error } = await supabase
+      .from('event_ticket_purchases')
+      .select('*')
+      .eq('stripe_checkout_session_id', sessionId)
+      .maybeSingle();
+    if (error || !data) return null;
+    if (data.payment_status !== 'paid') return null;
+    return data;
+  };
+
   // On mount, check for Stripe redirect and confirm attendance if paid
   useEffect(() => {
     const url = new URL(window.location.href);
