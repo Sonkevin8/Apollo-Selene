@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import {
+  createTicketCheckoutSession,
+  fetchPaidEventTicketPurchases,
   fetchMyProfile,
   getCurrentSession,
   onAuthStateChange,
@@ -171,6 +173,11 @@ const Events = ({ theme }) => {
   const [authMode, setAuthMode] = useState('signin');
   const [authForm, setAuthForm] = useState(defaultAuthForm);
   const [authMessage, setAuthMessage] = useState('');
+  const [checkoutEventId, setCheckoutEventId] = useState(null);
+  const [checkoutErrorEventId, setCheckoutErrorEventId] = useState(null);
+  const [checkoutMessage, setCheckoutMessage] = useState('');
+  const [hasSyncedPaidTickets, setHasSyncedPaidTickets] = useState(false);
+  const [paidTicketEventIds, setPaidTicketEventIds] = useState(() => new Set());
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showEditEvent, setShowEditEvent] = useState(false);
   const [newEvent, setNewEvent] = useState(() => createEventDraft(theme));
@@ -286,6 +293,140 @@ const Events = ({ theme }) => {
       authSubscription.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    setHasSyncedPaidTickets(false);
+    setPaidTicketEventIds(new Set());
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !currentUserId || hasSyncedPaidTickets) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const syncPaidTickets = async () => {
+      try {
+        const purchases = await fetchPaidEventTicketPurchases({ userId: currentUserId, limit: 200 });
+        if (!isMounted || purchases.length === 0) {
+          if (isMounted) {
+            setHasSyncedPaidTickets(true);
+          }
+          return;
+        }
+
+        const paidEventIds = purchases
+          .map((purchase) => String(purchase.event_id || ''))
+          .filter(Boolean);
+
+        const eventsById = new Map(events.map((eventItem) => [String(eventItem.id), eventItem]));
+        const matchedEventIds = paidEventIds
+          .map((eventId) => eventsById.get(eventId)?.id)
+          .filter((value) => value !== undefined);
+
+        setPaidTicketEventIds(new Set(matchedEventIds));
+
+        if (matchedEventIds.length === 0) {
+          setHasSyncedPaidTickets(true);
+          return;
+        }
+
+        const paidEventIdSet = new Set(matchedEventIds);
+        const newlyAddedEventIdSet = new Set(
+          matchedEventIds.filter((eventId) => !userAttendance.has(eventId))
+        );
+        const attendeeName = session?.user?.user_metadata?.display_name || session?.user?.email || 'Ticket Holder';
+        const attendeeContact = session?.user?.email || '';
+
+        setUserAttendance((prev) => {
+          const next = new Set(prev);
+          let changed = false;
+
+          paidEventIdSet.forEach((eventId) => {
+            if (!next.has(eventId)) {
+              next.add(eventId);
+              changed = true;
+            }
+          });
+
+          return changed ? next : prev;
+        });
+
+        setAttendanceDetails((prev) => {
+          const next = { ...prev };
+          let changed = false;
+
+          paidEventIdSet.forEach((eventId) => {
+            const ticketGuestId = `ticket-${eventId}-${currentUserId}`;
+            if (!next[eventId]) {
+              next[eventId] = {
+                name: attendeeName,
+                contact: attendeeContact,
+                guestId: ticketGuestId,
+              };
+              changed = true;
+            }
+          });
+
+          return changed ? next : prev;
+        });
+
+        setEventGuestLists((prev) => {
+          const next = { ...prev };
+          let changed = false;
+
+          paidEventIdSet.forEach((eventId) => {
+            const ticketGuestId = `ticket-${eventId}-${currentUserId}`;
+            const guests = next[eventId] || [];
+            const hasTicketGuest = guests.some((guest) => guest.id === ticketGuestId);
+
+            if (!hasTicketGuest) {
+              next[eventId] = [
+                ...guests,
+                {
+                  id: ticketGuestId,
+                  name: attendeeName,
+                  contact: attendeeContact,
+                  addedBy: currentUserId,
+                },
+              ];
+              changed = true;
+            }
+          });
+
+          return changed ? next : prev;
+        });
+
+        if (newlyAddedEventIdSet.size > 0) {
+          setEvents((prev) =>
+            prev.map((eventItem) => {
+              if (!newlyAddedEventIdSet.has(eventItem.id)) {
+                return eventItem;
+              }
+
+              return {
+                ...eventItem,
+                attendees: Math.min(eventItem.maxAttendees, eventItem.attendees + 1),
+              };
+            })
+          );
+        }
+
+        setHasSyncedPaidTickets(true);
+      } catch {
+        if (isMounted) {
+          setHasSyncedPaidTickets(true);
+        }
+      }
+    };
+
+    syncPaidTickets();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUserId, events, hasSyncedPaidTickets, isSupabaseConfigured, session, userAttendance]);
 
   useEffect(() => {
     window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
@@ -484,6 +625,33 @@ const Events = ({ theme }) => {
   const openAttendConfirm = (eventId) => {
     setSelectedEventId(eventId);
     setShowAttendConfirm(true);
+  };
+
+  const handleBuyTicket = async (event) => {
+    if (!ensureSignedIn()) {
+      return;
+    }
+
+    setCheckoutMessage('');
+    setCheckoutErrorEventId(null);
+    setCheckoutEventId(event.id);
+
+    try {
+      const result = await createTicketCheckoutSession({
+        eventId: String(event.id),
+        eventTitle: event.title,
+        eventDate: event.date,
+        eventLocation: event.location,
+      });
+
+      if (typeof window !== 'undefined') {
+        window.location.assign(result.url);
+      }
+    } catch (error) {
+      setCheckoutMessage(error.message || 'Unable to open Stripe checkout right now.');
+      setCheckoutErrorEventId(event.id);
+      setCheckoutEventId(null);
+    }
   };
 
   const confirmAttendance = (e) => {
@@ -1259,6 +1427,9 @@ const Events = ({ theme }) => {
                 </span>
               </div>
               <h3>{event.title}</h3>
+              {paidTicketEventIds.has(event.id) ? (
+                <p className="event-ticket-badge">Paid Ticket Confirmed</p>
+              ) : null}
               {event.updatedAt && (
                 <p className="event-updated-at">
                   Last updated: {new Date(event.updatedAt).toLocaleString()}
@@ -1320,6 +1491,18 @@ const Events = ({ theme }) => {
                       : 'Request Invitation'
                   }
                 </button>
+
+                <button
+                  type="button"
+                  className="buy-ticket-btn"
+                  onClick={() => handleBuyTicket(event)}
+                  disabled={checkoutEventId === event.id}
+                >
+                  {checkoutEventId === event.id ? 'Opening Checkout...' : 'Buy Ticket'}
+                </button>
+                {checkoutMessage && checkoutErrorEventId === event.id ? (
+                  <p className="form-error ticket-error">{checkoutMessage}</p>
+                ) : null}
 
                 <div className="guest-list-controls">
                   <button

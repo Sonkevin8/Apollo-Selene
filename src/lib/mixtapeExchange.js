@@ -3,6 +3,7 @@ import { isSupabaseConfigured, supabase } from './supabaseClient';
 export const MIXTAPE_TABLE = 'mixtape_exchanges';
 export const PROFILE_TABLE = 'profiles';
 export const INVITE_TABLE = 'mixtape_invites';
+export const TICKET_PURCHASE_TABLE = 'event_ticket_purchases';
 
 const requireSupabase = () => {
   if (!isSupabaseConfigured || !supabase) {
@@ -230,4 +231,46 @@ export const sendMixtapeInviteEmail = async ({ inviteEmail, senderEmail }) => {
   }
 
   return data;
+};
+
+export const createTicketCheckoutSession = async ({ eventId, eventTitle, eventDate, eventLocation }) => {
+  requireSupabase();
+
+  const { data, error } = await supabase.functions.invoke('create-ticket-checkout', {
+    body: {
+      eventId,
+      eventTitle,
+      eventDate,
+      eventLocation,
+      origin: typeof window !== 'undefined' ? window.location.origin : undefined,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data?.url) {
+    throw new Error('Unable to start ticket checkout session.');
+  }
+
+  return data;
+};
+
+export const fetchPaidEventTicketPurchases = async ({ userId, limit = 200 }) => {
+  requireSupabase();
+
+  const { data, error } = await supabase
+    .from(TICKET_PURCHASE_TABLE)
+    .select('*')
+    .eq('user_id', userId)
+    .eq('payment_status', 'paid')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data || [];
 };

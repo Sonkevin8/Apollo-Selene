@@ -112,6 +112,33 @@ Apollo-Selene
    ```
 3. If the function is not deployed yet, invites are still stored in DB as pending and can be retried.
 
+### Optional: Stripe Ticket Checkout For Events
+1. In Stripe, create a Product and recurring or one-time Price for your ticket.
+2. In Supabase SQL Editor, run [supabase/mixtape_exchange_schema.sql](supabase/mixtape_exchange_schema.sql) to add `event_ticket_purchases`.
+3. Deploy the checkout function in [supabase/functions/create-ticket-checkout/index.ts](supabase/functions/create-ticket-checkout/index.ts):
+   ```
+   supabase functions deploy create-ticket-checkout
+   ```
+4. Deploy the webhook function in [supabase/functions/stripe-ticket-webhook/index.ts](supabase/functions/stripe-ticket-webhook/index.ts):
+   ```
+   supabase functions deploy stripe-ticket-webhook
+   ```
+5. Set the required Supabase function secrets:
+   ```
+   supabase secrets set STRIPE_SECRET_KEY=sk_live_or_test_key
+   supabase secrets set STRIPE_TICKET_PRICE_ID=price_xxx
+   supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx
+   supabase secrets set APP_URL="https://your-site-url"
+   ```
+6. In Stripe Dashboard, create a webhook endpoint pointing to your deployed function URL and subscribe to:
+   ```
+   checkout.session.completed
+   checkout.session.async_payment_succeeded
+   checkout.session.expired
+   ```
+7. Ensure users can sign in on the Events page (checkout requires an authenticated session).
+8. After deployment, the Buy Ticket button on [src/pages/Events.jsx](src/pages/Events.jsx) opens Stripe Checkout, and completed payments automatically sync into attendance + guest ledger.
+
 ## Contributing
 Contributions are welcome! Please feel free to submit a pull request or open an issue for any suggestions or improvements.
 

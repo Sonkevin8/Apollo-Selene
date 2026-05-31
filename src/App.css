@@ -1343,6 +1343,21 @@ select:focus {
   line-height: 1.6;
 }
 
+.event-ticket-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 0.5rem 0 0;
+  padding: 0.22rem 0.62rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #103322;
+  border: 1px solid rgba(61, 168, 107, 0.45);
+  background: linear-gradient(135deg, rgba(124, 226, 170, 0.8), rgba(83, 197, 137, 0.72));
+}
+
 .event-attendance {
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -1430,6 +1445,31 @@ select:focus {
   background: var(--button-secondary-bg);
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.buy-ticket-btn {
+  width: 100%;
+  max-width: none;
+  margin-top: 0.7rem;
+  padding: 0.7rem;
+  background: linear-gradient(120deg, var(--accent-color), var(--accent-strong));
+  color: #0f1218;
+  border: 1px solid color-mix(in srgb, var(--accent-strong) 65%, transparent);
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--accent-color) 32%, transparent);
+}
+
+.buy-ticket-btn:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.buy-ticket-btn:disabled {
+  cursor: progress;
+  opacity: 0.78;
+}
+
+.ticket-error {
+  margin-top: 0.55rem;
 }
 
 .guest-list-btn {
