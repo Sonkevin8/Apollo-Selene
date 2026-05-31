@@ -4,10 +4,18 @@ import MobileScrollGuide from './MobileScrollGuide';
 import '../styles/Navbar.css';
 
 const navigationItems = [
-  { to: '/map-exchange', label: 'Map Exchange' },
+  { to: '/', label: 'Home' },
+  { to: '/events', label: 'Events' },
+  { to: '/experiences', label: 'Reflections' },
+  { to: '/account', label: 'Account' },
+  { to: '/mixtape-exchange', label: 'Mixtape Exchange' },
+  { to: '/merchandise', label: 'Coming Soon', disabled: true },
+  { to: '/artwork', label: 'Gallery' },
+  { to: '/earth', label: 'Earth' },
+  { to: '/ember-room', label: 'Ember Room' },
 ];
 
-const Navbar = () => {
+const Navbar = ({ theme, onToggleTheme }) => {
   return (
     <nav className="navbar">
       <div className="navbar-brand-block">
@@ -18,6 +26,9 @@ const Navbar = () => {
         <p className="navbar-copy">
           A welcoming place to pause, check the next event, and ease into community.
         </p>
+        <button type="button" className="theme-toggle" onClick={onToggleTheme}>
+          {theme === 'apollo' ? 'Switch to Selene Mode' : 'Switch to Apollo Mode'}
+        </button>
       </div>
       <ul className="navbar-menu">
         {navigationItems.map(({ to, label, disabled }) => (
@@ -30,9 +41,19 @@ const Navbar = () => {
               </span>
             ) : (
               <NavLink to={to} className={({ isActive }) => (isActive ? 'active' : '')}>
-                <span className="navbar-link-inner">
-                  <span className="navbar-link-label">{label}</span>
-                </span>
+                {({ isActive }) => (
+                  <span className="navbar-link-inner">
+                    {isActive ? (
+                      <span
+                        className={`navbar-link-guide navbar-link-guide--${theme}`}
+                        aria-hidden="true"
+                      >
+                        <MobileScrollGuide theme={theme} compact />
+                      </span>
+                    ) : null}
+                    <span className="navbar-link-label">{label}</span>
+                  </span>
+                )}
               </NavLink>
             )}
           </li>

@@ -13,8 +13,6 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
     "globe.gl": "^2.46.1",
-    "phaser": "^4.1.0",
-    "qr-scanner": "^1.4.2",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "^7.8.1",

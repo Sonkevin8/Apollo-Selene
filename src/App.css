@@ -1014,28 +1014,6 @@ select:focus {
   overflow: hidden;
 }
 
-.home-top-cards {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: stretch;
-}
-
-.home-top-cards .feature-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.home-top-card-actions {
-  display: flex;
-  gap: 0.7rem;
-  flex-wrap: wrap;
-  margin-top: 1rem;
-}
-
-.home-top-card-actions .button-link {
-  min-width: 130px;
-}
-
 .feature-card::before {
   content: '';
   position: absolute;
@@ -1078,10 +1056,6 @@ select:focus {
   .grid-4 {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
-
-  .home-top-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 /* MOBILE: <= 600px */
@@ -1115,7 +1089,6 @@ select:focus {
   .grid-2,
   .grid-3,
   .grid-4,
-  .home-top-cards,
   .timeline-grid,
   .name-secret {
     font-size: 0.4em;
@@ -1278,50 +1251,6 @@ select:focus {
   pointer-events: none;
 }
 
-.ticket-return-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.9rem;
-  margin-bottom: 1rem;
-  padding: 0.8rem 1rem;
-  border-radius: 14px;
-  border: 1px solid var(--border-color);
-  background: var(--surface-color-strong);
-}
-
-.ticket-return-banner p {
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.ticket-return-banner--success {
-  border-color: rgba(62, 168, 108, 0.45);
-  background: linear-gradient(140deg, rgba(62, 168, 108, 0.14), rgba(62, 168, 108, 0.04));
-}
-
-.ticket-return-banner--cancelled {
-  border-color: rgba(196, 120, 44, 0.45);
-  background: linear-gradient(140deg, rgba(196, 120, 44, 0.14), rgba(196, 120, 44, 0.04));
-}
-
-.ticket-return-dismiss {
-  width: auto;
-  min-width: 96px;
-  max-width: none;
-  margin: 0;
-  padding: 0.45rem 0.8rem;
-  font-size: 0.82rem;
-  background: var(--button-secondary-bg);
-  color: var(--button-secondary-text);
-  border-color: var(--button-secondary-border);
-  box-shadow: none;
-}
-
-.ticket-return-dismiss:hover {
-  background: var(--button-secondary-hover);
-}
-
 .event-card {
   position: relative;
   background: var(--surface-color);
@@ -1414,21 +1343,6 @@ select:focus {
   line-height: 1.6;
 }
 
-.event-ticket-badge {
-  display: inline-flex;
-  align-items: center;
-  margin: 0.5rem 0 0;
-  padding: 0.22rem 0.62rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: #103322;
-  border: 1px solid rgba(61, 168, 107, 0.45);
-  background: linear-gradient(135deg, rgba(124, 226, 170, 0.8), rgba(83, 197, 137, 0.72));
-}
-
 .event-attendance {
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -1518,37 +1432,6 @@ select:focus {
   opacity: 0.6;
 }
 
-.buy-ticket-btn {
-  width: 100%;
-  max-width: none;
-  margin-top: 0.7rem;
-  padding: 0.7rem;
-  background: linear-gradient(120deg, var(--accent-color), var(--accent-strong));
-  color: #0f1218;
-  border: 1px solid color-mix(in srgb, var(--accent-strong) 65%, transparent);
-  box-shadow: 0 10px 20px color-mix(in srgb, var(--accent-color) 32%, transparent);
-}
-
-.buy-ticket-btn:hover {
-  filter: brightness(1.04);
-  transform: translateY(-1px);
-}
-
-.buy-ticket-btn:disabled {
-  cursor: progress;
-  opacity: 0.78;
-}
-
-.ticket-error {
-  margin-top: 0.55rem;
-}
-
-.guest-checkout-note {
-  margin: 0.45rem 0 0;
-  font-size: 0.78rem;
-  color: var(--muted-color);
-}
-
 .guest-list-btn {
   width: 100%;
   max-width: none;
@@ -1614,40 +1497,6 @@ select:focus {
   gap: 0.75rem;
   margin-left: -1.35rem;
   padding-left: 1.35rem;
-}
-
-.guest-list-item-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.guest-edit-row {
-  width: 100%;
-}
-
-.guest-edit-row input {
-  margin-bottom: 0.5rem;
-}
-
-.guest-edit-error {
-  margin-top: 0;
-}
-
-.edit-guest-btn {
-  width: auto;
-  max-width: none;
-  padding: 0.35rem 0.7rem;
-  font-size: 0.76rem;
-  border-radius: 999px;
-  background: var(--button-bg);
-  color: var(--button-text);
-  border-color: transparent;
-  box-shadow: none;
-}
-
-.edit-guest-btn:hover {
-  background: var(--button-hover);
 }
 
 .remove-guest-btn {

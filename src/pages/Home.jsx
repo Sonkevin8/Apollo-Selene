@@ -36,7 +36,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="grid home-top-cards">
+      <section className="grid grid-2">
         <div className="feature-card card">
           <h3>Apollo Mode</h3>
           <p>
@@ -49,17 +49,6 @@ export default function Home() {
           <p>
             Dark mode shifts into the evening mood: reflective, soft, and grounded, with the same information delivered in a more restful atmosphere.
           </p>
-        </div>
-
-        <div className="feature-card card">
-          <h3>Account Access</h3>
-          <p>
-            Sign in or create your account to reserve event spots, manage your profile, and unlock full Apollo Selene features.
-          </p>
-          <div className="home-top-card-actions">
-            <Link to="/account" className="button-link primary-link">Login</Link>
-            <Link to="/account" className="button-link secondary-link">Sign Up</Link>
-          </div>
         </div>
       </section>
 
