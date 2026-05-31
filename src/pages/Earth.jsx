@@ -543,8 +543,7 @@ function Earth() {
   });
   const deliveryAnimationRef = useRef({ animationId: null, lastUiUpdate: 0 });
   const accentLayersRef = useRef({ outlineMesh: null, cloudMesh: null, scene: null, animationId: null });
-  const [visualMode, setVisualMode] = useState('cartoon');
-  const [cartoonPalette, setCartoonPalette] = useState('classic');
+  // Only realistic mode
   const [dataSourceLabel, setDataSourceLabel] = useState('Demo Routes');
   const [routeCount, setRouteCount] = useState(demoDeliveryRoutes.length);
   const [deliveryRoutesData, setDeliveryRoutesData] = useState(demoDeliveryRoutes);
@@ -566,80 +565,33 @@ function Earth() {
     setDataSourceLabel(sourceLabel || (routes.length ? 'Live Orders' : 'Demo Routes'));
   };
 
-  const applyPointStyles = (globe, mode, paletteKey) => {
-    if (mode === 'cartoon') {
-      const palette = cartoonPalettes[paletteKey] || cartoonPalettes.classic;
-      globe
-        .pointRadius((point) => {
-          if (point.type === 'sender' || point.type === 'receiver') {
-            return 0.29;
-          }
-
-          if (point.type === 'terrain-mountain') {
-            return 0.1;
-          }
-
-          if (point.type === 'terrain-hill') {
-            return 0.075;
-          }
-
-          return 0.24;
-        })
-        .pointColor((point) => {
-          if (point.type === 'sender') {
-            return '#ffd98d';
-          }
-
-          if (point.type === 'receiver') {
-            return '#f5ffbe';
-          }
-
-          if (point.type === 'terrain-mountain') {
-            return '#f7eee2';
-          }
-
-          if (point.type === 'terrain-hill') {
-            return '#cadc9b';
-          }
-
-          return palette.pointColor;
-        });
-      return;
-    }
-
+  const applyPointStyles = (globe) => {
     globe
       .pointRadius((point) => {
         if (point.type === 'sender' || point.type === 'receiver') {
           return 0.25;
         }
-
         if (point.type === 'terrain-mountain') {
           return 0.075;
         }
-
         if (point.type === 'terrain-hill') {
           return 0.058;
         }
-
         return 0.2;
       })
       .pointColor((point) => {
         if (point.type === 'sender') {
           return '#ffc777';
         }
-
         if (point.type === 'receiver') {
           return '#d8f4a1';
         }
-
         if (point.type === 'terrain-mountain') {
           return '#e4ecf6';
         }
-
         if (point.type === 'terrain-hill') {
           return '#8dac7b';
         }
-
         return '#ffb656';
       });
   };
@@ -821,29 +773,7 @@ function Earth() {
       .pointRadius(0.25)
       .pointColor(() => '#ffe173')
       .pointLabel((point) => point.label || '')
-      .arcsData(deliveryRoutesRef.current)
-      .arcStartLat('startLat')
-      .arcStartLng('startLng')
-      .arcEndLat('endLat')
-      .arcEndLng('endLng')
-      .arcAltitude('altitude')
-      .arcStroke(0.95)
-      .arcLabel(
-        (route) =>
-          `Flight Route: ${route.senderAirportCode || route.sender} -> ${route.receiverAirportCode || route.receiver}`
-      )
-      .arcDashLength(0.42)
-      .arcDashGap(0.88)
-      .arcDashInitialGap(() => Math.random())
-      .arcDashAnimateTime(2800)
-      .arcsTransitionDuration(0)
-      .ringsData(windStreams)
-      .ringLat('lat')
-      .ringLng('lng')
-      .ringMaxRadius('maxRadius')
-      .ringPropagationSpeed('propagationSpeed')
-      .ringRepeatPeriod('repeatPeriod')
-      .ringColor(() => '#8fe1ff')
+      // Removed arcs (delivery lines) and rings (wind streaks)
       .htmlElementsData([])
       .htmlLat('lat')
       .htmlLng('lng')
@@ -955,9 +885,14 @@ function Earth() {
       }
     );
 
-    applyVisualMode(globe, 'cartoon');
-    applyPointStyles(globe, 'cartoon', cartoonPalette);
-    applyLayerStyles(globe, 'cartoon', cartoonPalette);
+    // Only realistic mode
+    globe.showAtmosphere(true)
+      .atmosphereColor('#79b9ff')
+      .atmosphereAltitude(0.2)
+      .pointColor(() => '#ffb656')
+      .pointRadius(0.2);
+    globe.globeMaterial(materials.realisticMaterial);
+    applyPointStyles(globe);
 
     globe.controls().autoRotate = true;
     globe.controls().autoRotateSpeed = 0.45;
@@ -1245,62 +1180,9 @@ function Earth() {
           </p>
         </div>
 
-        {!mapSystemActive ? (
-          <div className="earth-visual-toggle" role="group" aria-label="Earth visual mode">
-            <button
-              type="button"
-              className={`button-link secondary-link ${visualMode === 'realistic' ? 'is-active' : ''}`}
-              onClick={() => setVisualMode('realistic')}
-            >
-              Realistic
-            </button>
-            <button
-              type="button"
-              className={`button-link secondary-link ${visualMode === 'cartoon' ? 'is-active' : ''}`}
-              onClick={() => setVisualMode('cartoon')}
-            >
-              Cartoon
-            </button>
-          </div>
-        ) : null}
+        {/* Removed visual and palette toggles, only realistic mode remains */}
 
-        {!mapSystemActive ? (
-          <div className="earth-palette-toggle" role="group" aria-label="Cartoon palette">
-            {Object.entries(cartoonPalettes).map(([key, palette]) => (
-              <button
-                key={key}
-                type="button"
-                className={`button-link secondary-link ${cartoonPalette === key ? 'is-active' : ''}`}
-                onClick={() => setCartoonPalette(key)}
-                disabled={visualMode !== 'cartoon'}
-                aria-pressed={cartoonPalette === key}
-              >
-                {palette.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
-
-        {!mapSystemActive ? (
-          <div className="earth-actions" role="group" aria-label="Jump to regions">
-            <button type="button" className="button-link secondary-link" onClick={() => moveCamera('global')}>
-              Global
-            </button>
-            <button
-              type="button"
-              className="button-link secondary-link"
-              onClick={() => moveCamera('northAmerica')}
-            >
-              North America
-            </button>
-            <button type="button" className="button-link secondary-link" onClick={() => moveCamera('europe')}>
-              Europe
-            </button>
-            <button type="button" className="button-link secondary-link" onClick={() => moveCamera('asia')}>
-              Asia
-            </button>
-          </div>
-        ) : null}
+        {/* Removed region jump actions, only globe and map system remain */}
 
         {!mapSystemActive ? (
           <section className="delivery-panel" aria-label="Live delivery status">
