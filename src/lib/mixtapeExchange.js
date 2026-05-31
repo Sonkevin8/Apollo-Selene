@@ -260,9 +260,10 @@ export const createTicketCheckoutSession = async ({ eventId, eventTitle, eventDa
 export const fetchPaidEventTicketPurchases = async ({ userId, limit = 200 }) => {
   requireSupabase();
 
+  // Explicitly select reference_number
   const { data, error } = await supabase
     .from(TICKET_PURCHASE_TABLE)
-    .select('*')
+    .select('*, reference_number')
     .eq('user_id', userId)
     .eq('payment_status', 'paid')
     .order('created_at', { ascending: false })

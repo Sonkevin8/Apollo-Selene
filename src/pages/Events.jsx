@@ -1,4 +1,71 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import QrScanner from 'qr-scanner';
+// Helper: fetch all paid tickets for an event (for admin scan)
+async function fetchEventTicketsByEventId(eventId) {
+  if (!window.supabase) return [];
+  const { data, error } = await window.supabase
+    .from('event_ticket_purchases')
+    .select('reference_number, purchaser_email, payment_status')
+    .eq('event_id', String(eventId))
+    .eq('payment_status', 'paid');
+  return data || [];
+}
+  // Admin scan ticket modal state
+  const [scanModalEventId, setScanModalEventId] = useState(null);
+  const [scanResult, setScanResult] = useState(null);
+  const [scanError, setScanError] = useState('');
+  const [manualRefInput, setManualRefInput] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
+  const [scannedTicket, setScannedTicket] = useState(null);
+  const [eventTicketsCache, setEventTicketsCache] = useState({});
+  // Scan QR code using camera
+  const startQrScan = async (videoRef, eventId) => {
+    setScanError('');
+    setScanResult(null);
+    setIsScanning(true);
+    setScannedTicket(null);
+    if (!videoRef.current) return;
+    try {
+      const qrScanner = new QrScanner(
+        videoRef.current,
+        (result) => {
+          setScanResult(result.data);
+          setIsScanning(false);
+          qrScanner.stop();
+        },
+        { returnDetailedScanResult: true }
+      );
+      await qrScanner.start();
+    } catch (err) {
+      setScanError('Camera error: ' + (err.message || err));
+      setIsScanning(false);
+    }
+  };
+  // Cross-check reference number (from QR or manual)
+  const checkReferenceNumber = async (refNum, eventId) => {
+    setScanError('');
+    setScannedTicket(null);
+    let tickets = eventTicketsCache[eventId];
+    if (!tickets) {
+      tickets = await fetchEventTicketsByEventId(eventId);
+      setEventTicketsCache((prev) => ({ ...prev, [eventId]: tickets }));
+    }
+    const found = tickets.find((t) => (t.reference_number || '').toUpperCase() === refNum.toUpperCase());
+    if (found) {
+      setScannedTicket(found);
+    } else {
+      setScanError('No valid ticket found for this reference number.');
+    }
+  };
+  // For QR scan modal
+  const scanVideoRef = React.useRef(null);
+  useEffect(() => {
+    if (scanModalEventId && isScanning && scanVideoRef.current) {
+      startQrScan(scanVideoRef, scanModalEventId);
+    }
+    // eslint-disable-next-line
+  }, [scanModalEventId, isScanning]);
+import { useLocation } from 'react-router-dom';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import {
   createTicketCheckoutSession,
@@ -165,6 +232,7 @@ const createEventDraft = (theme) => ({
 });
 
 const Events = ({ theme }) => {
+  const location = useLocation();
   const [events, setEvents] = useState(() => normalizeEvents(getStoredJson(EVENTS_STORAGE_KEY, defaultEvents)));
 
   const [session, setSession] = useState(null);
@@ -176,6 +244,8 @@ const Events = ({ theme }) => {
   const [checkoutEventId, setCheckoutEventId] = useState(null);
   const [checkoutErrorEventId, setCheckoutErrorEventId] = useState(null);
   const [checkoutMessage, setCheckoutMessage] = useState('');
+  const [ticketReturnStatus, setTicketReturnStatus] = useState('');
+  const [ticketReturnMessage, setTicketReturnMessage] = useState('');
   const [hasSyncedPaidTickets, setHasSyncedPaidTickets] = useState(false);
   const [paidTicketEventIds, setPaidTicketEventIds] = useState(() => new Set());
   const [showAddEvent, setShowAddEvent] = useState(false);
@@ -232,6 +302,50 @@ const Events = ({ theme }) => {
       adminEmails.includes(userEmail)
     );
   }, [profile, session]);
+
+  // Show reference number in confirmation banner if available
+  const [lastTicketReference, setLastTicketReference] = useState(null);
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const ticketState = searchParams.get('ticket');
+    const sessionId = searchParams.get('session_id');
+
+    async function fetchReferenceNumber() {
+      if (sessionId) {
+        // Try to fetch the ticket purchase by session id
+        try {
+          const { data, error } = await window.supabase
+            .from('event_ticket_purchases')
+            .select('reference_number')
+            .eq('stripe_checkout_session_id', sessionId)
+            .maybeSingle();
+          if (data && data.reference_number) {
+            setLastTicketReference(data.reference_number);
+          }
+        } catch {}
+      }
+    }
+
+    if (ticketState === 'success') {
+      setTicketReturnStatus('success');
+      setTicketReturnMessage(
+        'Ticket purchase confirmed. If you checked out as guest, keep your Stripe receipt email for entry details.'
+      );
+      fetchReferenceNumber();
+      return;
+    }
+
+    if (ticketState === 'cancelled') {
+      setTicketReturnStatus('cancelled');
+      setTicketReturnMessage('Checkout was canceled. You can try again whenever you are ready.');
+      setLastTicketReference(null);
+      return;
+    }
+
+    setTicketReturnStatus('');
+    setTicketReturnMessage('');
+    setLastTicketReference(null);
+  }, [location.search]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -628,10 +742,6 @@ const Events = ({ theme }) => {
   };
 
   const handleBuyTicket = async (event) => {
-    if (!ensureSignedIn()) {
-      return;
-    }
-
     setCheckoutMessage('');
     setCheckoutErrorEventId(null);
     setCheckoutEventId(event.id);
@@ -987,6 +1097,18 @@ const Events = ({ theme }) => {
 
   const selectedGuestEvent = events.find((event) => event.id === openGuestListForEvent);
 
+  const dismissTicketReturnNotice = () => {
+    setTicketReturnStatus('');
+    setTicketReturnMessage('');
+
+    if (typeof window !== 'undefined') {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.delete('ticket');
+      currentUrl.searchParams.delete('session_id');
+      window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+    }
+  };
+
   return (
     <div className="content-section">
       <div className="flex justify-between items-center mb-4">
@@ -1016,6 +1138,20 @@ const Events = ({ theme }) => {
           )}
         </div>
       </div>
+
+      {ticketReturnMessage ? (
+        <div className={`ticket-return-banner ticket-return-banner--${ticketReturnStatus || 'info'}`}>
+          <p>{ticketReturnMessage}</p>
+          {lastTicketReference && (
+            <p className="ticket-reference-number">
+              <strong>Reference Number:</strong> <span>{lastTicketReference}</span>
+            </p>
+          )}
+          <button type="button" className="ticket-return-dismiss" onClick={dismissTicketReturnNotice}>
+            Dismiss
+          </button>
+        </div>
+      ) : null}
 
       <div className="card events-intro-card">
         <p className="section-kicker">Invitation Circle</p>
@@ -1459,6 +1595,20 @@ const Events = ({ theme }) => {
                     >
                       Remove Event
                     </button>
+                    <button
+                      type="button"
+                      className="event-admin-btn event-admin-btn-scan"
+                      onClick={() => {
+                        setScanModalEventId(event.id);
+                        setScanResult(null);
+                        setManualRefInput('');
+                        setScanError('');
+                        setScannedTicket(null);
+                        setIsScanning(false);
+                      }}
+                    >
+                      Scan Ticket
+                    </button>
                   </div>
                 )}
 
@@ -1476,53 +1626,208 @@ const Events = ({ theme }) => {
                       className="attendance-fill" 
                       style={{ width: `${(event.attendees / event.maxAttendees) * 100}%` }}
                     ></div>
-                  </div>
-                </div>
-                
-                <button 
-                  className={`attend-btn ${userAttendance.has(event.id) ? 'attending' : ''}`}
-                  onClick={() => handleAttendEvent(event.id)}
-                  disabled={!userAttendance.has(event.id) && event.attendees >= event.maxAttendees}
-                >
-                  {userAttendance.has(event.id) 
-                    ? 'Release Invitation' 
-                    : event.attendees >= event.maxAttendees 
-                      ? 'Sealed Full' 
-                      : 'Request Invitation'
-                  }
-                </button>
+                  {/* Guest List Modal */}
+                  {openGuestListForEvent && (
+                    <div className="modal-overlay">
+                      <div className="modal guest-list-modal">
+                        <h3>{selectedGuestEvent ? `${selectedGuestEvent.title} Guest List` : 'Guest List'}</h3>
+                        {(eventGuestLists[openGuestListForEvent] || []).length > 0 ? (
+                          <ul className="guest-list">
+                            {(eventGuestLists[openGuestListForEvent] || []).map((guest) => (
+                              <li key={guest.id} className="guest-list-item">
+                                {editingGuestId === guest.id ? (
+                                  <div className="guest-edit-row">
+                                    <input
+                                      type="text"
+                                      value={editingGuestForm.name}
+                                      onChange={(e) => setEditingGuestForm((prev) => ({ ...prev, name: e.target.value }))}
+                                      placeholder="Guest Name"
+                                      required
+                                    />
+                                    <input
+                                      type="text"
+                                      value={editingGuestForm.contact}
+                                      onChange={(e) => {
+                                        setEditingGuestForm((prev) => ({ ...prev, contact: e.target.value }));
+                                        if (editingGuestContactError) {
+                                          setEditingGuestContactError('');
+                                        }
+                                      }}
+                                      placeholder="Contact (email or phone)"
+                                      required
+                                    />
+                                    {editingGuestContactError ? (
+                                      <p className="form-error guest-edit-error">{editingGuestContactError}</p>
+                                    ) : null}
+                                    <div className="guest-list-item-actions">
+                                      <button
+                                        type="button"
+                                        className="edit-guest-btn"
+                                        onClick={() => saveEditedGuest(openGuestListForEvent, guest.id)}
+                                      >
+                                        Save
+                                      </button>
+                                      <button type="button" className="remove-guest-btn" onClick={cancelEditGuest}>
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span>
+                                      {guest.name}
+                                      {guest.contact ? ` - ${guest.contact}` : ''}
+                                      {/* Show reference number if available (admin only) */}
+                                      {isAdmin && guest.reference_number && (
+                                        <span className="guest-refnum"> | Ref: <code>{guest.reference_number}</code></span>
+                                      )}
+                                    </span>
+                                    <div className="guest-list-item-actions">
+                                      {isAdmin && (
+                                        <button
+                                          type="button"
+                                          className="edit-guest-btn"
+                                          onClick={() => startEditGuest(guest)}
+                                        >
+                                          Edit
+                                        </button>
+                                      )}
+                                      {(isAdmin || guest.addedBy === currentUserId) && (
+                                        <button
+                                          type="button"
+                                          className="remove-guest-btn"
+                                          onClick={() => removeGuestFromEvent(openGuestListForEvent, guest.id)}
+                                        >
+                                          Remove
+                                        </button>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="guest-list-empty">No attendees listed yet.</p>
+                        )}
 
-                <button
-                  type="button"
-                  className="buy-ticket-btn"
-                  onClick={() => handleBuyTicket(event)}
-                  disabled={checkoutEventId === event.id}
-                >
-                  {checkoutEventId === event.id ? 'Opening Checkout...' : 'Buy Ticket'}
-                </button>
-                {checkoutMessage && checkoutErrorEventId === event.id ? (
-                  <p className="form-error ticket-error">{checkoutMessage}</p>
-                ) : null}
+                        {(eventGuestLists[openGuestListForEvent] || []).length > 0 && !showAddGuestForm && (
+                          <button
+                            type="button"
+                            className="add-guest-btn"
+                            onClick={openAddGuestForm}
+                            disabled={selectedGuestEvent ? selectedGuestEvent.attendees >= selectedGuestEvent.maxAttendees : false}
+                          >
+                            {selectedGuestEvent && selectedGuestEvent.attendees >= selectedGuestEvent.maxAttendees
+                              ? 'Event Full'
+                              : 'Add Another Guest'}
+                          </button>
+                        )}
 
-                <div className="guest-list-controls">
-                  <button
-                    type="button"
-                    className="guest-list-btn"
-                    onClick={() => toggleGuestList(event.id)}
-                  >
-                    View Guest Ledger
-                  </button>
-                  <span className="guest-list-count">
-                    {(eventGuestLists[event.id] || []).length} names in ledger
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+                        {showAddGuestForm && (
+                          <form className="add-guest-form" onSubmit={handleAddAnotherGuest}>
+                            <input
+                              type="text"
+                              placeholder="Guest Name"
+                              value={extraGuestForm.name}
+                              onChange={(e) => setExtraGuestForm({ ...extraGuestForm, name: e.target.value })}
+                              required
+                            />
+                            <input
+                              type="text"
+                              placeholder="Contact (email or phone)"
+                              value={extraGuestForm.contact}
+                              onChange={(e) => {
+                                setExtraGuestForm({ ...extraGuestForm, contact: e.target.value });
+                                if (extraGuestContactError) {
+                                  setExtraGuestContactError('');
+                                }
+                              }}
+                              required
+                            />
+                            {extraGuestContactError && <p className="form-error">{extraGuestContactError}</p>}
+                            <div className="modal-actions add-guest-actions">
+                              <button type="submit">Save Guest</button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowAddGuestForm(false);
+                                  setExtraGuestContactError('');
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        )}
 
-export default Events;
+                        <div className="modal-actions">
+                          <button type="button" onClick={closeGuestListModal}>
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Admin Scan Ticket Modal */}
+                  {isAdmin && scanModalEventId && (
+                    <div className="modal-overlay">
+                      <div className="modal scan-ticket-modal">
+                        <h3>Scan Ticket (Event #{scanModalEventId})</h3>
+                        <div className="scan-section">
+                          <button type="button" onClick={() => setIsScanning((v) => !v)}>
+                            {isScanning ? 'Stop Camera Scan' : 'Start Camera Scan'}
+                          </button>
+                          {isScanning && (
+                            <video ref={scanVideoRef} style={{ width: 320, height: 240, margin: '10px 0' }} />
+                          )}
+                          <div className="manual-scan-section">
+                            <label htmlFor="manual-ref-input">Or enter reference number:</label>
+                            <input
+                              id="manual-ref-input"
+                              type="text"
+                              value={manualRefInput}
+                              onChange={(e) => setManualRefInput(e.target.value)}
+                              placeholder="e.g. 1A2B3C4D"
+                              style={{ textTransform: 'uppercase' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => checkReferenceNumber(manualRefInput, scanModalEventId)}
+                              disabled={!manualRefInput}
+                            >
+                              Check Reference
+                            </button>
+                          </div>
+                          {scanResult && (
+                            <div className="scan-result">
+                              <p>Scanned Reference: <code>{scanResult}</code></p>
+                              <button type="button" onClick={() => checkReferenceNumber(scanResult, scanModalEventId)}>
+                                Cross-Check
+                              </button>
+                            </div>
+                          )}
+                          {scannedTicket && (
+                            <div className="scan-success">
+                              <p>✅ Ticket found for reference <code>{scannedTicket.reference_number}</code></p>
+                              <p>Purchaser: {scannedTicket.purchaser_email}</p>
+                            </div>
+                          )}
+                          {scanError && <p className="form-error scan-error">{scanError}</p>}
+                        </div>
+                        <div className="modal-actions">
+                          <button type="button" onClick={() => {
+                            setScanModalEventId(null);
+                            setScanResult(null);
+                            setManualRefInput('');
+                            setScanError('');
+                            setScannedTicket(null);
+                            setIsScanning(false);
+                          }}>
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}

@@ -47,36 +47,27 @@ Deno.serve(async (request) => {
       });
     }
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return jsonResponse(500, {
-        error: 'Missing SUPABASE_URL or SUPABASE_ANON_KEY in Supabase secrets.',
-      });
-    }
-
+    let user: { id: string; email?: string | null } | null = null;
     const authorization = request.headers.get('Authorization');
-    if (!authorization) {
-      return jsonResponse(401, { error: 'Missing authorization header.' });
-    }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: authorization,
+    // Auth is optional: signed-in users get linked purchases, guests can still pay.
+    if (authorization && supabaseUrl && supabaseAnonKey) {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+          headers: {
+            Authorization: authorization,
+          },
         },
-      },
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      });
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return jsonResponse(401, { error: 'Unauthorized.' });
+      const {
+        data: { user: maybeUser },
+      } = await supabase.auth.getUser();
+      user = maybeUser || null;
     }
 
     const body = await request.json().catch(() => ({}));
@@ -98,12 +89,12 @@ Deno.serve(async (request) => {
           quantity: 1,
         },
       ],
-      client_reference_id: `${user.id}:${eventId}`,
+      client_reference_id: user?.id ? `${user.id}:${eventId}` : `guest:${eventId}:${Date.now()}`,
       customer_email: user.email || undefined,
       success_url: `${baseUrl}/events?ticket=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/events?ticket=cancelled`,
       metadata: {
-        user_id: user.id,
+        user_id: user?.id || '',
         event_id: eventId,
         event_title: eventTitle,
         event_date: eventDate,

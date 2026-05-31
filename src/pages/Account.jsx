@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { fetchPaidEventTicketPurchases } from '../lib/mixtapeExchange';
 import { isSupabaseConfigured, SUPABASE_AUTH_STORAGE_KEY } from '../lib/supabaseClient';
 import {
   fetchMyProfile,
@@ -64,6 +65,20 @@ const Account = () => {
   const [authDebug, setAuthDebug] = useState(() =>
     readAuthDebugSnapshot({ session: null, eventLabel: 'init' })
   );
+  const [ticketHistory, setTicketHistory] = useState([]);
+  useEffect(() => {
+    async function loadTickets() {
+      if (session?.user?.id) {
+        try {
+          const tickets = await fetchPaidEventTicketPurchases({ userId: session.user.id });
+          setTicketHistory(tickets);
+        } catch {}
+      } else {
+        setTicketHistory([]);
+      }
+    }
+    loadTickets();
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -82,69 +97,98 @@ const Account = () => {
         display_name: profile?.display_name || '',
         username: profile?.username || '',
         city: profile?.city || '',
-        bio: profile?.bio || '',
-        plan_tier: profile?.plan_tier || 'free',
-        subscription_status: profile?.subscription_status || '',
-      });
-    };
+        return (
+          <div className="content-section account-shell">
+            <section className="account-card account-auth-debug" aria-label="Session persistence debug">
+              <h3>Auth Session Debug</h3>
+              <p>Use this to verify login persistence after refresh. No token contents are shown.</p>
+              <div className="account-auth-debug-grid">
+                <span>Last Auth Event</span>
+                <strong>{authDebug.eventLabel}</strong>
+                <span>Storage Key</span>
+                <strong>{authDebug.storageKey}</strong>
+                <span>Storage Available</span>
+                <strong>{authDebug.storageAvailable ? 'yes' : 'no'}</strong>
+                <span>Stored Session Found</span>
+                <strong>{authDebug.hasStoredSession ? 'yes' : 'no'}</strong>
+                <span>Stored Payload Size</span>
+                <strong>{authDebug.storedBytes} bytes</strong>
+                <span>Current Session User</span>
+                <strong>{authDebug.sessionEmail || authDebug.sessionUserId || 'none'}</strong>
+              </div>
+            </section>
 
-    const init = async () => {
-      try {
-        const existingSession = await getCurrentSession();
-        if (!isMounted) {
-          return;
-        }
+            {!session ? (
+              <section className="account-card">
+                <h2>Account Access</h2>
+                <div className="account-actions">
+                  <button
+                    type="button"
+                    className={`button-link secondary-link ${authMode === 'signin' ? 'is-active' : ''}`}
+                    onClick={() => setAuthMode('signin')}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    className={`button-link secondary-link ${authMode === 'signup' ? 'is-active' : ''}`}
+                    onClick={() => setAuthMode('signup')}
+                  >
+                    Sign Up
+                  </button>
+                </div>
 
-        setSession(existingSession);
-        setAuthDebug(readAuthDebugSnapshot({ session: existingSession, eventLabel: 'init:getSession' }));
-        if (existingSession?.user?.id) {
-          await syncProfile(existingSession.user.id);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setMessage(error.message || 'Unable to initialize account session.');
-        }
-      }
-    };
-
-    init();
-
-    const { data: authSubscription } = onAuthStateChange(async (_, nextSession) => {
-      if (!isMounted) {
-        return;
-      }
-
-      setSession(nextSession);
-      setAuthDebug(readAuthDebugSnapshot({ session: nextSession, eventLabel: 'auth_state_change' }));
-      if (nextSession?.user?.id) {
-        try {
-          await syncProfile(nextSession.user.id);
-        } catch (error) {
-          setMessage(error.message || 'Unable to load account profile.');
-        }
-      } else {
-        setProfileForm(defaultProfileForm);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      authSubscription.subscription.unsubscribe();
-    };
-  }, []);
-
-  const handleAuthSubmit = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    try {
-      if (authMode === 'signup') {
-        await signUpWithEmail({
-          email: authForm.email,
-          password: authForm.password,
-          displayName: authForm.displayName,
-        });
+                <form onSubmit={handleAuthSubmit} className="account-form-grid">
+                  <div className="account-field">
+                    <label htmlFor="account-email">Email</label>
+                    <input
+                      id="account-email"
+                      type="email"
+                      value={authForm.email}
+                      onChange={(event) => setAuthForm((prev) => ({ ...prev, email: event.target.value }))}
+                      required
+                    />
+                    {/* ...existing code... */}
+                  </div>
+                </form>
+              </section>
+            ) : (
+              <>
+                <section className="account-card">
+                  <h2>Account Details</h2>
+                  {/* ...existing code... */}
+                </section>
+                <section className="account-card">
+                  <h3>Ticket Purchase History</h3>
+                  {ticketHistory.length === 0 ? (
+                    <p>No tickets purchased yet.</p>
+                  ) : (
+                    <table className="ticket-history-table">
+                      <thead>
+                        <tr>
+                          <th>Event</th>
+                          <th>Date</th>
+                          <th>Location</th>
+                          <th>Reference #</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ticketHistory.map((ticket) => (
+                          <tr key={ticket.id}>
+                            <td>{ticket.event_title}</td>
+                            <td>{ticket.event_date}</td>
+                            <td>{ticket.event_location}</td>
+                            <td><code>{ticket.reference_number}</code></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </section>
+              </>
+            )}
+          </div>
+        );
         setMessage('Account created. Confirm your email, then sign in.');
       } else {
         await signInWithEmail({

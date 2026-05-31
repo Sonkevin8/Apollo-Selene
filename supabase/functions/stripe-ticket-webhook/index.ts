@@ -1,6 +1,12 @@
 import Stripe from 'npm:stripe@14.25.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 
+// Helper to generate a short unique reference number (8-char alphanumeric)
+function generateReferenceNumber() {
+  // Use a random 8-char base36 string (0-9a-z)
+  return Math.random().toString(36).substring(2, 10).toUpperCase();
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
@@ -87,6 +93,35 @@ Deno.serve(async (request) => {
 
     const paymentStatus = toStatus(stripeEvent.type);
 
+    // Try to generate a unique reference number (retry if collision)
+    let referenceNumber = generateReferenceNumber();
+    let tries = 0;
+    let maxTries = 5;
+    let unique = false;
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+    while (!unique && tries < maxTries) {
+      // Check for collision
+      const { data: existing, error: checkError } = await supabase
+        .from('event_ticket_purchases')
+        .select('id')
+        .eq('reference_number', referenceNumber)
+        .maybeSingle();
+      if (!existing) {
+        unique = true;
+      } else {
+        referenceNumber = generateReferenceNumber();
+        tries++;
+      }
+    }
+    if (!unique) {
+      return jsonResponse(500, { error: 'Could not generate unique reference number.' });
+    }
+
     const row = {
       user_id: validUserId,
       event_id: eventId,
@@ -102,14 +137,8 @@ Deno.serve(async (request) => {
       payment_status: paymentStatus,
       raw_event: stripeEvent as unknown as Record<string, unknown>,
       updated_at: new Date().toISOString(),
+      reference_number: referenceNumber,
     };
-
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
 
     const { error: upsertError } = await supabase
       .from('event_ticket_purchases')
@@ -119,7 +148,7 @@ Deno.serve(async (request) => {
       return jsonResponse(500, { error: upsertError.message });
     }
 
-    return jsonResponse(200, { ok: true, processed: stripeEvent.type, sessionId: session.id });
+    return jsonResponse(200, { ok: true, processed: stripeEvent.type, sessionId: session.id, referenceNumber });
   } catch (error) {
     return jsonResponse(400, {
       error: error instanceof Error ? error.message : 'Webhook processing failed.',

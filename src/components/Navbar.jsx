@@ -4,15 +4,7 @@ import MobileScrollGuide from './MobileScrollGuide';
 import '../styles/Navbar.css';
 
 const navigationItems = [
-  { to: '/', label: 'Home' },
-  { to: '/events', label: 'Events' },
-  { to: '/experiences', label: 'Reflections' },
-  { to: '/account', label: 'Account' },
-  { to: '/mixtape-exchange', label: 'Mixtape Exchange' },
-  { to: '/merchandise', label: 'Coming Soon', disabled: true },
-  { to: '/artwork', label: 'Gallery' },
-  { to: '/earth', label: 'Earth' },
-  { to: '/ember-room', label: 'Ember Room' },
+  { to: '/map-exchange', label: 'Map Exchange' },
 ];
 
 const Navbar = ({ theme, onToggleTheme }) => {
