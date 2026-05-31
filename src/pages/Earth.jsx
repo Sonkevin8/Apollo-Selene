@@ -775,8 +775,7 @@ function Earth() {
       gradientMap: toonGradientTexture,
       color: '#a3dcff',
       emissive: '#10274a',
-      emissiveIntensity: 0.2,
-      flatShading: false,
+      emissiveIntensity: 0.2
     });
 
     const realisticMaterial = new THREE.MeshPhongMaterial({
@@ -856,7 +855,9 @@ function Earth() {
       .atmosphereAltitude(0.2)
       .pointColor(() => '#ffb656')
       .pointRadius(0.2);
-    globe.globeMaterial(materials.realisticMaterial);
+    if (materialCacheRef.current) {
+      globe.globeMaterial(materialCacheRef.current.realisticMaterial);
+    }
     applyPointStyles(globe);
 
     globe.controls().autoRotate = true;
