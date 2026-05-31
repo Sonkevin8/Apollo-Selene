@@ -1271,6 +1271,6 @@ const Events = ({ theme }) => {
       </div>
     </div>
   );
-};
+}
 
 export default Events;
