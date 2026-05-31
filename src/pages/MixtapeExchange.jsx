@@ -20,12 +20,20 @@ const defaultComposeForm = {
   receiver_id: '',
   cassette_title: '',
   set_style: '',
-  sender_hub: '',
-  receiver_hub: '',
-  sender_lat: '40.7128',
-  sender_lng: '-74.0060',
-  receiver_lat: '51.5072',
-  receiver_lng: '-0.1276',
+  sender_airport_code: 'JFK',
+  sender_airport_name: 'John F. Kennedy International Airport',
+  sender_airport_lat: '40.6413',
+  sender_airport_lng: '-73.7781',
+  receiver_airport_code: 'LHR',
+  receiver_airport_name: 'Heathrow Airport',
+  receiver_airport_lat: '51.47',
+  receiver_airport_lng: '-0.4543',
+  sender_address: '',
+  sender_address_lat: '40.7128',
+  sender_address_lng: '-74.0060',
+  receiver_address: '',
+  receiver_address_lat: '51.5072',
+  receiver_address_lng: '-0.1276',
   note: '',
 };
 
@@ -33,6 +41,45 @@ const defaultAuthForm = {
   email: '',
   password: '',
   displayName: '',
+};
+
+const numberOrNull = (value) => {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const toRadians = (degrees) => (degrees * Math.PI) / 180;
+
+const distanceKm = (startLat, startLng, endLat, endLng) => {
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(endLat - startLat);
+  const dLng = toRadians(endLng - startLng);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(startLat)) * Math.cos(toRadians(endLat)) * Math.sin(dLng / 2) ** 2;
+
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+const calculateFlightMinutes = (km) => {
+  if (!Number.isFinite(km) || km <= 0) {
+    return 0;
+  }
+
+  const adjustedRouteKm = km * 1.08;
+  const cruiseSpeedKmh = 835;
+  const taxiAndHandlingMinutes = 32;
+  return Math.max(20, Math.round((adjustedRouteKm / cruiseSpeedKmh) * 60 + taxiAndHandlingMinutes));
+};
+
+const calculateVehicleMinutes = (km) => {
+  if (!Number.isFinite(km) || km <= 0) {
+    return 0;
+  }
+
+  const cityDrivingSpeedKmh = 46;
+  const handoffBufferMinutes = 10;
+  return Math.max(8, Math.round((km / cityDrivingSpeedKmh) * 60 + handoffBufferMinutes));
 };
 
 const MixtapeExchange = () => {
@@ -74,6 +121,58 @@ const MixtapeExchange = () => {
       );
     });
   }, [receiverQuery, receivers]);
+
+  const routeMetrics = useMemo(() => {
+    const senderAirportLat = numberOrNull(composeForm.sender_airport_lat);
+    const senderAirportLng = numberOrNull(composeForm.sender_airport_lng);
+    const receiverAirportLat = numberOrNull(composeForm.receiver_airport_lat);
+    const receiverAirportLng = numberOrNull(composeForm.receiver_airport_lng);
+
+    const senderAddressLat = numberOrNull(composeForm.sender_address_lat);
+    const senderAddressLng = numberOrNull(composeForm.sender_address_lng);
+    const receiverAddressLat = numberOrNull(composeForm.receiver_address_lat);
+    const receiverAddressLng = numberOrNull(composeForm.receiver_address_lng);
+
+    const flightDistance =
+      senderAirportLat === null ||
+      senderAirportLng === null ||
+      receiverAirportLat === null ||
+      receiverAirportLng === null
+        ? 0
+        : distanceKm(senderAirportLat, senderAirportLng, receiverAirportLat, receiverAirportLng);
+
+    const senderGroundDistance =
+      senderAddressLat === null ||
+      senderAddressLng === null ||
+      senderAirportLat === null ||
+      senderAirportLng === null
+        ? 0
+        : distanceKm(senderAddressLat, senderAddressLng, senderAirportLat, senderAirportLng);
+
+    const receiverGroundDistance =
+      receiverAddressLat === null ||
+      receiverAddressLng === null ||
+      receiverAirportLat === null ||
+      receiverAirportLng === null
+        ? 0
+        : distanceKm(receiverAirportLat, receiverAirportLng, receiverAddressLat, receiverAddressLng);
+
+    const flightDurationMinutes = calculateFlightMinutes(flightDistance);
+    const senderVehicleMinutes = calculateVehicleMinutes(senderGroundDistance);
+    const receiverVehicleMinutes = calculateVehicleMinutes(receiverGroundDistance);
+    const totalVehicleMinutes = senderVehicleMinutes + receiverVehicleMinutes;
+
+    return {
+      flightDistance,
+      senderGroundDistance,
+      receiverGroundDistance,
+      flightDurationMinutes,
+      senderVehicleMinutes,
+      receiverVehicleMinutes,
+      totalVehicleMinutes,
+      totalDeliveryMinutes: flightDurationMinutes + totalVehicleMinutes,
+    };
+  }, [composeForm]);
 
   const loadSignedInData = async (currentUserId) => {
     if (!currentUserId) {
@@ -177,17 +276,57 @@ const MixtapeExchange = () => {
     setMessage('');
 
     try {
+      const senderAirportLat = numberOrNull(composeForm.sender_airport_lat);
+      const senderAirportLng = numberOrNull(composeForm.sender_airport_lng);
+      const receiverAirportLat = numberOrNull(composeForm.receiver_airport_lat);
+      const receiverAirportLng = numberOrNull(composeForm.receiver_airport_lng);
+      const senderAddressLat = numberOrNull(composeForm.sender_address_lat);
+      const senderAddressLng = numberOrNull(composeForm.sender_address_lng);
+      const receiverAddressLat = numberOrNull(composeForm.receiver_address_lat);
+      const receiverAddressLng = numberOrNull(composeForm.receiver_address_lng);
+
+      if (
+        [senderAirportLat, senderAirportLng, receiverAirportLat, receiverAirportLng].some(
+          (value) => value === null
+        )
+      ) {
+        throw new Error('Airport coordinates are required for both artists.');
+      }
+
       const payload = {
         sender_id: userId,
         receiver_id: composeForm.receiver_id,
         cassette_title: composeForm.cassette_title,
         set_style: composeForm.set_style || null,
-        sender_hub: composeForm.sender_hub || null,
-        receiver_hub: composeForm.receiver_hub || null,
-        sender_lat: Number.parseFloat(composeForm.sender_lat),
-        sender_lng: Number.parseFloat(composeForm.sender_lng),
-        receiver_lat: Number.parseFloat(composeForm.receiver_lat),
-        receiver_lng: Number.parseFloat(composeForm.receiver_lng),
+        sender_hub:
+          composeForm.sender_airport_name || composeForm.sender_airport_code || 'Sender Airport',
+        receiver_hub:
+          composeForm.receiver_airport_name || composeForm.receiver_airport_code || 'Receiver Airport',
+        sender_lat: senderAirportLat,
+        sender_lng: senderAirportLng,
+        receiver_lat: receiverAirportLat,
+        receiver_lng: receiverAirportLng,
+        sender_airport_code: composeForm.sender_airport_code || null,
+        sender_airport_name: composeForm.sender_airport_name || null,
+        sender_airport_lat: senderAirportLat,
+        sender_airport_lng: senderAirportLng,
+        receiver_airport_code: composeForm.receiver_airport_code || null,
+        receiver_airport_name: composeForm.receiver_airport_name || null,
+        receiver_airport_lat: receiverAirportLat,
+        receiver_airport_lng: receiverAirportLng,
+        sender_address: composeForm.sender_address || null,
+        sender_address_lat: senderAddressLat,
+        sender_address_lng: senderAddressLng,
+        receiver_address: composeForm.receiver_address || null,
+        receiver_address_lat: receiverAddressLat,
+        receiver_address_lng: receiverAddressLng,
+        flight_distance_km: Number(routeMetrics.flightDistance.toFixed(1)),
+        flight_duration_minutes: routeMetrics.flightDurationMinutes,
+        sender_vehicle_minutes: routeMetrics.senderVehicleMinutes,
+        receiver_vehicle_minutes: routeMetrics.receiverVehicleMinutes,
+        total_vehicle_minutes: routeMetrics.totalVehicleMinutes,
+        total_delivery_minutes: routeMetrics.totalDeliveryMinutes,
+        duration_seconds: Math.max(30, routeMetrics.flightDurationMinutes),
         note: composeForm.note || null,
         status: 'pending',
       };
@@ -458,77 +597,198 @@ const MixtapeExchange = () => {
               </div>
 
               <div className="mixtape-field">
-                <label htmlFor="sender-hub">Sender Hub Name</label>
+                <label htmlFor="sender-airport-code">Sender Airport Code</label>
                 <input
-                  id="sender-hub"
-                  value={composeForm.sender_hub}
-                  onChange={(event) => setComposeForm((prev) => ({ ...prev, sender_hub: event.target.value }))}
-                  placeholder="Moonwax Pressing"
-                />
-              </div>
-
-              <div className="mixtape-field">
-                <label htmlFor="receiver-hub">Receiver Hub Name</label>
-                <input
-                  id="receiver-hub"
-                  value={composeForm.receiver_hub}
+                  id="sender-airport-code"
+                  value={composeForm.sender_airport_code}
                   onChange={(event) =>
-                    setComposeForm((prev) => ({ ...prev, receiver_hub: event.target.value }))
+                    setComposeForm((prev) => ({ ...prev, sender_airport_code: event.target.value.toUpperCase() }))
                   }
-                  placeholder="Berlin Loft Deck"
+                  placeholder="JFK"
                 />
               </div>
 
               <div className="mixtape-field">
-                <label htmlFor="sender-lat">Sender Latitude</label>
+                <label htmlFor="sender-airport-name">Sender Airport Name</label>
                 <input
-                  id="sender-lat"
-                  type="number"
-                  step="any"
-                  value={composeForm.sender_lat}
-                  onChange={(event) => setComposeForm((prev) => ({ ...prev, sender_lat: event.target.value }))}
-                  required
-                />
-              </div>
-
-              <div className="mixtape-field">
-                <label htmlFor="sender-lng">Sender Longitude</label>
-                <input
-                  id="sender-lng"
-                  type="number"
-                  step="any"
-                  value={composeForm.sender_lng}
-                  onChange={(event) => setComposeForm((prev) => ({ ...prev, sender_lng: event.target.value }))}
-                  required
-                />
-              </div>
-
-              <div className="mixtape-field">
-                <label htmlFor="receiver-lat">Receiver Latitude</label>
-                <input
-                  id="receiver-lat"
-                  type="number"
-                  step="any"
-                  value={composeForm.receiver_lat}
+                  id="sender-airport-name"
+                  value={composeForm.sender_airport_name}
                   onChange={(event) =>
-                    setComposeForm((prev) => ({ ...prev, receiver_lat: event.target.value }))
+                    setComposeForm((prev) => ({ ...prev, sender_airport_name: event.target.value }))
+                  }
+                  placeholder="John F. Kennedy International Airport"
+                />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="sender-airport-lat">Sender Airport Latitude</label>
+                <input
+                  id="sender-airport-lat"
+                  type="number"
+                  step="any"
+                  value={composeForm.sender_airport_lat}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, sender_airport_lat: event.target.value }))
                   }
                   required
                 />
               </div>
 
               <div className="mixtape-field">
-                <label htmlFor="receiver-lng">Receiver Longitude</label>
+                <label htmlFor="sender-airport-lng">Sender Airport Longitude</label>
                 <input
-                  id="receiver-lng"
+                  id="sender-airport-lng"
                   type="number"
                   step="any"
-                  value={composeForm.receiver_lng}
+                  value={composeForm.sender_airport_lng}
                   onChange={(event) =>
-                    setComposeForm((prev) => ({ ...prev, receiver_lng: event.target.value }))
+                    setComposeForm((prev) => ({ ...prev, sender_airport_lng: event.target.value }))
                   }
                   required
                 />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="receiver-airport-code">Receiver Airport Code</label>
+                <input
+                  id="receiver-airport-code"
+                  value={composeForm.receiver_airport_code}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, receiver_airport_code: event.target.value.toUpperCase() }))
+                  }
+                  placeholder="LHR"
+                />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="receiver-airport-name">Receiver Airport Name</label>
+                <input
+                  id="receiver-airport-name"
+                  value={composeForm.receiver_airport_name}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, receiver_airport_name: event.target.value }))
+                  }
+                  placeholder="Heathrow Airport"
+                />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="receiver-airport-lat">Receiver Airport Latitude</label>
+                <input
+                  id="receiver-airport-lat"
+                  type="number"
+                  step="any"
+                  value={composeForm.receiver_airport_lat}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, receiver_airport_lat: event.target.value }))
+                  }
+                  required
+                />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="receiver-airport-lng">Receiver Airport Longitude</label>
+                <input
+                  id="receiver-airport-lng"
+                  type="number"
+                  step="any"
+                  value={composeForm.receiver_airport_lng}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, receiver_airport_lng: event.target.value }))
+                  }
+                  required
+                />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="sender-address">Sender Address / Studio</label>
+                <input
+                  id="sender-address"
+                  value={composeForm.sender_address}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, sender_address: event.target.value }))
+                  }
+                  placeholder="Brooklyn, New York"
+                />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="sender-address-lat">Sender Address Latitude</label>
+                <input
+                  id="sender-address-lat"
+                  type="number"
+                  step="any"
+                  value={composeForm.sender_address_lat}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, sender_address_lat: event.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="sender-address-lng">Sender Address Longitude</label>
+                <input
+                  id="sender-address-lng"
+                  type="number"
+                  step="any"
+                  value={composeForm.sender_address_lng}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, sender_address_lng: event.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="receiver-address">Receiver Address / Venue</label>
+                <input
+                  id="receiver-address"
+                  value={composeForm.receiver_address}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, receiver_address: event.target.value }))
+                  }
+                  placeholder="Hackney, London"
+                />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="receiver-address-lat">Receiver Address Latitude</label>
+                <input
+                  id="receiver-address-lat"
+                  type="number"
+                  step="any"
+                  value={composeForm.receiver_address_lat}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, receiver_address_lat: event.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="mixtape-field">
+                <label htmlFor="receiver-address-lng">Receiver Address Longitude</label>
+                <input
+                  id="receiver-address-lng"
+                  type="number"
+                  step="any"
+                  value={composeForm.receiver_address_lng}
+                  onChange={(event) =>
+                    setComposeForm((prev) => ({ ...prev, receiver_address_lng: event.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="mixtape-field" style={{ gridColumn: '1 / -1' }}>
+                <label>Calculated Route Timing</label>
+                <p className="mixtape-helper-text">
+                  Flight route (airport to airport): {Math.round(routeMetrics.flightDistance)} km •{' '}
+                  {routeMetrics.flightDurationMinutes} min
+                </p>
+                <p className="mixtape-helper-text">
+                  Vehicle time (address to airport + airport to address): {routeMetrics.totalVehicleMinutes}{' '}
+                  min ({routeMetrics.senderVehicleMinutes} + {routeMetrics.receiverVehicleMinutes})
+                </p>
+                <p className="mixtape-helper-text">
+                  Total estimated delivery time: {routeMetrics.totalDeliveryMinutes} min
+                </p>
               </div>
 
               <div className="mixtape-field" style={{ gridColumn: '1 / -1' }}>

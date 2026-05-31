@@ -116,10 +116,34 @@ const stringFrom = (...values) => {
 };
 
 const mapRowToDeliveryRoute = (row, index) => {
-  const startLat = numberFrom(row.sender_lat, row.origin_lat, row.from_lat, row.start_lat);
-  const startLng = numberFrom(row.sender_lng, row.origin_lng, row.from_lng, row.start_lng);
-  const endLat = numberFrom(row.receiver_lat, row.destination_lat, row.to_lat, row.end_lat);
-  const endLng = numberFrom(row.receiver_lng, row.destination_lng, row.to_lng, row.end_lng);
+  const startLat = numberFrom(
+    row.sender_airport_lat,
+    row.sender_lat,
+    row.origin_lat,
+    row.from_lat,
+    row.start_lat
+  );
+  const startLng = numberFrom(
+    row.sender_airport_lng,
+    row.sender_lng,
+    row.origin_lng,
+    row.from_lng,
+    row.start_lng
+  );
+  const endLat = numberFrom(
+    row.receiver_airport_lat,
+    row.receiver_lat,
+    row.destination_lat,
+    row.to_lat,
+    row.end_lat
+  );
+  const endLng = numberFrom(
+    row.receiver_airport_lng,
+    row.receiver_lng,
+    row.destination_lng,
+    row.to_lng,
+    row.end_lng
+  );
 
   if ([startLat, startLng, endLat, endLng].some((value) => value === null)) {
     return null;
@@ -128,18 +152,57 @@ const mapRowToDeliveryRoute = (row, index) => {
   return {
     id: String(row.id || row.order_id || `live-${index}`),
     sender:
-      stringFrom(row.sender_name, row.sender, row.origin_name, row.from_name) ||
+      stringFrom(
+        row.sender_airport_code,
+        row.sender_airport_name,
+        row.sender_hub,
+        row.sender_name,
+        row.sender,
+        row.origin_name,
+        row.from_name
+      ) ||
       `Sender ${index + 1}`,
     receiver:
-      stringFrom(row.receiver_name, row.receiver, row.destination_name, row.to_name) ||
+      stringFrom(
+        row.receiver_airport_code,
+        row.receiver_airport_name,
+        row.receiver_hub,
+        row.receiver_name,
+        row.receiver,
+        row.destination_name,
+        row.to_name
+      ) ||
       `Receiver ${index + 1}`,
+    senderAirportCode: stringFrom(row.sender_airport_code, row.sender_hub, row.sender_name),
+    receiverAirportCode: stringFrom(row.receiver_airport_code, row.receiver_hub, row.receiver_name),
+    senderAddress: stringFrom(row.sender_address),
+    receiverAddress: stringFrom(row.receiver_address),
     startLat,
     startLng,
     endLat,
     endLng,
     altitude: numberFrom(row.altitude, row.route_altitude, row.flight_altitude, 0.25),
-    duration: Math.max(12, numberFrom(row.duration_seconds, row.duration, row.travel_time, 24)),
+    duration: Math.max(
+      12,
+      numberFrom(
+        row.duration_seconds,
+        numberFrom(row.flight_duration_minutes, 0) || 0,
+        row.duration,
+        row.travel_time,
+        24
+      )
+    ),
     offset: numberFrom(row.offset_seconds, row.offset, index * 5, 0),
+    flightDurationMinutes: Math.round(numberFrom(row.flight_duration_minutes, row.duration_seconds, 0)),
+    senderVehicleMinutes: Math.round(numberFrom(row.sender_vehicle_minutes, 0)),
+    receiverVehicleMinutes: Math.round(numberFrom(row.receiver_vehicle_minutes, 0)),
+    totalVehicleMinutes: Math.round(
+      numberFrom(
+        row.total_vehicle_minutes,
+        numberFrom(row.sender_vehicle_minutes, 0) + numberFrom(row.receiver_vehicle_minutes, 0),
+        0
+      )
+    ),
   };
 };
 
@@ -706,7 +769,10 @@ function Earth() {
       .arcEndLng('endLng')
       .arcAltitude('altitude')
       .arcStroke(0.95)
-      .arcLabel((route) => `Stork Route: ${route.sender} -> ${route.receiver}`)
+      .arcLabel(
+        (route) =>
+          `Flight Route: ${route.senderAirportCode || route.sender} -> ${route.receiverAirportCode || route.receiver}`
+      )
       .arcDashLength(0.42)
       .arcDashGap(0.88)
       .arcDashInitialGap(() => Math.random())
@@ -860,6 +926,14 @@ function Earth() {
           id: route.id,
           sender: route.sender,
           receiver: route.receiver,
+          senderAirportCode: route.senderAirportCode,
+          receiverAirportCode: route.receiverAirportCode,
+          senderAddress: route.senderAddress,
+          receiverAddress: route.receiverAddress,
+          flightDurationMinutes: route.flightDurationMinutes,
+          senderVehicleMinutes: route.senderVehicleMinutes,
+          receiverVehicleMinutes: route.receiverVehicleMinutes,
+          totalVehicleMinutes: route.totalVehicleMinutes,
           lat: currentPosition.lat,
           lng: currentPosition.lng,
           altitude: route.altitude + 0.05 + Math.sin(routeProgress * Math.PI) * 0.03,
@@ -877,6 +951,14 @@ function Earth() {
               id: courier.id,
               sender: courier.sender,
               receiver: courier.receiver,
+              senderAirportCode: courier.senderAirportCode,
+              receiverAirportCode: courier.receiverAirportCode,
+              senderAddress: courier.senderAddress,
+              receiverAddress: courier.receiverAddress,
+              flightDurationMinutes: courier.flightDurationMinutes,
+              senderVehicleMinutes: courier.senderVehicleMinutes,
+              receiverVehicleMinutes: courier.receiverVehicleMinutes,
+              totalVehicleMinutes: courier.totalVehicleMinutes,
               progress: percentage,
               status: percentage >= 94 ? 'Arriving Now' : 'In Flight',
               lat: courier.lat,
@@ -1157,18 +1239,26 @@ function Earth() {
         {!mapSystemActive ? (
           <section className="delivery-panel" aria-label="Live delivery status">
             <h3>Live Stork Dispatch Board</h3>
-            <p>Real-time simulation of cassette set shipments for musicians and DJs.</p>
+            <p>Airport-to-airport flight arcs with separate first/last-mile vehicle time estimates.</p>
             <div className="delivery-list">
               {liveDeliveries.map((delivery) => (
                 <article key={delivery.id} className="delivery-item">
                   <div className="delivery-headline">
-                    <strong>{delivery.sender}</strong>
+                    <strong>{delivery.senderAirportCode || delivery.sender}</strong>
                     <span>to</span>
-                    <strong>{delivery.receiver}</strong>
+                    <strong>{delivery.receiverAirportCode || delivery.receiver}</strong>
                   </div>
                   <div className="delivery-meta">
                     <span>{delivery.status}</span>
                     <span>{delivery.progress}%</span>
+                  </div>
+                  <div className="delivery-meta">
+                    <span>Flight: {delivery.flightDurationMinutes || 0} min</span>
+                    <span>Vehicle: {delivery.totalVehicleMinutes || 0} min</span>
+                  </div>
+                  <div className="delivery-meta">
+                    <span>{delivery.senderAddress || 'Sender address not set'}</span>
+                    <span>{delivery.receiverAddress || 'Receiver address not set'}</span>
                   </div>
                   <div className="delivery-progress-track" aria-hidden="true">
                     <span className="delivery-progress-fill" style={{ width: `${delivery.progress}%` }} />

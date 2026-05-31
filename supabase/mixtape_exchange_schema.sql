@@ -188,11 +188,61 @@ create table if not exists public.mixtape_exchanges (
   sender_lng double precision not null,
   receiver_lat double precision not null,
   receiver_lng double precision not null,
+  sender_airport_code text,
+  sender_airport_name text,
+  sender_airport_lat double precision,
+  sender_airport_lng double precision,
+  receiver_airport_code text,
+  receiver_airport_name text,
+  receiver_airport_lat double precision,
+  receiver_airport_lng double precision,
+  sender_address text,
+  sender_address_lat double precision,
+  sender_address_lng double precision,
+  receiver_address text,
+  receiver_address_lat double precision,
+  receiver_address_lng double precision,
+  flight_distance_km double precision,
+  flight_duration_minutes integer,
+  sender_vehicle_minutes integer,
+  receiver_vehicle_minutes integer,
+  total_vehicle_minutes integer,
+  total_delivery_minutes integer,
   altitude double precision not null default 0.25,
   duration_seconds integer not null default 24,
   offset_seconds integer not null default 0,
   status text not null default 'pending' check (status in ('pending', 'in_flight', 'delivered', 'cancelled'))
 );
+
+alter table public.mixtape_exchanges add column if not exists sender_airport_code text;
+alter table public.mixtape_exchanges add column if not exists sender_airport_name text;
+alter table public.mixtape_exchanges add column if not exists sender_airport_lat double precision;
+alter table public.mixtape_exchanges add column if not exists sender_airport_lng double precision;
+alter table public.mixtape_exchanges add column if not exists receiver_airport_code text;
+alter table public.mixtape_exchanges add column if not exists receiver_airport_name text;
+alter table public.mixtape_exchanges add column if not exists receiver_airport_lat double precision;
+alter table public.mixtape_exchanges add column if not exists receiver_airport_lng double precision;
+alter table public.mixtape_exchanges add column if not exists sender_address text;
+alter table public.mixtape_exchanges add column if not exists sender_address_lat double precision;
+alter table public.mixtape_exchanges add column if not exists sender_address_lng double precision;
+alter table public.mixtape_exchanges add column if not exists receiver_address text;
+alter table public.mixtape_exchanges add column if not exists receiver_address_lat double precision;
+alter table public.mixtape_exchanges add column if not exists receiver_address_lng double precision;
+alter table public.mixtape_exchanges add column if not exists flight_distance_km double precision;
+alter table public.mixtape_exchanges add column if not exists flight_duration_minutes integer;
+alter table public.mixtape_exchanges add column if not exists sender_vehicle_minutes integer;
+alter table public.mixtape_exchanges add column if not exists receiver_vehicle_minutes integer;
+alter table public.mixtape_exchanges add column if not exists total_vehicle_minutes integer;
+alter table public.mixtape_exchanges add column if not exists total_delivery_minutes integer;
+
+update public.mixtape_exchanges
+set
+  sender_airport_lat = coalesce(sender_airport_lat, sender_lat),
+  sender_airport_lng = coalesce(sender_airport_lng, sender_lng),
+  receiver_airport_lat = coalesce(receiver_airport_lat, receiver_lat),
+  receiver_airport_lng = coalesce(receiver_airport_lng, receiver_lng),
+  sender_airport_name = coalesce(sender_airport_name, sender_hub),
+  receiver_airport_name = coalesce(receiver_airport_name, receiver_hub);
 
 alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_sender_lat_check;
 alter table public.mixtape_exchanges
@@ -218,6 +268,71 @@ alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges
 alter table public.mixtape_exchanges
   add constraint mixtape_exchanges_duration_check
   check (duration_seconds > 0);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_sender_airport_lat_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_sender_airport_lat_check
+  check (sender_airport_lat is null or sender_airport_lat between -90 and 90);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_sender_airport_lng_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_sender_airport_lng_check
+  check (sender_airport_lng is null or sender_airport_lng between -180 and 180);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_receiver_airport_lat_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_receiver_airport_lat_check
+  check (receiver_airport_lat is null or receiver_airport_lat between -90 and 90);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_receiver_airport_lng_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_receiver_airport_lng_check
+  check (receiver_airport_lng is null or receiver_airport_lng between -180 and 180);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_sender_address_lat_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_sender_address_lat_check
+  check (sender_address_lat is null or sender_address_lat between -90 and 90);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_sender_address_lng_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_sender_address_lng_check
+  check (sender_address_lng is null or sender_address_lng between -180 and 180);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_receiver_address_lat_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_receiver_address_lat_check
+  check (receiver_address_lat is null or receiver_address_lat between -90 and 90);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_receiver_address_lng_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_receiver_address_lng_check
+  check (receiver_address_lng is null or receiver_address_lng between -180 and 180);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_flight_duration_minutes_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_flight_duration_minutes_check
+  check (flight_duration_minutes is null or flight_duration_minutes >= 0);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_sender_vehicle_minutes_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_sender_vehicle_minutes_check
+  check (sender_vehicle_minutes is null or sender_vehicle_minutes >= 0);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_receiver_vehicle_minutes_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_receiver_vehicle_minutes_check
+  check (receiver_vehicle_minutes is null or receiver_vehicle_minutes >= 0);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_total_vehicle_minutes_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_total_vehicle_minutes_check
+  check (total_vehicle_minutes is null or total_vehicle_minutes >= 0);
+
+alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_total_delivery_minutes_check;
+alter table public.mixtape_exchanges
+  add constraint mixtape_exchanges_total_delivery_minutes_check
+  check (total_delivery_minutes is null or total_delivery_minutes >= 0);
 
 alter table public.mixtape_exchanges drop constraint if exists mixtape_exchanges_offset_check;
 alter table public.mixtape_exchanges
