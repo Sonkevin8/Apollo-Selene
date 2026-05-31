@@ -133,11 +133,6 @@ const createTicketCheckout = async ({ event }) => {
     alert('Could not start checkout: ' + (data?.error || 'Unknown error'));
   }
 };
-import React, { useEffect, useState } from 'react';
-import { supabase, EVENTS_TABLE, EVENT_GUESTS_TABLE, EVENT_ATTENDANCE_TABLE } from '../lib/supabaseClient';
-
-const EVENTS_STORAGE_KEY = 'apollo-selene-events';
-const USER_ATTENDANCE_STORAGE_KEY = 'apollo-selene-user-attendance';
 const ATTENDANCE_DETAILS_STORAGE_KEY = 'apollo-selene-attendance-details';
 const CURRENT_USER_ID_STORAGE_KEY = 'apollo-selene-current-user-id';
 
