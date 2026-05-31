@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { supabase, EVENTS_TABLE, EVENT_GUESTS_TABLE, EVENT_ATTENDANCE_TABLE } from '../lib/supabaseClient';
 
 const EVENTS_STORAGE_KEY = 'apollo-selene-events';
 const GUEST_LISTS_STORAGE_KEY = 'apollo-selene-guest-lists';
@@ -50,11 +51,7 @@ const defaultEvents = [
   }
 ];
 
-const initialGuestLists = {
-  1: ['Ari M.', 'Nadia K.', 'Leah P.', 'Jasper T.', 'Mina R.'],
-  2: ['Rowan C.', 'Elio S.', 'Nora V.', 'Priya N.'],
-  3: ['Noah L.', 'Anya B.', 'Sofia R.', 'Mason K.', 'Iris D.', 'Kai M.']
-};
+// Guest lists and attendance are now stored in Supabase
 
 const createGuestId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -164,8 +161,8 @@ const createEventDraft = (theme) => ({
 });
 
 const Events = ({ theme }) => {
-  const [events, setEvents] = useState(() => normalizeEvents(getStoredJson(EVENTS_STORAGE_KEY, defaultEvents)));
-
+  const [events, setEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
@@ -183,16 +180,11 @@ const Events = ({ theme }) => {
     poster: '',
     maxAttendees: 50
   });
-  const [userAttendance, setUserAttendance] = useState(
-    () => new Set(getStoredJson(USER_ATTENDANCE_STORAGE_KEY, []))
-  );
   const [currentUserId] = useState(() => getCurrentUserId());
-  const [attendanceDetails, setAttendanceDetails] = useState(
-    () => getStoredJson(ATTENDANCE_DETAILS_STORAGE_KEY, {})
-  );
-  const [eventGuestLists, setEventGuestLists] = useState(
-    () => normalizeGuestLists(getStoredJson(GUEST_LISTS_STORAGE_KEY, initialGuestLists))
-  );
+  // Guest/attendance state
+  const [eventGuestLists, setEventGuestLists] = useState({});
+  const [attendanceDetails, setAttendanceDetails] = useState({});
+  const [userAttendance, setUserAttendance] = useState(new Set());
   const [openGuestListForEvent, setOpenGuestListForEvent] = useState(null);
   const [showAttendConfirm, setShowAttendConfirm] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState(null);
@@ -202,27 +194,45 @@ const Events = ({ theme }) => {
   const [attendeeContactError, setAttendeeContactError] = useState('');
   const [extraGuestContactError, setExtraGuestContactError] = useState('');
 
-  useEffect(() => {
-    window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
-  }, [events]);
 
+  // Fetch events, guests, and attendance from Supabase on mount
   useEffect(() => {
-    window.localStorage.setItem(GUEST_LISTS_STORAGE_KEY, JSON.stringify(eventGuestLists));
-  }, [eventGuestLists]);
+    const fetchAll = async () => {
+      setLoadingEvents(true);
+      // Events
+      const { data: eventData } = await supabase
+        .from(EVENTS_TABLE)
+        .select('*')
+        .order('date', { ascending: true });
+      if (eventData) setEvents(normalizeEvents(eventData));
+      // Guests
+      const { data: guestData } = await supabase
+        .from(EVENT_GUESTS_TABLE)
+        .select('*');
+      const guestLists = {};
+      (guestData || []).forEach(g => {
+        if (!guestLists[g.event_id]) guestLists[g.event_id] = [];
+        guestLists[g.event_id].push(g);
+      });
+      setEventGuestLists(guestLists);
+      // Attendance
+      const { data: attendanceData } = await supabase
+        .from(EVENT_ATTENDANCE_TABLE)
+        .select('*');
+      const attendanceMap = {};
+      const userSet = new Set();
+      (attendanceData || []).forEach(a => {
+        attendanceMap[a.event_id] = a;
+        if (a.user_id === currentUserId) userSet.add(a.event_id);
+      });
+      setAttendanceDetails(attendanceMap);
+      setUserAttendance(userSet);
+      setLoadingEvents(false);
+    };
+    fetchAll();
+  }, [currentUserId]);
 
-  useEffect(() => {
-    window.localStorage.setItem(
-      USER_ATTENDANCE_STORAGE_KEY,
-      JSON.stringify(Array.from(userAttendance))
-    );
-  }, [userAttendance]);
 
-  useEffect(() => {
-    window.localStorage.setItem(
-      ATTENDANCE_DETAILS_STORAGE_KEY,
-      JSON.stringify(attendanceDetails)
-    );
-  }, [attendanceDetails]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -236,18 +246,30 @@ const Events = ({ theme }) => {
     }
   };
 
-  const handleAddEvent = (e) => {
+  const handleAddEvent = async (e) => {
     e.preventDefault();
     const event = {
-      ...newEvent,
-      id: Date.now(),
-      attendees: 0,
+      title: newEvent.title,
+      date: newEvent.date,
+      time: newEvent.time,
       phase: newEvent.phase || inferEventPhase(newEvent.time),
-      updatedAt: new Date().toISOString()
+      location: newEvent.location,
+      description: newEvent.description,
+      poster: newEvent.poster,
+      max_attendees: newEvent.maxAttendees,
+      attendees: 0,
+      updated_at: new Date().toISOString()
     };
-    setEvents([...events, event]);
+    const { error } = await supabase.from(EVENTS_TABLE).insert([event]);
+    if (!error) {
+      // Refresh events from backend
+      const { data } = await supabase
+        .from(EVENTS_TABLE)
+        .select('*')
+        .order('date', { ascending: true });
+      setEvents(normalizeEvents(data));
+    }
     setNewEvent(createEventDraft(theme));
-    setEventGuestLists((prev) => ({ ...prev, [event.id]: [] }));
     setShowAddEvent(false);
   };
 
@@ -281,7 +303,7 @@ const Events = ({ theme }) => {
     });
   };
 
-  const handleEditEvent = (e) => {
+  const handleEditEvent = async (e) => {
     e.preventDefault();
     if (!editingEventId) {
       return;
@@ -292,25 +314,31 @@ const Events = ({ theme }) => {
       ? parsedMaxAttendees
       : 1;
 
-    setEvents((prev) =>
-      prev.map((event) =>
-        event.id === editingEventId
-          ? {
-              ...event,
-              ...editEventData,
-              phase: editEventData.phase || inferEventPhase(editEventData.time),
-              maxAttendees: safeMaxAttendees,
-              attendees: Math.min(event.attendees, safeMaxAttendees),
-              updatedAt: new Date().toISOString()
-            }
-          : event
-      )
-    );
+    const update = {
+      ...editEventData,
+      phase: editEventData.phase || inferEventPhase(editEventData.time),
+      max_attendees: safeMaxAttendees,
+      updated_at: new Date().toISOString()
+    };
+    // Remove maxAttendees for DB update, use max_attendees
+    delete update.maxAttendees;
+
+    await supabase
+      .from(EVENTS_TABLE)
+      .update(update)
+      .eq('id', editingEventId);
+
+    // Refresh events from backend
+    const { data } = await supabase
+      .from(EVENTS_TABLE)
+      .select('*')
+      .order('date', { ascending: true });
+    setEvents(normalizeEvents(data));
 
     closeEditEventModal();
   };
 
-  const handleDeleteEvent = (eventId) => {
+  const handleDeleteEvent = async (eventId) => {
     const eventToDelete = events.find((event) => event.id === eventId);
     if (!eventToDelete) {
       return;
@@ -321,7 +349,18 @@ const Events = ({ theme }) => {
       return;
     }
 
-    setEvents((prev) => prev.filter((event) => event.id !== eventId));
+    await supabase
+      .from(EVENTS_TABLE)
+      .delete()
+      .eq('id', eventId);
+
+    // Refresh events from backend
+    const { data } = await supabase
+      .from(EVENTS_TABLE)
+      .select('*')
+      .order('date', { ascending: true });
+    setEvents(normalizeEvents(data));
+
     setEventGuestLists((prev) => {
       const next = { ...prev };
       delete next[eventId];
@@ -361,102 +400,123 @@ const Events = ({ theme }) => {
     setShowAttendConfirm(true);
   };
 
-  const confirmAttendance = (e) => {
+  const confirmAttendance = async (e) => {
     e.preventDefault();
-
     const event = events.find((item) => item.id === selectedEventId);
     if (!event || event.attendees >= event.maxAttendees) {
       closeAttendConfirm();
       return;
     }
-
-    setUserAttendance((prev) => new Set([...prev, selectedEventId]));
     const attendeeName = attendeeForm.name.trim();
     const attendeeContact = attendeeForm.contact.trim();
     if (!isValidContact(attendeeContact)) {
       setAttendeeContactError('Enter a valid email or phone number.');
       return;
     }
-
     setAttendeeContactError('');
-    const existingGuest = (eventGuestLists[selectedEventId] || []).find(
-      (guest) =>
-        guest.addedBy === currentUserId &&
-        guest.name.toLowerCase() === attendeeName.toLowerCase()
-    );
-    const attendeeGuestId = existingGuest?.id || createGuestId();
-
-    setAttendanceDetails((prev) => ({
-      ...prev,
-      [selectedEventId]: {
-        name: attendeeName,
-        contact: attendeeContact,
-        guestId: attendeeGuestId
-      }
-    }));
-    setEventGuestLists((prev) => {
-      const currentGuests = prev[selectedEventId] || [];
-      if (currentGuests.some((guest) => guest.id === attendeeGuestId)) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        [selectedEventId]: [
-          ...currentGuests,
-          {
-            id: attendeeGuestId,
-            name: attendeeName,
-            contact: attendeeContact,
-            addedBy: currentUserId
-          }
-        ]
-      };
-    });
-    setEvents((prev) =>
-      prev.map((item) =>
-        item.id === selectedEventId
-          ? { ...item, attendees: item.attendees + 1 }
-          : item
-      )
-    );
-
+    // Add guest
+    let guestId;
+    const { data: existingGuests } = await supabase
+      .from(EVENT_GUESTS_TABLE)
+      .select('*')
+      .eq('event_id', selectedEventId)
+      .eq('name', attendeeName)
+      .eq('added_by', currentUserId);
+    if (existingGuests && existingGuests.length > 0) {
+      guestId = existingGuests[0].id;
+    } else {
+      const { data: newGuest } = await supabase
+        .from(EVENT_GUESTS_TABLE)
+        .insert([{ event_id: selectedEventId, name: attendeeName, contact: attendeeContact, added_by: currentUserId }])
+        .select();
+      guestId = newGuest && newGuest[0]?.id;
+    }
+    // Add attendance
+    await supabase
+      .from(EVENT_ATTENDANCE_TABLE)
+      .upsert({ event_id: selectedEventId, user_id: currentUserId, guest_id: guestId, name: attendeeName, contact: attendeeContact });
+    // Increment event attendee count
+    await supabase
+      .from(EVENTS_TABLE)
+      .update({ attendees: event.attendees + 1 })
+      .eq('id', selectedEventId);
+    // Refresh all
+    const fetchAll = async () => {
+      const { data: eventData } = await supabase
+        .from(EVENTS_TABLE)
+        .select('*')
+        .order('date', { ascending: true });
+      if (eventData) setEvents(normalizeEvents(eventData));
+      const { data: guestData } = await supabase
+        .from(EVENT_GUESTS_TABLE)
+        .select('*');
+      const guestLists = {};
+      (guestData || []).forEach(g => {
+        if (!guestLists[g.event_id]) guestLists[g.event_id] = [];
+        guestLists[g.event_id].push(g);
+      });
+      setEventGuestLists(guestLists);
+      const { data: attendanceData } = await supabase
+        .from(EVENT_ATTENDANCE_TABLE)
+        .select('*');
+      const attendanceMap = {};
+      const userSet = new Set();
+      (attendanceData || []).forEach(a => {
+        attendanceMap[a.event_id] = a;
+        if (a.user_id === currentUserId) userSet.add(a.event_id);
+      });
+      setAttendanceDetails(attendanceMap);
+      setUserAttendance(userSet);
+    };
+    await fetchAll();
     closeAttendConfirm();
   };
 
-  const handleAttendEvent = (eventId) => {
+  const handleAttendEvent = async (eventId) => {
     if (userAttendance.has(eventId)) {
-      const attendeeName = attendanceDetails[eventId]?.name;
-      const attendeeGuestId = attendanceDetails[eventId]?.guestId;
-
-      // User is already attending, remove them
-      setUserAttendance(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(eventId);
-        return newSet;
-      });
-      setAttendanceDetails((prev) => {
-        const updatedDetails = { ...prev };
-        delete updatedDetails[eventId];
-        return updatedDetails;
-      });
-      if (attendeeName) {
-        setEventGuestLists((prev) => ({
-          ...prev,
-          [eventId]: (prev[eventId] || []).filter((guest) => {
-            if (attendeeGuestId) {
-              return guest.id !== attendeeGuestId;
-            }
-
-            return !(guest.name === attendeeName && guest.addedBy === currentUserId);
-          })
-        }));
+      // Remove attendance
+      await supabase
+        .from(EVENT_ATTENDANCE_TABLE)
+        .delete()
+        .eq('event_id', eventId)
+        .eq('user_id', currentUserId);
+      // Decrement event attendee count
+      const event = events.find(e => e.id === eventId);
+      if (event) {
+        await supabase
+          .from(EVENTS_TABLE)
+          .update({ attendees: Math.max(0, event.attendees - 1) })
+          .eq('id', eventId);
       }
-      setEvents(prev => prev.map(event => 
-        event.id === eventId 
-          ? { ...event, attendees: Math.max(0, event.attendees - 1) }
-          : event
-      ));
+      // Refresh all
+      const fetchAll = async () => {
+        const { data: eventData } = await supabase
+          .from(EVENTS_TABLE)
+          .select('*')
+          .order('date', { ascending: true });
+        if (eventData) setEvents(normalizeEvents(eventData));
+        const { data: guestData } = await supabase
+          .from(EVENT_GUESTS_TABLE)
+          .select('*');
+        const guestLists = {};
+        (guestData || []).forEach(g => {
+          if (!guestLists[g.event_id]) guestLists[g.event_id] = [];
+          guestLists[g.event_id].push(g);
+        });
+        setEventGuestLists(guestLists);
+        const { data: attendanceData } = await supabase
+          .from(EVENT_ATTENDANCE_TABLE)
+          .select('*');
+        const attendanceMap = {};
+        const userSet = new Set();
+        (attendanceData || []).forEach(a => {
+          attendanceMap[a.event_id] = a;
+          if (a.user_id === currentUserId) userSet.add(a.event_id);
+        });
+        setAttendanceDetails(attendanceMap);
+        setUserAttendance(userSet);
+      };
+      await fetchAll();
     } else {
       // User wants to attend
       const event = events.find(e => e.id === eventId);
@@ -484,101 +544,133 @@ const Events = ({ theme }) => {
     setShowAddGuestForm(true);
   };
 
-  const handleAddAnotherGuest = (e) => {
+  const handleAddAnotherGuest = async (e) => {
     e.preventDefault();
-
     const eventId = openGuestListForEvent;
     const event = events.find((item) => item.id === eventId);
     if (!event || event.attendees >= event.maxAttendees) {
       return;
     }
-
     const guestName = extraGuestForm.name.trim();
     const guestContact = extraGuestForm.contact.trim();
     if (!guestName || !guestContact) {
       return;
     }
-
     if (!isValidContact(guestContact)) {
       setExtraGuestContactError('Enter a valid email or phone number.');
       return;
     }
-
     setExtraGuestContactError('');
-
-    let addedGuest = false;
-    setEventGuestLists((prev) => {
-      const currentGuests = prev[eventId] || [];
-      const duplicateGuest = currentGuests.some(
-        (guest) =>
-          guest.addedBy === currentUserId &&
-          guest.name.toLowerCase() === guestName.toLowerCase()
-      );
-      if (duplicateGuest) {
-        return prev;
-      }
-
-      addedGuest = true;
-      return {
-        ...prev,
-        [eventId]: [
-          ...currentGuests,
-          {
-            id: createGuestId(),
-            name: guestName,
-            contact: guestContact,
-            addedBy: currentUserId
-          }
-        ]
-      };
-    });
-
-    if (addedGuest) {
-      setEvents((prev) =>
-        prev.map((item) =>
-          item.id === eventId
-            ? { ...item, attendees: Math.min(item.maxAttendees, item.attendees + 1) }
-            : item
-        )
-      );
+    // Check for duplicate
+    const { data: existingGuests } = await supabase
+      .from(EVENT_GUESTS_TABLE)
+      .select('*')
+      .eq('event_id', eventId)
+      .eq('name', guestName)
+      .eq('added_by', currentUserId);
+    if (existingGuests && existingGuests.length > 0) {
+      setShowAddGuestForm(false);
+      setExtraGuestForm({ name: '', contact: '' });
+      return;
     }
-
+    // Add guest
+    await supabase
+      .from(EVENT_GUESTS_TABLE)
+      .insert([{ event_id: eventId, name: guestName, contact: guestContact, added_by: currentUserId }]);
+    // Increment event attendee count
+    await supabase
+      .from(EVENTS_TABLE)
+      .update({ attendees: event.attendees + 1 })
+      .eq('id', eventId);
+    // Refresh all
+    const fetchAll = async () => {
+      const { data: eventData } = await supabase
+        .from(EVENTS_TABLE)
+        .select('*')
+        .order('date', { ascending: true });
+      if (eventData) setEvents(normalizeEvents(eventData));
+      const { data: guestData } = await supabase
+        .from(EVENT_GUESTS_TABLE)
+        .select('*');
+      const guestLists = {};
+      (guestData || []).forEach(g => {
+        if (!guestLists[g.event_id]) guestLists[g.event_id] = [];
+        guestLists[g.event_id].push(g);
+      });
+      setEventGuestLists(guestLists);
+      const { data: attendanceData } = await supabase
+        .from(EVENT_ATTENDANCE_TABLE)
+        .select('*');
+      const attendanceMap = {};
+      const userSet = new Set();
+      (attendanceData || []).forEach(a => {
+        attendanceMap[a.event_id] = a;
+        if (a.user_id === currentUserId) userSet.add(a.event_id);
+      });
+      setAttendanceDetails(attendanceMap);
+      setUserAttendance(userSet);
+    };
+    await fetchAll();
     setExtraGuestForm({ name: '', contact: '' });
     setShowAddGuestForm(false);
   };
 
-  const removeGuestFromEvent = (eventId, guestId) => {
+  const removeGuestFromEvent = async (eventId, guestId) => {
+    // Only allow removing your own guests
     const guest = (eventGuestLists[eventId] || []).find((entry) => entry.id === guestId);
-    if (!guest || guest.addedBy !== currentUserId) {
+    if (!guest || guest.added_by !== currentUserId) {
       return;
     }
-
-    setEventGuestLists((prev) => ({
-      ...prev,
-      [eventId]: (prev[eventId] || []).filter((entry) => entry.id !== guestId)
-    }));
-    setEvents((prev) =>
-      prev.map((item) =>
-        item.id === eventId
-          ? { ...item, attendees: Math.max(0, item.attendees - 1) }
-          : item
-      )
-    );
-
-    const isCurrentUserAttendance =
-      userAttendance.has(eventId) && attendanceDetails[eventId]?.guestId === guestId;
-    if (isCurrentUserAttendance) {
-      setUserAttendance((prev) => {
-        const next = new Set(prev);
-        next.delete(eventId);
-        return next;
-      });
-      setAttendanceDetails((prev) => {
-        const next = { ...prev };
-        delete next[eventId];
-        return next;
-      });
+    await supabase
+      .from(EVENT_GUESTS_TABLE)
+      .delete()
+      .eq('id', guestId);
+    // Decrement event attendee count
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+      await supabase
+        .from(EVENTS_TABLE)
+        .update({ attendees: Math.max(0, event.attendees - 1) })
+        .eq('id', eventId);
     }
+    // Remove attendance if this guest was the user's attendance
+    const attendance = attendanceDetails[eventId];
+    if (attendance && attendance.guest_id === guestId && attendance.user_id === currentUserId) {
+      await supabase
+        .from(EVENT_ATTENDANCE_TABLE)
+        .delete()
+        .eq('event_id', eventId)
+        .eq('user_id', currentUserId);
+    }
+    // Refresh all
+    const fetchAll = async () => {
+      const { data: eventData } = await supabase
+        .from(EVENTS_TABLE)
+        .select('*')
+        .order('date', { ascending: true });
+      if (eventData) setEvents(normalizeEvents(eventData));
+      const { data: guestData } = await supabase
+        .from(EVENT_GUESTS_TABLE)
+        .select('*');
+      const guestLists = {};
+      (guestData || []).forEach(g => {
+        if (!guestLists[g.event_id]) guestLists[g.event_id] = [];
+        guestLists[g.event_id].push(g);
+      });
+      setEventGuestLists(guestLists);
+      const { data: attendanceData } = await supabase
+        .from(EVENT_ATTENDANCE_TABLE)
+        .select('*');
+      const attendanceMap = {};
+      const userSet = new Set();
+      (attendanceData || []).forEach(a => {
+        attendanceMap[a.event_id] = a;
+        if (a.user_id === currentUserId) userSet.add(a.event_id);
+      });
+      setAttendanceDetails(attendanceMap);
+      setUserAttendance(userSet);
+    };
+    await fetchAll();
   };
 
   const visibleEvents = events.filter((event) => (event.phase || inferEventPhase(event.time)) === theme);
