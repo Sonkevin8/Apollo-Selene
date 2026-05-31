@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import MapPhaser from '../components/MapPhaser';
 import Globe from 'globe.gl';
 import * as THREE from 'three';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
@@ -1359,29 +1360,14 @@ function Earth() {
               </div>
             </div>
 
-            <div className="earth-map-plane" aria-hidden="true">
-              {nearbyHubPoints.map((hub) => {
-                const coordinate = toMapCoordinate(hub.lat, hub.lng);
-                return (
-                  <span
-                    key={`${hub.label}-${hub.lat}-${hub.lng}`}
-                    className={`earth-map-node earth-map-node--${hub.type}`}
-                    style={{ '--map-x': `${coordinate.x}%`, '--map-y': `${coordinate.y}%` }}
-                  />
-                );
-              })}
-
-              {nearbyCouriers.map((courier) => {
-                const coordinate = toMapCoordinate(courier.lat, courier.lng);
-                return (
-                  <span
-                    key={`courier-${courier.id}`}
-                    className="earth-map-node earth-map-node--courier"
-                    style={{ '--map-x': `${coordinate.x}%`, '--map-y': `${coordinate.y}%` }}
-                  />
-                );
-              })}
-            </div>
+            {/* Phaser-based high-definition map system */}
+            <MapPhaser
+              userLocation={mapFocus}
+              mixtapePegs={[
+                ...nearbyHubPoints.map(hub => ({ lat: hub.lat, lng: hub.lng })),
+                ...nearbyCouriers.map(courier => ({ lat: courier.lat, lng: courier.lng }))
+              ]}
+            />
 
             <div className="earth-map-grid">
               <article className="earth-map-card">

@@ -111,6 +111,9 @@ export const updateMyProfile = async ({ userId, profile }) => {
     city: profile.city || null,
     username: profile.username || null,
     bio: profile.bio || null,
+    address: profile.address || null,
+    address_lat: profile.address_lat || null,
+    address_lng: profile.address_lng || null,
   };
 
   const { data, error } = await supabase

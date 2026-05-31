@@ -13,7 +13,7 @@ import ApolloDayVibe from './components/ApolloDayVibe';
 import SeleneNightVibe from './components/SeleneNightVibe';
 
 const THEME_STORAGE_KEY = 'apollo-selene-theme';
-const Earth = lazy(() => import('./pages/Earth'));
+import Earth from './pages/Earth';
 
 const App = () => {
   const [theme, setTheme] = useState(() => {
@@ -51,9 +51,8 @@ const App = () => {
                 <Route path="/account" element={<Account />} />
                 <Route path="/merchandise" element={<Merchandise />} />
                 <Route path="/artwork" element={<Artwork />} />
-                <Route path="/mixtape-exchange" element={<MixtapeExchange />} />
+                <Route path="/mixtape-exchange" element={<MixtapeExchange globeComponent={<Earth />} />} />
                 <Route path="/ember-room" element={<EmberRoom />} />
-                <Route path="/earth" element={<Earth />} />
               </Routes>
             </Suspense>
           </main>

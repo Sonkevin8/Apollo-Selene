@@ -75,9 +75,10 @@ const calculateVehicleMinutes = (km) => {
   return Math.max(8, Math.round((km / cityDrivingSpeedKmh) * 60 + handoffBufferMinutes));
 };
 
-const MixtapeExchange = () => {
+const MixtapeExchange = ({ globeComponent }) => {
   const [session, setSession] = useState(null);
   const [composeForm, setComposeForm] = useState(defaultComposeForm);
+  const [myProfile, setMyProfile] = useState(null);
   const [receiverQuery, setReceiverQuery] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [receivers, setReceivers] = useState([]);
@@ -170,13 +171,32 @@ const MixtapeExchange = () => {
       return;
     }
 
-    const [profiles, myExchanges] = await Promise.all([
+    const [profiles, myExchanges, profile] = await Promise.all([
       fetchReceiverProfiles({ currentUserId }),
       fetchMyMixtapeExchanges({ userId: currentUserId }),
+      (async () => {
+        try {
+          const { fetchMyProfile } = await import('../lib/mixtapeExchange');
+          return await fetchMyProfile({ userId: currentUserId });
+        } catch {
+          return null;
+        }
+      })(),
     ]);
 
     setReceivers(profiles);
     setExchanges(myExchanges);
+    setMyProfile(profile);
+
+    // Auto-fill sender address/coords if available
+    if (profile && (profile.address_lat || profile.address_lng)) {
+      setComposeForm((prev) => ({
+        ...prev,
+        sender_address: profile.address || '',
+        sender_address_lat: profile.address_lat ? String(profile.address_lat) : '',
+        sender_address_lng: profile.address_lng ? String(profile.address_lng) : '',
+      }));
+    }
   };
 
   useEffect(() => {
@@ -392,6 +412,12 @@ const MixtapeExchange = () => {
 
   return (
     <div className="content-section mixtape-shell">
+      {globeComponent ? (
+        <section className="mixtape-globe-section">
+          <h2>Global Mixtape Delivery Globe</h2>
+          <div className="mixtape-globe-embed">{globeComponent}</div>
+        </section>
+      ) : null}
       <section className="mixtape-auth">
         <h2>Mixtape Exchange Access</h2>
         {session ? (

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import LocationCapture from '../components/LocationCapture';
 import { isSupabaseConfigured, SUPABASE_AUTH_STORAGE_KEY } from '../lib/supabaseClient';
 import {
   fetchMyProfile,
@@ -24,6 +25,9 @@ const defaultProfileForm = {
   bio: '',
   plan_tier: 'free',
   subscription_status: '',
+  address: '',
+  address_lat: '',
+  address_lng: '',
 };
 
 const readAuthDebugSnapshot = ({ session, eventLabel }) => {
@@ -85,6 +89,9 @@ const Account = () => {
         bio: profile?.bio || '',
         plan_tier: profile?.plan_tier || 'free',
         subscription_status: profile?.subscription_status || '',
+        address: profile?.address || '',
+        address_lat: profile?.address_lat || '',
+        address_lng: profile?.address_lng || '',
       });
     };
 
@@ -315,6 +322,26 @@ const Account = () => {
             </p>
           ) : null}
           <form onSubmit={handleProfileSave} className="account-form-grid">
+                        <div className="account-field" style={{ gridColumn: '1 / -1' }}>
+                          <label>Set Your Location (Required)</label>
+                          <LocationCapture
+                            onLocationCaptured={({ lat, lng, address }) =>
+                              setProfileForm((prev) => ({
+                                ...prev,
+                                address: address || prev.address,
+                                address_lat: lat,
+                                address_lng: lng,
+                              }))
+                            }
+                          />
+                          {profileForm.address_lat && profileForm.address_lng ? (
+                            <p className="account-helper-text">
+                              Location set: {profileForm.address_lat}, {profileForm.address_lng}
+                            </p>
+                          ) : (
+                            <p className="account-helper-text">Location not set yet.</p>
+                          )}
+                        </div>
             <div className="account-field">
               <label htmlFor="profile-display-name">Display Name</label>
               <input
