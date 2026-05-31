@@ -1499,6 +1499,40 @@ select:focus {
   padding-left: 1.35rem;
 }
 
+.guest-list-item-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.guest-edit-row {
+  width: 100%;
+}
+
+.guest-edit-row input {
+  margin-bottom: 0.5rem;
+}
+
+.guest-edit-error {
+  margin-top: 0;
+}
+
+.edit-guest-btn {
+  width: auto;
+  max-width: none;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.76rem;
+  border-radius: 999px;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.edit-guest-btn:hover {
+  background: var(--button-hover);
+}
+
 .remove-guest-btn {
   width: auto;
   max-width: none;

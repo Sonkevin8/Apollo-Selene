@@ -1,10 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
+import {
+  fetchMyProfile,
+  getCurrentSession,
+  onAuthStateChange,
+  signInWithEmail,
+  signOutUser,
+  signUpWithEmail,
+} from '../lib/mixtapeExchange';
 
 const EVENTS_STORAGE_KEY = 'apollo-selene-events';
 const GUEST_LISTS_STORAGE_KEY = 'apollo-selene-guest-lists';
 const USER_ATTENDANCE_STORAGE_KEY = 'apollo-selene-user-attendance';
 const ATTENDANCE_DETAILS_STORAGE_KEY = 'apollo-selene-attendance-details';
-const CURRENT_USER_ID_STORAGE_KEY = 'apollo-selene-current-user-id';
 
 const EVENT_PHASES = {
   apollo: 'apollo',
@@ -58,19 +66,10 @@ const initialGuestLists = {
 
 const createGuestId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-const getCurrentUserId = () => {
-  if (typeof window === 'undefined') {
-    return 'server-user';
-  }
-
-  const existingUserId = window.localStorage.getItem(CURRENT_USER_ID_STORAGE_KEY);
-  if (existingUserId) {
-    return existingUserId;
-  }
-
-  const newUserId = `user-${Math.random().toString(36).slice(2, 10)}`;
-  window.localStorage.setItem(CURRENT_USER_ID_STORAGE_KEY, newUserId);
-  return newUserId;
+const defaultAuthForm = {
+  email: '',
+  password: '',
+  displayName: '',
 };
 
 const normalizeGuestEntry = (entry, index) => {
@@ -166,9 +165,12 @@ const createEventDraft = (theme) => ({
 const Events = ({ theme }) => {
   const [events, setEvents] = useState(() => normalizeEvents(getStoredJson(EVENTS_STORAGE_KEY, defaultEvents)));
 
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
-  const [loginData, setLoginData] = useState({ username: '', password: '' });
+  const [authMode, setAuthMode] = useState('signin');
+  const [authForm, setAuthForm] = useState(defaultAuthForm);
+  const [authMessage, setAuthMessage] = useState('');
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showEditEvent, setShowEditEvent] = useState(false);
   const [newEvent, setNewEvent] = useState(() => createEventDraft(theme));
@@ -186,7 +188,6 @@ const Events = ({ theme }) => {
   const [userAttendance, setUserAttendance] = useState(
     () => new Set(getStoredJson(USER_ATTENDANCE_STORAGE_KEY, []))
   );
-  const [currentUserId] = useState(() => getCurrentUserId());
   const [attendanceDetails, setAttendanceDetails] = useState(
     () => getStoredJson(ATTENDANCE_DETAILS_STORAGE_KEY, {})
   );
@@ -199,8 +200,92 @@ const Events = ({ theme }) => {
   const [attendeeForm, setAttendeeForm] = useState({ name: '', contact: '' });
   const [showAddGuestForm, setShowAddGuestForm] = useState(false);
   const [extraGuestForm, setExtraGuestForm] = useState({ name: '', contact: '' });
+  const [editingGuestId, setEditingGuestId] = useState(null);
+  const [editingGuestForm, setEditingGuestForm] = useState({ name: '', contact: '' });
+  const [editingGuestContactError, setEditingGuestContactError] = useState('');
   const [attendeeContactError, setAttendeeContactError] = useState('');
   const [extraGuestContactError, setExtraGuestContactError] = useState('');
+
+  const currentUserId = session?.user?.id || null;
+
+  const isAdmin = useMemo(() => {
+    if (!session?.user) {
+      return false;
+    }
+
+    const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '')
+      .split(',')
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean);
+    const userEmail = (session.user.email || '').toLowerCase();
+
+    return (
+      profile?.plan_tier === 'label' ||
+      profile?.username === 'admin' ||
+      adminEmails.includes(userEmail)
+    );
+  }, [profile, session]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const syncAuthProfile = async (nextSession) => {
+      if (!nextSession?.user?.id) {
+        if (isMounted) {
+          setProfile(null);
+        }
+        return;
+      }
+
+      try {
+        const nextProfile = await fetchMyProfile({ userId: nextSession.user.id });
+        if (isMounted) {
+          setProfile(nextProfile || null);
+        }
+      } catch {
+        if (isMounted) {
+          setProfile(null);
+        }
+      }
+    };
+
+    const initializeSession = async () => {
+      try {
+        const existingSession = await getCurrentSession();
+        if (!isMounted) {
+          return;
+        }
+
+        setSession(existingSession);
+        await syncAuthProfile(existingSession);
+      } catch {
+        if (isMounted) {
+          setSession(null);
+          setProfile(null);
+        }
+      }
+    };
+
+    initializeSession();
+
+    const { data: authSubscription } = onAuthStateChange(async (_, nextSession) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setSession(nextSession);
+      await syncAuthProfile(nextSession);
+    });
+
+    return () => {
+      isMounted = false;
+      authSubscription.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
@@ -224,15 +309,41 @@ const Events = ({ theme }) => {
     );
   }, [attendanceDetails]);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    // Simple admin check (in real app, this would be secure authentication)
-    if (loginData.username === 'admin' && loginData.password === 'apolloselene2024') {
-      setIsAdmin(true);
-      setShowLogin(false);
-      setLoginData({ username: '', password: '' });
-    } else {
-      alert('Invalid credentials. Try username: admin, password: apolloselene2024');
+  const openAuthModal = (mode = 'signin') => {
+    setAuthMode(mode);
+    setAuthMessage('');
+    setShowLogin(true);
+  };
+
+  const handleAuthSubmit = async (event) => {
+    event.preventDefault();
+    setAuthMessage('');
+
+    try {
+      if (authMode === 'signup') {
+        await signUpWithEmail({
+          email: authForm.email,
+          password: authForm.password,
+          displayName: authForm.displayName,
+        });
+        setAuthMessage('Account created. Confirm your email, then sign in.');
+      } else {
+        await signInWithEmail({
+          email: authForm.email,
+          password: authForm.password,
+        });
+        setShowLogin(false);
+      }
+    } catch (error) {
+      setAuthMessage(error.message || 'Authentication failed.');
+    }
+  };
+
+  const handleAuthLogout = async () => {
+    try {
+      await signOutUser();
+    } catch {
+      // no-op
     }
   };
 
@@ -356,6 +467,20 @@ const Events = ({ theme }) => {
     setAttendeeContactError('');
   };
 
+  const ensureSignedIn = () => {
+    if (!isSupabaseConfigured) {
+      window.alert('Sign-in requires Supabase configuration. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+      return false;
+    }
+
+    if (currentUserId) {
+      return true;
+    }
+
+    openAuthModal('signin');
+    return false;
+  };
+
   const openAttendConfirm = (eventId) => {
     setSelectedEventId(eventId);
     setShowAttendConfirm(true);
@@ -363,6 +488,10 @@ const Events = ({ theme }) => {
 
   const confirmAttendance = (e) => {
     e.preventDefault();
+
+    if (!ensureSignedIn()) {
+      return;
+    }
 
     const event = events.find((item) => item.id === selectedEventId);
     if (!event || event.attendees >= event.maxAttendees) {
@@ -425,6 +554,10 @@ const Events = ({ theme }) => {
   };
 
   const handleAttendEvent = (eventId) => {
+    if (!ensureSignedIn()) {
+      return;
+    }
+
     if (userAttendance.has(eventId)) {
       const attendeeName = attendanceDetails[eventId]?.name;
       const attendeeGuestId = attendanceDetails[eventId]?.guestId;
@@ -468,6 +601,9 @@ const Events = ({ theme }) => {
 
   const toggleGuestList = (eventId) => {
     setShowAddGuestForm(false);
+    setEditingGuestId(null);
+    setEditingGuestForm({ name: '', contact: '' });
+    setEditingGuestContactError('');
     setExtraGuestForm({ name: '', contact: '' });
     setOpenGuestListForEvent((prev) => (prev === eventId ? null : eventId));
   };
@@ -475,6 +611,9 @@ const Events = ({ theme }) => {
   const closeGuestListModal = () => {
     setOpenGuestListForEvent(null);
     setShowAddGuestForm(false);
+    setEditingGuestId(null);
+    setEditingGuestForm({ name: '', contact: '' });
+    setEditingGuestContactError('');
     setExtraGuestForm({ name: '', contact: '' });
     setExtraGuestContactError('');
   };
@@ -486,6 +625,10 @@ const Events = ({ theme }) => {
 
   const handleAddAnotherGuest = (e) => {
     e.preventDefault();
+
+    if (!ensureSignedIn()) {
+      return;
+    }
 
     const eventId = openGuestListForEvent;
     const event = events.find((item) => item.id === eventId);
@@ -549,8 +692,16 @@ const Events = ({ theme }) => {
 
   const removeGuestFromEvent = (eventId, guestId) => {
     const guest = (eventGuestLists[eventId] || []).find((entry) => entry.id === guestId);
-    if (!guest || guest.addedBy !== currentUserId) {
+    const canManageGuest = Boolean(guest) && (isAdmin || guest.addedBy === currentUserId);
+    if (!canManageGuest) {
       return;
+    }
+
+    if (isAdmin) {
+      const confirmed = window.confirm(`Remove ${guest.name} from this guest ledger?`);
+      if (!confirmed) {
+        return;
+      }
     }
 
     setEventGuestLists((prev) => ({
@@ -579,6 +730,82 @@ const Events = ({ theme }) => {
         return next;
       });
     }
+
+    if (editingGuestId === guestId) {
+      setEditingGuestId(null);
+      setEditingGuestForm({ name: '', contact: '' });
+      setEditingGuestContactError('');
+    }
+  };
+
+  const startEditGuest = (guest) => {
+    if (!isAdmin) {
+      return;
+    }
+
+    setEditingGuestId(guest.id);
+    setEditingGuestForm({
+      name: guest.name || '',
+      contact: guest.contact || ''
+    });
+    setEditingGuestContactError('');
+    setShowAddGuestForm(false);
+  };
+
+  const cancelEditGuest = () => {
+    setEditingGuestId(null);
+    setEditingGuestForm({ name: '', contact: '' });
+    setEditingGuestContactError('');
+  };
+
+  const saveEditedGuest = (eventId, guestId) => {
+    if (!isAdmin) {
+      return;
+    }
+
+    const nextName = editingGuestForm.name.trim();
+    const nextContact = editingGuestForm.contact.trim();
+
+    if (!nextName) {
+      return;
+    }
+
+    if (!nextContact || !isValidContact(nextContact)) {
+      setEditingGuestContactError('Enter a valid email or phone number.');
+      return;
+    }
+
+    setEditingGuestContactError('');
+
+    setEventGuestLists((prev) => ({
+      ...prev,
+      [eventId]: (prev[eventId] || []).map((entry) =>
+        entry.id === guestId
+          ? {
+              ...entry,
+              name: nextName,
+              contact: nextContact
+            }
+          : entry
+      )
+    }));
+
+    setAttendanceDetails((prev) => {
+      if (!prev[eventId] || prev[eventId].guestId !== guestId) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [eventId]: {
+          ...prev[eventId],
+          name: nextName,
+          contact: nextContact
+        }
+      };
+    });
+
+    cancelEditGuest();
   };
 
   const visibleEvents = events.filter((event) => (event.phase || inferEventPhase(event.time)) === theme);
@@ -599,17 +826,22 @@ const Events = ({ theme }) => {
           Apollo Selene Events <span className="name-secret">confidential</span>
         </h1>
         <div className="flex gap-2">
-          {!isAdmin && (
-            <button onClick={() => setShowLogin(true)} className="admin-btn">
-              Admin Login
+          {session?.user?.email ? (
+            <span className="guest-list-count">Signed in as {session.user.email}</span>
+          ) : null}
+          {!session && (
+            <button onClick={() => openAuthModal('signin')} className="admin-btn">
+              Sign In
             </button>
           )}
-          {isAdmin && (
+          {session && (
             <>
-              <button onClick={() => setShowAddEvent(true)} className="add-event-btn">
-                Add Event
-              </button>
-              <button onClick={() => setIsAdmin(false)} className="logout-btn">
+              {isAdmin && (
+                <button onClick={() => setShowAddEvent(true)} className="add-event-btn">
+                  Add Event
+                </button>
+              )}
+              <button onClick={handleAuthLogout} className="logout-btn">
                 Logout
               </button>
             </>
@@ -632,24 +864,51 @@ const Events = ({ theme }) => {
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>Admin Login</h3>
-            <form onSubmit={handleLogin}>
+            <h3>{authMode === 'signup' ? 'Create Account' : 'Sign In'}</h3>
+            <div className="account-actions">
+              <button
+                type="button"
+                className={`button-link secondary-link ${authMode === 'signin' ? 'is-active' : ''}`}
+                onClick={() => setAuthMode('signin')}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                className={`button-link secondary-link ${authMode === 'signup' ? 'is-active' : ''}`}
+                onClick={() => setAuthMode('signup')}
+              >
+                Sign Up
+              </button>
+            </div>
+            <form onSubmit={handleAuthSubmit}>
               <input
-                type="text"
-                placeholder="Username"
-                value={loginData.username}
-                onChange={(e) => setLoginData({...loginData, username: e.target.value})}
+                type="email"
+                placeholder="Email"
+                value={authForm.email}
+                onChange={(e) => setAuthForm((prev) => ({ ...prev, email: e.target.value }))}
                 required
               />
               <input
                 type="password"
                 placeholder="Password"
-                value={loginData.password}
-                onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                value={authForm.password}
+                onChange={(e) => setAuthForm((prev) => ({ ...prev, password: e.target.value }))}
                 required
+                minLength={8}
               />
+              {authMode === 'signup' ? (
+                <input
+                  type="text"
+                  placeholder="Display Name"
+                  value={authForm.displayName}
+                  onChange={(e) => setAuthForm((prev) => ({ ...prev, displayName: e.target.value }))}
+                  required
+                />
+              ) : null}
+              {authMessage ? <p className="form-error">{authMessage}</p> : null}
               <div className="modal-actions">
-                <button type="submit">Login</button>
+                <button type="submit">{authMode === 'signup' ? 'Create Account' : 'Sign In'}</button>
                 <button type="button" onClick={() => setShowLogin(false)}>Cancel</button>
               </div>
             </form>
@@ -846,15 +1105,70 @@ const Events = ({ theme }) => {
               <ul className="guest-list">
                 {(eventGuestLists[openGuestListForEvent] || []).map((guest) => (
                   <li key={guest.id} className="guest-list-item">
-                    <span>{guest.name}</span>
-                    {guest.addedBy === currentUserId && (
-                      <button
-                        type="button"
-                        className="remove-guest-btn"
-                        onClick={() => removeGuestFromEvent(openGuestListForEvent, guest.id)}
-                      >
-                        Remove
-                      </button>
+                    {editingGuestId === guest.id ? (
+                      <div className="guest-edit-row">
+                        <input
+                          type="text"
+                          value={editingGuestForm.name}
+                          onChange={(e) => setEditingGuestForm((prev) => ({ ...prev, name: e.target.value }))}
+                          placeholder="Guest Name"
+                          required
+                        />
+                        <input
+                          type="text"
+                          value={editingGuestForm.contact}
+                          onChange={(e) => {
+                            setEditingGuestForm((prev) => ({ ...prev, contact: e.target.value }));
+                            if (editingGuestContactError) {
+                              setEditingGuestContactError('');
+                            }
+                          }}
+                          placeholder="Contact (email or phone)"
+                          required
+                        />
+                        {editingGuestContactError ? (
+                          <p className="form-error guest-edit-error">{editingGuestContactError}</p>
+                        ) : null}
+                        <div className="guest-list-item-actions">
+                          <button
+                            type="button"
+                            className="edit-guest-btn"
+                            onClick={() => saveEditedGuest(openGuestListForEvent, guest.id)}
+                          >
+                            Save
+                          </button>
+                          <button type="button" className="remove-guest-btn" onClick={cancelEditGuest}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <span>
+                          {guest.name}
+                          {guest.contact ? ` - ${guest.contact}` : ''}
+                        </span>
+                        <div className="guest-list-item-actions">
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              className="edit-guest-btn"
+                              onClick={() => startEditGuest(guest)}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {(isAdmin || guest.addedBy === currentUserId) && (
+                            <button
+                              type="button"
+                              className="remove-guest-btn"
+                              onClick={() => removeGuestFromEvent(openGuestListForEvent, guest.id)}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </>
                     )}
                   </li>
                 ))}
