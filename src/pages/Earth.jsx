@@ -719,42 +719,7 @@ function Earth() {
       .pointRadius(0.25);
   };
 
-  const applyVisualMode = (globe, mode) => {
-    const materials = materialCacheRef.current;
-    if (!materials) {
-      return;
-    }
 
-    if (mode === 'cartoon') {
-      applyCartoonPalette(globe, cartoonPalette);
-      globe.globeMaterial(materials.toonMaterial);
-
-      if (accentLayersRef.current.outlineMesh) {
-        accentLayersRef.current.outlineMesh.visible = true;
-      }
-
-      if (accentLayersRef.current.cloudMesh) {
-        accentLayersRef.current.cloudMesh.visible = true;
-      }
-      return;
-    }
-
-    globe
-      .showAtmosphere(true)
-      .atmosphereColor('#79b9ff')
-      .atmosphereAltitude(0.2)
-      .pointColor(() => '#ffb656')
-      .pointRadius(0.2);
-    globe.globeMaterial(materials.realisticMaterial);
-
-    if (accentLayersRef.current.outlineMesh) {
-      accentLayersRef.current.outlineMesh.visible = false;
-    }
-
-    if (accentLayersRef.current.cloudMesh) {
-      accentLayersRef.current.cloudMesh.visible = false;
-    }
-  };
 
   useEffect(() => {
     if (!globeContainerRef.current || globeRef.current) {
@@ -1119,15 +1084,7 @@ function Earth() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!globeRef.current) {
-      return;
-    }
 
-    applyVisualMode(globeRef.current, visualMode);
-    applyPointStyles(globeRef.current, visualMode, cartoonPalette);
-    applyLayerStyles(globeRef.current, visualMode, cartoonPalette);
-  }, [visualMode, cartoonPalette]);
 
   const moveCamera = (viewKey) => {
     const view = viewpoints[viewKey];
