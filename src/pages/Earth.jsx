@@ -247,8 +247,8 @@ const mapRowToDeliveryRoute = (row, index) => {
   };
 };
 
-const DETAIL_ZOOM_DISTANCE = 180;
-const MAP_SYSTEM_DISTANCE = 145;
+const DETAIL_ZOOM_DISTANCE = 200;
+const MAP_SYSTEM_DISTANCE = 170;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -863,7 +863,7 @@ function Earth() {
     globe.controls().autoRotate = true;
     globe.controls().autoRotateSpeed = 0.45;
     globe.controls().enablePan = false;
-    globe.controls().minDistance = 130;
+    globe.controls().minDistance = 170; // Prevent zooming in too close
     globe.controls().maxDistance = 370;
 
     const syncZoomDetail = () => {
@@ -1176,68 +1176,22 @@ function Earth() {
         ) : null}
 
         <div className={`earth-globe-wrap ${mapSystemActive ? 'earth-globe-wrap--map-mode' : ''}`}>
-          <div className="earth-globe" ref={globeContainerRef} aria-label="3D Earth globe simulation" />
+          {mapSystemActive ? (
+            <>
+              {/* Pause globe animation when map is active */}
+              {globeRef.current && globeRef.current.pauseAnimation && globeRef.current.pauseAnimation()}
+              <MapPhaser
+                userLocation={mapFocus}
+                mixtapePegs={[
+                  ...nearbyHubPoints.map(hub => ({ lat: hub.lat, lng: hub.lng })),
+                  ...nearbyCouriers.map(courier => ({ lat: courier.lat, lng: courier.lng }))
+                ]}
+              />
+            </>
+          ) : (
+            <div className="earth-globe" ref={globeContainerRef} aria-label="3D Earth globe simulation" />
+          )}
         </div>
-
-        {mapSystemActive ? (
-          <section className="earth-map-system" aria-label="Local 3D map system">
-            <div className="earth-map-system-header">
-              <h3>3D Map System</h3>
-              <p>
-                Zoom lock engaged near {mapFocus.lat.toFixed(2)}, {mapFocus.lng.toFixed(2)} at distance{' '}
-                {mapZoomDistance ?? '--'}
-              </p>
-              <div className="earth-map-controls" role="group" aria-label="Map system controls">
-                <button type="button" className="button-link secondary-link" onClick={exitMapSystem}>
-                  Return to Globe
-                </button>
-                <button type="button" className="button-link secondary-link" onClick={focusNearestHub}>
-                  Focus Nearest Hub
-                </button>
-                <button type="button" className="button-link secondary-link" onClick={focusNearestCourier}>
-                  Focus Nearest Courier
-                </button>
-              </div>
-            </div>
-
-            {/* Phaser-based high-definition map system */}
-            <MapPhaser
-              userLocation={mapFocus}
-              mixtapePegs={[
-                ...nearbyHubPoints.map(hub => ({ lat: hub.lat, lng: hub.lng })),
-                ...nearbyCouriers.map(courier => ({ lat: courier.lat, lng: courier.lng }))
-              ]}
-            />
-
-            <div className="earth-map-grid">
-              <article className="earth-map-card">
-                <h4>Nearby Hubs</h4>
-                {nearbyHubPoints.length ? (
-                  nearbyHubPoints.slice(0, 4).map((hub) => (
-                    <p key={`hub-row-${hub.label}-${hub.distanceKm.toFixed(0)}`}>
-                      {hub.label} • {Math.round(hub.distanceKm)} km
-                    </p>
-                  ))
-                ) : (
-                  <p>No hubs in local radius.</p>
-                )}
-              </article>
-
-              <article className="earth-map-card">
-                <h4>Nearest Couriers</h4>
-                {nearbyCouriers.length ? (
-                  nearbyCouriers.slice(0, 4).map((courier) => (
-                    <p key={`courier-row-${courier.id}`}>
-                      {courier.sender} to {courier.receiver} • {courier.progress}%
-                    </p>
-                  ))
-                ) : (
-                  <p>No storks currently in local radius.</p>
-                )}
-              </article>
-            </div>
-          </section>
-        ) : null}
       </section>
     </div>
   );
