@@ -10,6 +10,7 @@ create table if not exists events (
   poster text,
   attendees integer default 0,
   max_attendees integer default 50,
+  ticketed boolean default false,
   updated_at timestamptz default now()
 );
 

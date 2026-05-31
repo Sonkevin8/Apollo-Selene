@@ -190,7 +190,7 @@ const createEventDraft = (theme) => ({
 const Events = ({ theme }) => {
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
   const [showLogin, setShowLogin] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [showAddEvent, setShowAddEvent] = useState(false);
@@ -346,20 +346,31 @@ const Events = ({ theme }) => {
     }
   }, [currentUserId]);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Simple admin check (in real app, this would be secure authentication)
-    if (loginData.username === 'admin' && loginData.password === 'apolloselene2024') {
-      setIsAdmin(true);
-      setShowLogin(false);
-      setLoginData({ username: '', password: '' });
-    } else {
-      alert('Invalid credentials. Try username: admin, password: apolloselene2024');
+    if (!supabase) {
+      alert('Supabase is not configured.');
+      return;
     }
+    const { data, error } = await supabase.functions.invoke('verify-admin', {
+      body: { username: loginData.username, password: loginData.password },
+    });
+    if (error || !data?.success) {
+      alert('Invalid credentials.');
+      return;
+    }
+    setIsAdmin(true);
+    window.localStorage.setItem('apollo-admin', 'true');
+    setShowLogin(false);
+    setLoginData({ username: '', password: '' });
   };
 
   const handleAddEvent = async (e) => {
     e.preventDefault();
+    if (!supabase) {
+      alert('Supabase is not configured. Check your environment variables.');
+      return;
+    }
     const event = {
       title: newEvent.title,
       date: newEvent.date,
@@ -370,17 +381,19 @@ const Events = ({ theme }) => {
       poster: newEvent.poster,
       max_attendees: newEvent.maxAttendees,
       attendees: 0,
+      ticketed: newEvent.ticketed === true ? true : false,
       updated_at: new Date().toISOString()
     };
     const { error } = await supabase.from(EVENTS_TABLE).insert([event]);
-    if (!error) {
-      // Refresh events from backend
-      const { data } = await supabase
-        .from(EVENTS_TABLE)
-        .select('*')
-        .order('date', { ascending: true });
-      setEvents(normalizeEvents(data));
+    if (error) {
+      alert('Failed to save event: ' + error.message);
+      return;
     }
+    const { data } = await supabase
+      .from(EVENTS_TABLE)
+      .select('*')
+      .order('date', { ascending: true });
+    setEvents(normalizeEvents(data));
     setNewEvent(createEventDraft(theme));
     setShowAddEvent(false);
   };
@@ -813,7 +826,7 @@ const Events = ({ theme }) => {
               <button onClick={() => setShowAddEvent(true)} className="add-event-btn">
                 Add Event
               </button>
-              <button onClick={() => setIsAdmin(false)} className="logout-btn">
+              <button onClick={() => { setIsAdmin(false); window.localStorage.removeItem('apollo-admin'); }} className="logout-btn">
                 Logout
               </button>
             </>
