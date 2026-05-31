@@ -9,7 +9,6 @@ const navigationItems = [
   { to: '/experiences', label: 'Reflections' },
   { to: '/account', label: 'Account' },
   { to: '/mixtape-exchange', label: 'Mixtape Exchange' },
-  { to: '/merchandise', label: 'Coming Soon', disabled: true },
   { to: '/artwork', label: 'Gallery' },
   { to: '/earth', label: 'Earth' },
   { to: '/ember-room', label: 'Ember Room' },
@@ -23,9 +22,7 @@ const Navbar = ({ theme, onToggleTheme }) => {
           Apollo Selene <span className="name-secret">secrets</span>
         </p>
         <h2 className="navbar-brand">Sun by day. Moon by night.</h2>
-        <p className="navbar-copy">
-          A welcoming place to pause, check the next event, and ease into community.
-        </p>
+        <p className="navbar-copy">Explore events, art, and cassette deliveries from one place.</p>
         <button type="button" className="theme-toggle" onClick={onToggleTheme}>
           {theme === 'apollo' ? 'Switch to Selene Mode' : 'Switch to Apollo Mode'}
         </button>
