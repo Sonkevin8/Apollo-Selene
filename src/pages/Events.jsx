@@ -1273,4 +1273,4 @@ const Events = ({ theme }) => {
   );
 }
 
-export default Events;}
+export default Events;
