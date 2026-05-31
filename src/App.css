@@ -96,6 +96,7 @@ body {
 
 .layout-container {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   width: 100%;
   position: relative;
@@ -712,8 +713,9 @@ body {
 }
 
 .Navbar {
-  min-width: 320px;
-  max-width: 320px;
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
   background: transparent;
   box-sizing: border-box;
   flex-shrink: 0;
@@ -721,7 +723,7 @@ body {
 
 .content-container {
   flex: 1;
-  padding: 2rem;
+  padding: 1.5rem 2rem 2rem;
   min-width: 0;
   width: 100%;
 }
@@ -1044,11 +1046,6 @@ select:focus {
 
 /* TABLET: 601px to 1024px */
 @media (max-width: 1024px) and (min-width: 601px) {
-  .Navbar {
-    min-width: 280px;
-    max-width: 280px;
-  }
-  
   .content-container {
     padding: 1.5rem;
   }
@@ -1060,10 +1057,6 @@ select:focus {
 
 /* MOBILE: <= 600px */
 @media (max-width: 600px) {
-  .layout-container {
-    flex-direction: column;
-  }
-  
   .Navbar {
     min-width: 100% !important;
     max-width: 100% !important;
@@ -1127,11 +1120,6 @@ select:focus {
 @media (min-width: 1200px) {
   .content-container {
     padding: 3rem;
-  }
-  
-  .Navbar {
-    min-width: 340px;
-    max-width: 340px;
   }
 }
 

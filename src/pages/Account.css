@@ -105,3 +105,30 @@
   font-size: 0.88rem;
   color: var(--muted-color);
 }
+
+.account-auth-debug h3 {
+  margin: 0;
+}
+
+.account-auth-debug p {
+  margin: 0.45rem 0 0.75rem;
+  color: var(--muted-color);
+  font-size: 0.84rem;
+}
+
+.account-auth-debug-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 0.8rem;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.account-auth-debug-grid span {
+  color: var(--muted-color);
+}
+
+.account-auth-debug-grid strong {
+  color: var(--text-color);
+  overflow-wrap: anywhere;
+}

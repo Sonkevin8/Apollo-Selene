@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { isSupabaseConfigured, SUPABASE_AUTH_STORAGE_KEY } from '../lib/supabaseClient';
 import {
   fetchMyProfile,
   getCurrentSession,
@@ -26,6 +26,34 @@ const defaultProfileForm = {
   subscription_status: '',
 };
 
+const readAuthDebugSnapshot = ({ session, eventLabel }) => {
+  const snapshot = {
+    eventLabel,
+    storageKey: SUPABASE_AUTH_STORAGE_KEY,
+    hasWindow: typeof window !== 'undefined',
+    storageAvailable: false,
+    hasStoredSession: false,
+    storedBytes: 0,
+    sessionUserId: session?.user?.id || null,
+    sessionEmail: session?.user?.email || null,
+  };
+
+  if (!snapshot.hasWindow) {
+    return snapshot;
+  }
+
+  try {
+    const rawStored = window.localStorage.getItem(SUPABASE_AUTH_STORAGE_KEY);
+    snapshot.storageAvailable = true;
+    snapshot.hasStoredSession = typeof rawStored === 'string' && rawStored.length > 0;
+    snapshot.storedBytes = rawStored?.length || 0;
+  } catch {
+    snapshot.storageAvailable = false;
+  }
+
+  return snapshot;
+};
+
 const Account = () => {
   const [session, setSession] = useState(null);
   const [authMode, setAuthMode] = useState('signin');
@@ -33,6 +61,9 @@ const Account = () => {
   const [profileForm, setProfileForm] = useState(defaultProfileForm);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [authDebug, setAuthDebug] = useState(() =>
+    readAuthDebugSnapshot({ session: null, eventLabel: 'init' })
+  );
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -65,6 +96,7 @@ const Account = () => {
         }
 
         setSession(existingSession);
+        setAuthDebug(readAuthDebugSnapshot({ session: existingSession, eventLabel: 'init:getSession' }));
         if (existingSession?.user?.id) {
           await syncProfile(existingSession.user.id);
         }
@@ -83,6 +115,7 @@ const Account = () => {
       }
 
       setSession(nextSession);
+      setAuthDebug(readAuthDebugSnapshot({ session: nextSession, eventLabel: 'auth_state_change' }));
       if (nextSession?.user?.id) {
         try {
           await syncProfile(nextSession.user.id);
@@ -176,6 +209,25 @@ const Account = () => {
 
   return (
     <div className="content-section account-shell">
+      <section className="account-card account-auth-debug" aria-label="Session persistence debug">
+        <h3>Auth Session Debug</h3>
+        <p>Use this to verify login persistence after refresh. No token contents are shown.</p>
+        <div className="account-auth-debug-grid">
+          <span>Last Auth Event</span>
+          <strong>{authDebug.eventLabel}</strong>
+          <span>Storage Key</span>
+          <strong>{authDebug.storageKey}</strong>
+          <span>Storage Available</span>
+          <strong>{authDebug.storageAvailable ? 'yes' : 'no'}</strong>
+          <span>Stored Session Found</span>
+          <strong>{authDebug.hasStoredSession ? 'yes' : 'no'}</strong>
+          <span>Stored Payload Size</span>
+          <strong>{authDebug.storedBytes} bytes</strong>
+          <span>Current Session User</span>
+          <strong>{authDebug.sessionEmail || authDebug.sessionUserId || 'none'}</strong>
+        </div>
+      </section>
+
       {!session ? (
         <section className="account-card">
           <h2>Account Access</h2>
