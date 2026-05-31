@@ -326,7 +326,7 @@ const MixtapeExchange = () => {
         receiver_vehicle_minutes: routeMetrics.receiverVehicleMinutes,
         total_vehicle_minutes: routeMetrics.totalVehicleMinutes,
         total_delivery_minutes: routeMetrics.totalDeliveryMinutes,
-        duration_seconds: Math.max(30, routeMetrics.flightDurationMinutes),
+        duration_seconds: Math.max(60, routeMetrics.flightDurationMinutes * 60),
         note: composeForm.note || null,
         status: 'pending',
       };

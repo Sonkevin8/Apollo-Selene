@@ -18,49 +18,65 @@ const demoDeliveryRoutes = [
     id: 'route-1',
     sender: 'Moonwax Pressing, Detroit',
     receiver: 'DJ Solara, Berlin',
+    senderAirportCode: 'DTW',
+    receiverAirportCode: 'BER',
     startLat: 42.3314,
     startLng: -83.0458,
     endLat: 52.52,
     endLng: 13.405,
     altitude: 0.29,
-    duration: 26,
-    offset: 0,
+    durationSeconds: 8 * 60 * 60,
+    offsetSeconds: 0,
+    createdAtMs: Date.now() - 3.1 * 60 * 60 * 1000,
+    status: 'in_flight',
   },
   {
     id: 'route-2',
     sender: 'Pulse Crate Studio, London',
     receiver: 'DJ Kairo, Lagos',
+    senderAirportCode: 'LHR',
+    receiverAirportCode: 'LOS',
     startLat: 51.5072,
     startLng: -0.1276,
     endLat: 6.5244,
     endLng: 3.3792,
     altitude: 0.24,
-    duration: 22,
-    offset: 7,
+    durationSeconds: 6 * 60 * 60,
+    offsetSeconds: 11 * 60,
+    createdAtMs: Date.now() - 2.2 * 60 * 60 * 1000,
+    status: 'in_flight',
   },
   {
     id: 'route-3',
     sender: 'Neon Tape Works, Tokyo',
     receiver: 'DJ Noctis, Sydney',
+    senderAirportCode: 'HND',
+    receiverAirportCode: 'SYD',
     startLat: 35.6764,
     startLng: 139.65,
     endLat: -33.8688,
     endLng: 151.2093,
     altitude: 0.22,
-    duration: 19,
-    offset: 13,
+    durationSeconds: 9 * 60 * 60,
+    offsetSeconds: 7 * 60,
+    createdAtMs: Date.now() - 4.4 * 60 * 60 * 1000,
+    status: 'in_flight',
   },
   {
     id: 'route-4',
     sender: 'Solar Groove Lab, Sao Paulo',
     receiver: 'DJ Orpheus, New York',
+    senderAirportCode: 'GRU',
+    receiverAirportCode: 'JFK',
     startLat: -23.5505,
     startLng: -46.6333,
     endLat: 40.7128,
     endLng: -74.006,
     altitude: 0.28,
-    duration: 28,
-    offset: 3,
+    durationSeconds: 10 * 60 * 60,
+    offsetSeconds: 5 * 60,
+    createdAtMs: Date.now() - 5.5 * 60 * 60 * 1000,
+    status: 'in_flight',
   },
 ];
 
@@ -115,6 +131,23 @@ const stringFrom = (...values) => {
   return null;
 };
 
+const unixMsFrom = (...values) => {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Date.parse(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+
+  return Date.now();
+};
+
 const mapRowToDeliveryRoute = (row, index) => {
   const startLat = numberFrom(
     row.sender_airport_lat,
@@ -149,6 +182,20 @@ const mapRowToDeliveryRoute = (row, index) => {
     return null;
   }
 
+  const durationFromSeconds = numberFrom(
+    row.duration_seconds,
+    row.duration_seconds_estimate,
+    row.duration,
+    24 * 60
+  );
+  const durationFromFlightMinutes = (numberFrom(row.flight_duration_minutes, 0) || 0) * 60;
+  const durationSeconds = Math.max(60, durationFromSeconds || 0, durationFromFlightMinutes);
+
+  const flightDurationMinutes = Math.max(
+    1,
+    Math.round(numberFrom(row.flight_duration_minutes, durationSeconds / 60, 0))
+  );
+
   return {
     id: String(row.id || row.order_id || `live-${index}`),
     sender:
@@ -182,18 +229,11 @@ const mapRowToDeliveryRoute = (row, index) => {
     endLat,
     endLng,
     altitude: numberFrom(row.altitude, row.route_altitude, row.flight_altitude, 0.25),
-    duration: Math.max(
-      12,
-      numberFrom(
-        row.duration_seconds,
-        numberFrom(row.flight_duration_minutes, 0) || 0,
-        row.duration,
-        row.travel_time,
-        24
-      )
-    ),
-    offset: numberFrom(row.offset_seconds, row.offset, index * 5, 0),
-    flightDurationMinutes: Math.round(numberFrom(row.flight_duration_minutes, row.duration_seconds, 0)),
+    durationSeconds,
+    offsetSeconds: numberFrom(row.offset_seconds, row.offset, index * 5, 0),
+    createdAtMs: unixMsFrom(row.created_at, row.createdAt),
+    status: stringFrom(row.status) || 'in_flight',
+    flightDurationMinutes,
     senderVehicleMinutes: Math.round(numberFrom(row.sender_vehicle_minutes, 0)),
     receiverVehicleMinutes: Math.round(numberFrom(row.receiver_vehicle_minutes, 0)),
     totalVehicleMinutes: Math.round(
@@ -208,6 +248,24 @@ const mapRowToDeliveryRoute = (row, index) => {
 
 const DETAIL_ZOOM_DISTANCE = 180;
 const MAP_SYSTEM_DISTANCE = 145;
+
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const getRouteProgress = (route, nowMs) => {
+  if (route.status === 'delivered') {
+    return 1;
+  }
+
+  const durationSeconds = Math.max(60, numberFrom(route.durationSeconds, route.duration, 0));
+  const elapsedSeconds = (nowMs - numberFrom(route.createdAtMs, Date.now())) / 1000 +
+    numberFrom(route.offsetSeconds, route.offset, 0);
+
+  if (elapsedSeconds <= 0) {
+    return 0;
+  }
+
+  return clamp(elapsedSeconds / durationSeconds, 0, 1);
+};
 
 const windStreams = [
   { lat: 16, lng: -46, maxRadius: 8, propagationSpeed: 2.4, repeatPeriod: 900 },
@@ -482,7 +540,7 @@ function Earth() {
     lastUpdateTime: 0,
     lastFocus: { lat: viewpoints.global.lat, lng: viewpoints.global.lng },
   });
-  const deliveryAnimationRef = useRef({ animationId: null, startedAt: 0, lastUiUpdate: 0 });
+  const deliveryAnimationRef = useRef({ animationId: null, lastUiUpdate: 0 });
   const accentLayersRef = useRef({ outlineMesh: null, cloudMesh: null, scene: null, animationId: null });
   const [visualMode, setVisualMode] = useState('cartoon');
   const [cartoonPalette, setCartoonPalette] = useState('classic');
@@ -792,7 +850,15 @@ function Earth() {
       .htmlElement((delivery) => {
         const marker = document.createElement('div');
         marker.className = 'stork-courier';
-        marker.innerHTML = '<span class="stork-wing">stork</span><span class="stork-cassette">cassette</span>';
+        marker.innerHTML = [
+          '<span class="stork-body"></span>',
+          '<span class="stork-wing stork-wing--left"></span>',
+          '<span class="stork-wing stork-wing--right"></span>',
+          '<span class="stork-beak"></span>',
+          '<span class="stork-leg stork-leg--left"></span>',
+          '<span class="stork-leg stork-leg--right"></span>',
+          '<span class="stork-cassette-box">▣</span>',
+        ].join('');
         marker.setAttribute('title', `${delivery.sender} to ${delivery.receiver}`);
         return marker;
       });
@@ -905,15 +971,11 @@ function Earth() {
 
     globe.controls().addEventListener('change', syncZoomDetail);
 
-    const updateDeliveries = (timeStamp) => {
-      if (!deliveryAnimationRef.current.startedAt) {
-        deliveryAnimationRef.current.startedAt = timeStamp;
-      }
-
-      const elapsedSeconds = (timeStamp - deliveryAnimationRef.current.startedAt) / 1000;
+      const updateDeliveries = (timeStamp) => {
+      const nowMs = Date.now();
 
       const courierPositions = deliveryRoutesRef.current.map((route) => {
-        const routeProgress = ((elapsedSeconds + route.offset) % route.duration) / route.duration;
+        const routeProgress = getRouteProgress(route, nowMs);
         const currentPosition = interpolateGreatCircle(
           route.startLat,
           route.startLng,
@@ -934,9 +996,10 @@ function Earth() {
           senderVehicleMinutes: route.senderVehicleMinutes,
           receiverVehicleMinutes: route.receiverVehicleMinutes,
           totalVehicleMinutes: route.totalVehicleMinutes,
+          routeStatus: route.status,
           lat: currentPosition.lat,
           lng: currentPosition.lng,
-          altitude: route.altitude + 0.05 + Math.sin(routeProgress * Math.PI) * 0.03,
+          altitude: route.altitude + 0.04 + Math.sin((timeStamp / 1000) * 3.3) * 0.015,
           progress: routeProgress,
         };
       });
@@ -947,6 +1010,8 @@ function Earth() {
         setLiveDeliveries(
           courierPositions.map((courier) => {
             const percentage = Math.round(courier.progress * 100);
+            const isDelivered = courier.routeStatus === 'delivered' || percentage >= 100;
+
             return {
               id: courier.id,
               sender: courier.sender,
@@ -960,7 +1025,7 @@ function Earth() {
               receiverVehicleMinutes: courier.receiverVehicleMinutes,
               totalVehicleMinutes: courier.totalVehicleMinutes,
               progress: percentage,
-              status: percentage >= 94 ? 'Arriving Now' : 'In Flight',
+              status: isDelivered ? 'Delivered' : percentage >= 94 ? 'Arriving Now' : 'In Flight',
               lat: courier.lat,
               lng: courier.lng,
             };
@@ -1046,7 +1111,7 @@ function Earth() {
         lastUpdateTime: 0,
         lastFocus: { lat: viewpoints.global.lat, lng: viewpoints.global.lng },
       };
-      deliveryAnimationRef.current = { animationId: null, startedAt: 0, lastUiUpdate: 0 };
+      deliveryAnimationRef.current = { animationId: null, lastUiUpdate: 0 };
       supabaseChannelRef.current = null;
       globeRef.current = null;
     };

@@ -111,31 +111,91 @@
 }
 
 .stork-courier {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.28rem;
-  padding: 0.22rem 0.42rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 239, 198, 0.7);
-  background: rgba(33, 24, 13, 0.82);
-  color: #fff8e8;
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-  white-space: nowrap;
+  position: relative;
+  width: 24px;
+  height: 16px;
   transform: translate(-50%, -50%);
+  filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.35));
+  animation: stork-bob 1.6s ease-in-out infinite;
+}
+
+.stork-body,
+.stork-wing,
+.stork-beak,
+.stork-leg,
+.stork-cassette-box {
+  position: absolute;
+  display: block;
+}
+
+.stork-body {
+  left: 6px;
+  top: 5px;
+  width: 10px;
+  height: 7px;
+  border-radius: 9px;
+  background: #f8f5ed;
+  border: 1px solid rgba(46, 50, 60, 0.45);
 }
 
 .stork-wing {
-  font-weight: 700;
+  top: 5px;
+  width: 9px;
+  height: 5px;
+  border-radius: 6px 6px 3px 3px;
+  background: #f2eee2;
+  border: 1px solid rgba(46, 50, 60, 0.35);
+  transform-origin: center bottom;
 }
 
-.stork-cassette {
-  padding: 0.05rem 0.3rem;
-  border-radius: 999px;
-  background: rgba(255, 181, 102, 0.25);
-  border: 1px solid rgba(255, 202, 122, 0.45);
+.stork-wing--left {
+  left: 3px;
+  animation: stork-wing-left 0.34s ease-in-out infinite;
+}
+
+.stork-wing--right {
+  left: 12px;
+  animation: stork-wing-right 0.34s ease-in-out infinite;
+}
+
+.stork-beak {
+  left: 16px;
+  top: 7px;
+  width: 7px;
+  height: 2px;
+  border-radius: 2px;
+  background: #ffb357;
+}
+
+.stork-leg {
+  width: 1.5px;
+  height: 8px;
+  border-radius: 2px;
+  background: #d79a46;
+  top: 10px;
+}
+
+.stork-leg--left {
+  left: 9px;
+}
+
+.stork-leg--right {
+  left: 13px;
+}
+
+.stork-cassette-box {
+  left: -1px;
+  top: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: #2d1d12;
+  border: 1px solid rgba(255, 208, 122, 0.7);
+  color: #f9d88f;
+  font-size: 6px;
+  line-height: 7px;
+  text-align: center;
+  animation: cassette-sway 1.2s ease-in-out infinite;
 }
 
 .delivery-panel {
@@ -314,6 +374,50 @@
   }
 }
 
+@keyframes stork-wing-left {
+  0%,
+  100% {
+    transform: rotate(-22deg);
+  }
+
+  50% {
+    transform: rotate(20deg);
+  }
+}
+
+@keyframes stork-wing-right {
+  0%,
+  100% {
+    transform: rotate(20deg);
+  }
+
+  50% {
+    transform: rotate(-22deg);
+  }
+}
+
+@keyframes cassette-sway {
+  0%,
+  100% {
+    transform: rotate(-8deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(9deg) translateY(1px);
+  }
+}
+
+@keyframes stork-bob {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateY(0);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) translateY(-2px);
+  }
+}
+
 @media (max-width: 700px) {
   .earth-globe-wrap {
     min-height: 62vh;
@@ -345,6 +449,7 @@
   }
 
   .stork-courier {
-    font-size: 0.52rem;
+    width: 20px;
+    height: 14px;
   }
 }
