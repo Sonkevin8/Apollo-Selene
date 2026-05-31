@@ -7,7 +7,7 @@ const navigationItems = [
   { to: '/map-exchange', label: 'Map Exchange' },
 ];
 
-const Navbar = ({ theme, onToggleTheme }) => {
+const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-brand-block">
@@ -18,9 +18,6 @@ const Navbar = ({ theme, onToggleTheme }) => {
         <p className="navbar-copy">
           A welcoming place to pause, check the next event, and ease into community.
         </p>
-        <button type="button" className="theme-toggle" onClick={onToggleTheme}>
-          {theme === 'apollo' ? 'Switch to Selene Mode' : 'Switch to Apollo Mode'}
-        </button>
       </div>
       <ul className="navbar-menu">
         {navigationItems.map(({ to, label, disabled }) => (
@@ -33,19 +30,9 @@ const Navbar = ({ theme, onToggleTheme }) => {
               </span>
             ) : (
               <NavLink to={to} className={({ isActive }) => (isActive ? 'active' : '')}>
-                {({ isActive }) => (
-                  <span className="navbar-link-inner">
-                    {isActive ? (
-                      <span
-                        className={`navbar-link-guide navbar-link-guide--${theme}`}
-                        aria-hidden="true"
-                      >
-                        <MobileScrollGuide theme={theme} compact />
-                      </span>
-                    ) : null}
-                    <span className="navbar-link-label">{label}</span>
-                  </span>
-                )}
+                <span className="navbar-link-inner">
+                  <span className="navbar-link-label">{label}</span>
+                </span>
               </NavLink>
             )}
           </li>
