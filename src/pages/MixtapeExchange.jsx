@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import {
   createMixtapeInvite,
@@ -9,9 +10,7 @@ import {
   markInviteStatus,
   onAuthStateChange,
   sendMixtapeInviteEmail,
-  signInWithEmail,
   signOutUser,
-  signUpWithEmail,
   updateMixtapeStatus,
 } from '../lib/mixtapeExchange';
 import './MixtapeExchange.css';
@@ -35,12 +34,6 @@ const defaultComposeForm = {
   receiver_address_lat: '51.5072',
   receiver_address_lng: '-0.1276',
   note: '',
-};
-
-const defaultAuthForm = {
-  email: '',
-  password: '',
-  displayName: '',
 };
 
 const numberOrNull = (value) => {
@@ -84,8 +77,6 @@ const calculateVehicleMinutes = (km) => {
 
 const MixtapeExchange = () => {
   const [session, setSession] = useState(null);
-  const [authMode, setAuthMode] = useState('signin');
-  const [authForm, setAuthForm] = useState(defaultAuthForm);
   const [composeForm, setComposeForm] = useState(defaultComposeForm);
   const [receiverQuery, setReceiverQuery] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -238,33 +229,6 @@ const MixtapeExchange = () => {
       authSubscription.subscription.unsubscribe();
     };
   }, []);
-
-  const handleAuthSubmit = async (event) => {
-    event.preventDefault();
-    setMessage('');
-    setLoading(true);
-
-    try {
-      if (authMode === 'signup') {
-        await signUpWithEmail({
-          email: authForm.email,
-          password: authForm.password,
-          displayName: authForm.displayName,
-        });
-        setMessage('Account created. Check your email to confirm, then sign in.');
-      } else {
-        await signInWithEmail({
-          email: authForm.email,
-          password: authForm.password,
-        });
-        setMessage('Signed in. You can now exchange mixtapes.');
-      }
-    } catch (error) {
-      setMessage(error.message || 'Authentication failed.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreateExchange = async (event) => {
     event.preventDefault();
@@ -441,66 +405,15 @@ const MixtapeExchange = () => {
           </>
         ) : (
           <>
-            <p>Sign in or create an account to exchange tapes with other musicians and DJs.</p>
+            <p>
+              This page now uses one shared sign-in flow. Go to Account to sign in or create your
+              profile, then return here to send deliveries.
+            </p>
             <div className="mixtape-actions">
-              <button
-                type="button"
-                className={`button-link secondary-link ${authMode === 'signin' ? 'is-active' : ''}`}
-                onClick={() => setAuthMode('signin')}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                className={`button-link secondary-link ${authMode === 'signup' ? 'is-active' : ''}`}
-                onClick={() => setAuthMode('signup')}
-              >
-                Sign Up
-              </button>
+              <Link to="/account" className="button-link primary-link">
+                Go To Account Sign-In
+              </Link>
             </div>
-
-            <form onSubmit={handleAuthSubmit} className="mixtape-form-grid">
-              <div className="mixtape-field">
-                <label htmlFor="auth-email">Email</label>
-                <input
-                  id="auth-email"
-                  type="email"
-                  value={authForm.email}
-                  onChange={(event) => setAuthForm((prev) => ({ ...prev, email: event.target.value }))}
-                  required
-                />
-              </div>
-              <div className="mixtape-field">
-                <label htmlFor="auth-password">Password</label>
-                <input
-                  id="auth-password"
-                  type="password"
-                  value={authForm.password}
-                  onChange={(event) => setAuthForm((prev) => ({ ...prev, password: event.target.value }))}
-                  required
-                  minLength={8}
-                />
-              </div>
-              {authMode === 'signup' ? (
-                <div className="mixtape-field">
-                  <label htmlFor="auth-display-name">Display Name</label>
-                  <input
-                    id="auth-display-name"
-                    type="text"
-                    value={authForm.displayName}
-                    onChange={(event) =>
-                      setAuthForm((prev) => ({ ...prev, displayName: event.target.value }))
-                    }
-                    required
-                  />
-                </div>
-              ) : null}
-              <div className="mixtape-actions">
-                <button type="submit" className="button-link primary-link" disabled={loading}>
-                  {authMode === 'signup' ? 'Create Account' : 'Sign In'}
-                </button>
-              </div>
-            </form>
           </>
         )}
         {message ? <p className="mixtape-message">{message}</p> : null}

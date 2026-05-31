@@ -11,7 +11,7 @@ const viewpoints = {
   asia: { lat: 35.68, lng: 139.69, altitude: 1.3 },
 };
 
-const DELIVERY_TABLE_NAME = import.meta.env.VITE_DELIVERY_TABLE || 'mixtape_exchanges';
+const DELIVERY_TABLE_NAME = import.meta.env.VITE_DELIVERY_TABLE || 'mixtape_routes_public';
 
 const demoDeliveryRoutes = [
   {
