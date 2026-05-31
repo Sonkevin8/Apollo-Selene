@@ -1,4 +1,7 @@
-// ...existing code...
+
+import React, { useState, useEffect } from 'react';
+import supabase from '../lib/supabaseClient';
+import '../Account.css'; // Add or adjust if you have a CSS file for styling
 
 const Events = ({ theme }) => {
   // ...existing code...
