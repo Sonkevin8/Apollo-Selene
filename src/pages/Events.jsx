@@ -1088,7 +1088,7 @@ const Events = ({ theme }) => {
                 {(eventGuestLists[openGuestListForEvent] || []).map((guest) => (
                   <li key={guest.id} className="guest-list-item">
                     <span>{guest.name}</span>
-                    {guest.addedBy === currentUserId && (
+                    {guest.added_by === currentUserId && (
                       <button
                         type="button"
                         className="remove-guest-btn"
