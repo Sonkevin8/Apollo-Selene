@@ -1,8 +1,137 @@
+// Helper to check ticket purchase status from Supabase
+const checkTicketPurchase = async (sessionId) => {
+  // Query the event_ticket_purchases table for this session
+  const { data, error } = await supabase
+    .from('event_ticket_purchases')
+    .select('*')
+    .eq('stripe_checkout_session_id', sessionId)
+    .maybeSingle();
+  if (error || !data) return null;
+  if (data.payment_status !== 'paid') return null;
+  return data;
+};
+  // On mount, check for Stripe redirect and confirm attendance if paid
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const ticketStatus = url.searchParams.get('ticket');
+    const sessionId = url.searchParams.get('session_id');
+    if (ticketStatus === 'success' && sessionId) {
+      (async () => {
+        const purchase = await checkTicketPurchase(sessionId);
+        if (purchase && purchase.event_id) {
+          // Only add attendance if not already present
+          const { data: existing } = await supabase
+            .from(EVENT_ATTENDANCE_TABLE)
+            .select('*')
+            .eq('event_id', purchase.event_id)
+            .eq('user_id', currentUserId);
+          if (!existing || existing.length === 0) {
+            // Add guest entry if not present
+            let guestId;
+            const { data: guests } = await supabase
+              .from(EVENT_GUESTS_TABLE)
+              .select('*')
+              .eq('event_id', purchase.event_id)
+              .eq('name', purchase.purchaser_email)
+              .eq('added_by', currentUserId);
+            if (guests && guests.length > 0) {
+              guestId = guests[0].id;
+            } else {
+              const { data: newGuest } = await supabase
+                .from(EVENT_GUESTS_TABLE)
+                .insert([{ event_id: purchase.event_id, name: purchase.purchaser_email, contact: purchase.purchaser_email, added_by: currentUserId }])
+                .select();
+              guestId = newGuest && newGuest[0]?.id;
+            }
+            // Add attendance
+            await supabase
+              .from(EVENT_ATTENDANCE_TABLE)
+              .upsert({ event_id: purchase.event_id, user_id: currentUserId, guest_id: guestId, name: purchase.purchaser_email, contact: purchase.purchaser_email });
+            // Increment event attendee count
+            const { data: eventData } = await supabase
+              .from(EVENTS_TABLE)
+              .select('*')
+              .eq('id', purchase.event_id)
+              .maybeSingle();
+            if (eventData) {
+              await supabase
+                .from(EVENTS_TABLE)
+                .update({ attendees: (eventData.attendees || 0) + 1 })
+                .eq('id', purchase.event_id);
+            }
+            // Refresh all
+            const fetchAll = async () => {
+              const { data: eventData } = await supabase
+                .from(EVENTS_TABLE)
+                .select('*')
+                .order('date', { ascending: true });
+              if (eventData) setEvents(normalizeEvents(eventData));
+              const { data: guestData } = await supabase
+                .from(EVENT_GUESTS_TABLE)
+                .select('*');
+              const guestLists = {};
+              (guestData || []).forEach(g => {
+                if (!guestLists[g.event_id]) guestLists[g.event_id] = [];
+                guestLists[g.event_id].push(g);
+              });
+              setEventGuestLists(guestLists);
+              const { data: attendanceData } = await supabase
+                .from(EVENT_ATTENDANCE_TABLE)
+                .select('*');
+              const attendanceMap = {};
+              const userSet = new Set();
+              (attendanceData || []).forEach(a => {
+                attendanceMap[a.event_id] = a;
+                if (a.user_id === currentUserId) userSet.add(a.event_id);
+              });
+              setAttendanceDetails(attendanceMap);
+              setUserAttendance(userSet);
+            };
+            await fetchAll();
+            alert('Ticket purchase confirmed! You have been added to the guest list.');
+          }
+        } else {
+          alert('Could not confirm ticket purchase. Please contact support.');
+        }
+        // Clean up URL
+        url.searchParams.delete('ticket');
+        url.searchParams.delete('session_id');
+        window.history.replaceState({}, document.title, url.pathname);
+      })();
+    }
+  }, [currentUserId]);
+// Helper to call Supabase Edge Function for Stripe checkout
+const createTicketCheckout = async ({ event }) => {
+  const origin = window.location.origin;
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-ticket-checkout`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabase.auth.session()?.access_token || ''}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        eventId: event.id,
+        eventTitle: event.title,
+        eventDate: event.date,
+        eventLocation: event.location,
+        origin,
+      }),
+    }
+  );
+  const data = await res.json();
+  if (data?.url) {
+    window.location.href = data.url;
+  } else {
+    alert('Could not start checkout: ' + (data?.error || 'Unknown error'));
+  }
+};
 import React, { useEffect, useState } from 'react';
 import { supabase, EVENTS_TABLE, EVENT_GUESTS_TABLE, EVENT_ATTENDANCE_TABLE } from '../lib/supabaseClient';
 
 const EVENTS_STORAGE_KEY = 'apollo-selene-events';
-const GUEST_LISTS_STORAGE_KEY = 'apollo-selene-guest-lists';
 const USER_ATTENDANCE_STORAGE_KEY = 'apollo-selene-user-attendance';
 const ATTENDANCE_DETAILS_STORAGE_KEY = 'apollo-selene-attendance-details';
 const CURRENT_USER_ID_STORAGE_KEY = 'apollo-selene-current-user-id';
@@ -518,10 +647,10 @@ const Events = ({ theme }) => {
       };
       await fetchAll();
     } else {
-      // User wants to attend
+      // User wants to attend: start Stripe checkout
       const event = events.find(e => e.id === eventId);
       if (event && event.attendees < event.maxAttendees) {
-        openAttendConfirm(eventId);
+        await createTicketCheckout({ event });
       }
     }
   };
@@ -693,7 +822,7 @@ const Events = ({ theme }) => {
         <div className="flex gap-2">
           {!isAdmin && (
             <button onClick={() => setShowLogin(true)} className="admin-btn">
-              Admin Login
+              Login
             </button>
           )}
           {isAdmin && (
@@ -811,6 +940,16 @@ const Events = ({ theme }) => {
                 min="1"
                 required
               />
+              <div style={{ margin: '10px 0' }}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={!!newEvent.ticketed}
+                    onChange={e => setNewEvent({ ...newEvent, ticketed: e.target.checked })}
+                  />
+                  {' '}Require ticket purchase (Stripe)
+                </label>
+              </div>
               <div className="modal-actions">
                 <button type="submit">Add Event</button>
                 <button type="button" onClick={() => setShowAddEvent(false)}>Cancel</button>
@@ -882,6 +1021,16 @@ const Events = ({ theme }) => {
                 min="1"
                 required
               />
+              <div style={{ margin: '10px 0' }}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={!!editEventData.ticketed}
+                    onChange={e => setEditEventData({ ...editEventData, ticketed: e.target.checked })}
+                  />
+                  {' '}Require ticket purchase (Stripe)
+                </label>
+              </div>
               <div className="modal-actions">
                 <button type="submit">Save Changes</button>
                 <button type="button" onClick={closeEditEventModal}>Cancel</button>
@@ -1091,13 +1240,17 @@ const Events = ({ theme }) => {
                   onClick={() => handleAttendEvent(event.id)}
                   disabled={!userAttendance.has(event.id) && event.attendees >= event.maxAttendees}
                 >
-                  {userAttendance.has(event.id) 
-                    ? 'Release Invitation' 
-                    : event.attendees >= event.maxAttendees 
-                      ? 'Sealed Full' 
-                      : 'Request Invitation'
-                  }
+                  {userAttendance.has(event.id)
+                    ? 'Release Invitation'
+                    : event.attendees >= event.maxAttendees
+                      ? 'Sealed Full'
+                      : event.ticketed === false
+                        ? 'Attend Free'
+                        : 'Buy Ticket'}
                 </button>
+                <div style={{ marginTop: 4, fontSize: 13, color: '#888' }}>
+                  {event.ticketed === false ? 'Free event' : 'Ticketed event'}
+                </div>
 
                 <div className="guest-list-controls">
                   <button
