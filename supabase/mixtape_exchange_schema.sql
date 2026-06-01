@@ -28,6 +28,9 @@ alter table public.profiles add column if not exists subscription_status text;
 alter table public.profiles add column if not exists stripe_customer_id text unique;
 alter table public.profiles add column if not exists updated_at timestamptz not null default now();
 alter table public.profiles add column if not exists created_at timestamptz not null default now();
+alter table public.profiles add column if not exists address text;
+alter table public.profiles add column if not exists address_lat double precision;
+alter table public.profiles add column if not exists address_lng double precision;
 
 alter table public.profiles drop constraint if exists profiles_plan_tier_check;
 alter table public.profiles

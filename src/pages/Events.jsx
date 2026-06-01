@@ -4,33 +4,49 @@ import { supabase, EVENTS_TABLE, EVENT_GUESTS_TABLE, EVENT_ATTENDANCE_TABLE } fr
 
 
 // Helper to call Supabase Edge Function for Stripe checkout
-const createTicketCheckout = async ({ event }) => {
+const createTicketCheckout = async ({ event, quantity = 1 }) => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const anonKey    = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !anonKey) {
+    throw new Error('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+  }
+
   const origin = window.location.origin;
   const { data: { session } } = await supabase.auth.getSession();
-  const accessToken = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const accessToken = session?.access_token || anonKey;
+
   const res = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-ticket-checkout`,
+    `${supabaseUrl}/functions/v1/create-ticket-checkout`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'apikey': anonKey,
       },
       body: JSON.stringify({
         eventId: event.id,
         eventTitle: event.title,
         eventDate: event.date,
         eventLocation: event.location,
+        quantity: Math.max(1, Math.min(10, Math.floor(quantity))),
         origin,
       }),
     }
   );
+
+  if (!res.ok) {
+    let msg = `Edge Function returned ${res.status}`;
+    try { const e = await res.json(); msg = e?.error || msg; } catch {}
+    throw new Error(msg);
+  }
+
   const data = await res.json();
   if (data?.url) {
     window.location.href = data.url;
   } else {
-    alert('Could not start checkout: ' + (data?.error || 'Unknown error'));
+    throw new Error(data?.error || 'No checkout URL returned.');
   }
 };
 const ATTENDANCE_DETAILS_STORAGE_KEY = 'apollo-selene-attendance-details';
@@ -222,6 +238,9 @@ const Events = ({ theme }) => {
   const [extraGuestForm, setExtraGuestForm] = useState({ name: '', contact: '' });
   const [attendeeContactError, setAttendeeContactError] = useState('');
   const [extraGuestContactError, setExtraGuestContactError] = useState('');
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+  const [ticketQuantities, setTicketQuantities] = useState({});
 
 
   // Fetch events, guests, and attendance from Supabase on mount
@@ -748,9 +767,9 @@ const Events = ({ theme }) => {
   };
 
   const removeGuestFromEvent = async (eventId, guestId) => {
-    // Only allow removing your own guests
+    if (!isAdmin) return;
     const guest = (eventGuestLists[eventId] || []).find((entry) => entry.id === guestId);
-    if (!guest || guest.added_by !== currentUserId) {
+    if (!guest) {
       return;
     }
     await supabase
@@ -1091,7 +1110,7 @@ const Events = ({ theme }) => {
                 {(eventGuestLists[openGuestListForEvent] || []).map((guest) => (
                   <li key={guest.id} className="guest-list-item">
                     <span>{guest.name}</span>
-                    {guest.added_by === currentUserId && (
+                    {isAdmin && (
                       <button
                         type="button"
                         className="remove-guest-btn"
@@ -1107,7 +1126,7 @@ const Events = ({ theme }) => {
               <p className="guest-list-empty">No attendees listed yet.</p>
             )}
 
-            {(eventGuestLists[openGuestListForEvent] || []).length > 0 && !showAddGuestForm && (
+            {isAdmin && (eventGuestLists[openGuestListForEvent] || []).length > 0 && !showAddGuestForm && (
               <button
                 type="button"
                 className="add-guest-btn"
@@ -1120,7 +1139,7 @@ const Events = ({ theme }) => {
               </button>
             )}
 
-            {showAddGuestForm && (
+            {isAdmin && showAddGuestForm && (
               <form className="add-guest-form" onSubmit={handleAddAnotherGuest}>
                 <input
                   type="text"
@@ -1238,25 +1257,67 @@ const Events = ({ theme }) => {
                   </div>
                 </div>
                 
+                {event.ticketed && !userAttendance.has(event.id) && event.attendees < event.maxAttendees && (
+                  <div className="ticket-quantity-row">
+                    <label className="ticket-quantity-label" htmlFor={`qty-${event.id}`}>Qty</label>
+                    <button
+                      type="button"
+                      className="ticket-qty-btn"
+                      onClick={() => setTicketQuantities(q => ({ ...q, [event.id]: Math.max(1, (q[event.id] || 1) - 1) }))}
+                      aria-label="Decrease quantity"
+                    >−</button>
+                    <input
+                      id={`qty-${event.id}`}
+                      type="number"
+                      className="ticket-qty-input"
+                      min="1"
+                      max={Math.min(10, event.maxAttendees - event.attendees)}
+                      value={ticketQuantities[event.id] || 1}
+                      onChange={e => {
+                        const val = Math.max(1, Math.min(10, Math.min(event.maxAttendees - event.attendees, parseInt(e.target.value) || 1)));
+                        setTicketQuantities(q => ({ ...q, [event.id]: val }));
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="ticket-qty-btn"
+                      onClick={() => setTicketQuantities(q => ({ ...q, [event.id]: Math.min(10, Math.min(event.maxAttendees - event.attendees, (q[event.id] || 1) + 1)) }))}
+                      aria-label="Increase quantity"
+                    >+</button>
+                  </div>
+                )}
                 <button 
                   className={`attend-btn ${userAttendance.has(event.id) ? 'attending' : ''}`}
-                  onClick={() => {
+                  disabled={checkoutLoading || (!userAttendance.has(event.id) && event.attendees >= event.maxAttendees)}
+                  onClick={async () => {
+                    setCheckoutError('');
                     if (event.ticketed && !userAttendance.has(event.id)) {
-                      createTicketCheckout({ event });
+                      setCheckoutLoading(true);
+                      try {
+                        await createTicketCheckout({ event, quantity: ticketQuantities[event.id] || 1 });
+                      } catch (err) {
+                        setCheckoutError(err.message || 'Checkout failed.');
+                      } finally {
+                        setCheckoutLoading(false);
+                      }
                     } else {
                       handleAttendEvent(event.id);
                     }
                   }}
-                  disabled={!userAttendance.has(event.id) && event.attendees >= event.maxAttendees}
                 >
-                  {userAttendance.has(event.id)
-                    ? 'Release Invitation'
-                    : event.attendees >= event.maxAttendees
-                      ? 'Sealed Full'
-                      : event.ticketed === false
-                        ? 'Attend Free'
-                        : 'Buy Ticket'}
+                  {checkoutLoading
+                    ? 'Opening checkout…'
+                    : userAttendance.has(event.id)
+                      ? 'Release Invitation'
+                      : event.attendees >= event.maxAttendees
+                        ? 'Sealed Full'
+                        : event.ticketed === false
+                          ? 'Attend Free'
+                          : 'Buy Ticket'}
                 </button>
+                {checkoutError && (
+                  <p style={{ color: '#e55', fontSize: '0.8rem', marginTop: '0.35rem' }}>{checkoutError}</p>
+                )}
                 <div style={{ marginTop: 4, fontSize: 13, color: '#888' }}>
                   {event.ticketed === false ? 'Free event' : 'Ticketed event'}
                 </div>

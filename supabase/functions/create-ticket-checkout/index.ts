@@ -76,6 +76,8 @@ Deno.serve(async (request) => {
     const eventDate = body?.eventDate ? String(body.eventDate).slice(0, 64) : '';
     const eventLocation = body?.eventLocation ? String(body.eventLocation).slice(0, 200) : '';
     const baseUrl = safeBaseUrl(body?.origin || request.headers.get('origin'));
+    const rawQty = parseInt(body?.quantity, 10);
+    const quantity = Number.isFinite(rawQty) && rawQty >= 1 ? Math.min(rawQty, 10) : 1;
 
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2024-06-20',
@@ -86,7 +88,7 @@ Deno.serve(async (request) => {
       line_items: [
         {
           price: stripeTicketPriceId,
-          quantity: 1,
+          quantity,
         },
       ],
       client_reference_id: user?.id ? `${user.id}:${eventId}` : `guest:${eventId}:${Date.now()}`,
