@@ -6,13 +6,15 @@ import { supabase, EVENTS_TABLE, EVENT_GUESTS_TABLE, EVENT_ATTENDANCE_TABLE } fr
 // Helper to call Supabase Edge Function for Stripe checkout
 const createTicketCheckout = async ({ event }) => {
   const origin = window.location.origin;
+  const { data: { session } } = await supabase.auth.getSession();
+  const accessToken = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
   const res = await fetch(
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-ticket-checkout`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabase.auth.session()?.access_token || ''}`,
+        'Authorization': `Bearer ${accessToken}`,
         'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
@@ -1238,7 +1240,13 @@ const Events = ({ theme }) => {
                 
                 <button 
                   className={`attend-btn ${userAttendance.has(event.id) ? 'attending' : ''}`}
-                  onClick={() => handleAttendEvent(event.id)}
+                  onClick={() => {
+                    if (event.ticketed && !userAttendance.has(event.id)) {
+                      createTicketCheckout({ event });
+                    } else {
+                      handleAttendEvent(event.id);
+                    }
+                  }}
                   disabled={!userAttendance.has(event.id) && event.attendees >= event.maxAttendees}
                 >
                   {userAttendance.has(event.id)
