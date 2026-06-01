@@ -1257,7 +1257,7 @@ const Events = ({ theme }) => {
                   </div>
                 </div>
                 
-                {event.ticketed && !userAttendance.has(event.id) && event.attendees < event.maxAttendees && (
+                {event.ticketed !== false && !userAttendance.has(event.id) && event.attendees < event.maxAttendees && (
                   <div className="ticket-quantity-row">
                     <label className="ticket-quantity-label" htmlFor={`qty-${event.id}`}>Qty</label>
                     <button
