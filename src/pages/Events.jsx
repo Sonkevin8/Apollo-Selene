@@ -266,11 +266,32 @@ const createEventDraft = (theme) => ({
   maxAttendees: 50
 });
 
+const POSTER_BUCKET = 'event-posters';
+
+const uploadPosterImage = async (file, index) => {
+  if (!supabase) throw new Error('Supabase not configured');
+  const ext = file.name.split('.').pop().toLowerCase();
+  const allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+  if (!allowed.includes(ext)) throw new Error('Only JPG, PNG, WEBP, or GIF images are allowed.');
+  if (file.size > 10 * 1024 * 1024) throw new Error('Image must be under 10 MB.');
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `posters/${Date.now()}-${index}-${safeName}`;
+  const { error } = await supabase.storage.from(POSTER_BUCKET).upload(path, file, {
+    contentType: file.type || 'image/jpeg',
+    upsert: false,
+  });
+  if (error) throw new Error(error.message);
+  const { data } = supabase.storage.from(POSTER_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+};
+
 const Events = ({ theme }) => {
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
   const [galleryItems, setGalleryItems] = useState([]);
+  const [posterUploading, setPosterUploading] = useState([false, false, false, false]);
+  const [posterUploadError, setPosterUploadError] = useState([null, null, null, null]);
   const [showLogin, setShowLogin] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [showAddEvent, setShowAddEvent] = useState(false);
@@ -310,6 +331,12 @@ const Events = ({ theme }) => {
   const [voucherMsgs, setVoucherMsgs] = useState({});       // eventId → {text, ok}
   const [voucherOpen, setVoucherOpen] = useState({});       // eventId → bool
   const [voucherRedeeming, setVoucherRedeeming] = useState({});
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [attendConfirmLoading, setAttendConfirmLoading] = useState(false);
+  const [addEventLoading, setAddEventLoading] = useState(false);
+  const [editEventLoading, setEditEventLoading] = useState(false);
+  const [attendActionLoading, setAttendActionLoading] = useState({});  // eventId → bool
+  const [addGuestLoading, setAddGuestLoading] = useState(false);
 
   const redeemVoucher = async (event) => {
     const code = (voucherInputs[event.id] || '').trim().toUpperCase();
@@ -418,37 +445,34 @@ const Events = ({ theme }) => {
 
   // Fetch events, guests, and attendance from Supabase on mount
   useEffect(() => {
+    if (!supabase) { setLoadingEvents(false); return; }
     const fetchAll = async () => {
       setLoadingEvents(true);
-      // Events
-      const { data: eventData } = await supabase
-        .from(EVENTS_TABLE)
-        .select('*')
-        .order('date', { ascending: true });
-      if (eventData) setEvents(normalizeEvents(eventData));
-      // Guests
-      const { data: guestData } = await supabase
-        .from(EVENT_GUESTS_TABLE)
-        .select('*');
-      const guestLists = {};
-      (guestData || []).forEach(g => {
-        if (!guestLists[g.event_id]) guestLists[g.event_id] = [];
-        guestLists[g.event_id].push(g);
-      });
-      setEventGuestLists(guestLists);
-      // Attendance
-      const { data: attendanceData } = await supabase
-        .from(EVENT_ATTENDANCE_TABLE)
-        .select('*');
-      const attendanceMap = {};
-      const userSet = new Set();
-      (attendanceData || []).forEach(a => {
-        attendanceMap[a.event_id] = a;
-        if (a.user_id === currentUserId) userSet.add(a.event_id);
-      });
-      setAttendanceDetails(attendanceMap);
-      setUserAttendance(userSet);
-      setLoadingEvents(false);
+      try {
+        // Fetch all three in parallel
+        const [eventRes, guestRes, attendanceRes] = await Promise.all([
+          supabase.from(EVENTS_TABLE).select('*').order('date', { ascending: true }),
+          supabase.from(EVENT_GUESTS_TABLE).select('*'),
+          supabase.from(EVENT_ATTENDANCE_TABLE).select('*'),
+        ]);
+        if (eventRes.data) setEvents(normalizeEvents(eventRes.data));
+        const guestLists = {};
+        (guestRes.data || []).forEach(g => {
+          if (!guestLists[g.event_id]) guestLists[g.event_id] = [];
+          guestLists[g.event_id].push(g);
+        });
+        setEventGuestLists(guestLists);
+        const attendanceMap = {};
+        const userSet = new Set();
+        (attendanceRes.data || []).forEach(a => {
+          attendanceMap[a.event_id] = a;
+          if (a.user_id === currentUserId) userSet.add(a.event_id);
+        });
+        setAttendanceDetails(attendanceMap);
+        setUserAttendance(userSet);
+      } finally {
+        setLoadingEvents(false);
+      }
     };
     fetchAll();
   }, [currentUserId]);
@@ -466,6 +490,15 @@ const Events = ({ theme }) => {
     }
     return null;
   };
+
+  // Load gallery items whenever admin is active (covers page refresh while already logged in)
+  useEffect(() => {
+    if (isAdmin && supabase && galleryItems.length === 0) {
+      supabase.from('gallery_items').select('id, title, artist').order('title').then(({ data }) => {
+        if (data) setGalleryItems(data);
+      });
+    }
+  }, [isAdmin]);
 
   // On mount, check for Stripe redirect and confirm attendance if paid
   useEffect(() => {
@@ -548,26 +581,27 @@ const Events = ({ theme }) => {
       alert('Supabase is not configured.');
       return;
     }
-    const { data, error } = await supabase.functions.invoke('verify-admin', {
-      body: { username: loginData.username, password: loginData.password },
-    });
-    if (error) {
-      const detail = error?.context ? JSON.stringify(await error.context?.json?.().catch(() => error.context)) : '';
-      alert(`Login error: ${error.message}\nStatus: ${error.status || 'unknown'}\nDetail: ${detail || JSON.stringify(error)}`);
-      return;
-    }
-    if (!data?.success) {
-      alert('Invalid credentials.');
-      return;
-    }
-    setIsAdmin(true);
-    window.localStorage.setItem('apollo-admin', 'true');
-    setShowLogin(false);
-    setLoginData({ username: '', password: '' });
-    if (supabase) {
-      supabase.from('gallery_items').select('id, title, artist').order('title').then(({ data }) => {
-        if (data) setGalleryItems(data);
+    setLoginLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-admin', {
+        body: { username: loginData.username, password: loginData.password },
       });
+      if (error) {
+        const detail = error?.context ? JSON.stringify(await error.context?.json?.().catch(() => error.context)) : '';
+        alert(`Login error: ${error.message}\nStatus: ${error.status || 'unknown'}\nDetail: ${detail || JSON.stringify(error)}`);
+        return;
+      }
+      if (!data?.success) {
+        alert('Invalid credentials.');
+        return;
+      }
+      setIsAdmin(true);
+      window.localStorage.setItem('apollo-admin', 'true');
+      setShowLogin(false);
+      setLoginData({ username: '', password: '' });
+      // galleryItems will be fetched by the isAdmin useEffect
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -577,6 +611,7 @@ const Events = ({ theme }) => {
       alert('Supabase is not configured. Check your environment variables.');
       return;
     }
+    setAddEventLoading(true);
     const event = {
       title: newEvent.title,
       date: newEvent.date,
@@ -611,6 +646,7 @@ const Events = ({ theme }) => {
     }
     setNewEvent(createEventDraft(theme));
     setShowAddEvent(false);
+    setAddEventLoading(false);
   };
 
   const openEditEventModal = (event) => {
@@ -657,6 +693,7 @@ const Events = ({ theme }) => {
     if (!editingEventId) {
       return;
     }
+    setEditEventLoading(true);
 
     const parsedMaxAttendees = Number(editEventData.maxAttendees);
     const safeMaxAttendees = Number.isFinite(parsedMaxAttendees) && parsedMaxAttendees > 0
@@ -695,6 +732,7 @@ const Events = ({ theme }) => {
       }
     }
 
+    setEditEventLoading(false);
     closeEditEventModal();
   };
 
@@ -774,6 +812,7 @@ const Events = ({ theme }) => {
       return;
     }
     setAttendeeContactError('');
+    setAttendConfirmLoading(true);
     // Add guest
     let guestId;
     const { data: existingGuests } = await supabase
@@ -829,10 +868,13 @@ const Events = ({ theme }) => {
       setUserAttendance(userSet);
     };
     await fetchAll();
+    setAttendConfirmLoading(false);
     closeAttendConfirm();
   };
 
   const handleAttendEvent = async (eventId) => {
+    setAttendActionLoading(prev => ({ ...prev, [eventId]: true }));
+    try {
     if (userAttendance.has(eventId)) {
       // Remove attendance
       await supabase
@@ -884,6 +926,9 @@ const Events = ({ theme }) => {
         await createTicketCheckout({ event });
       }
     }
+    } finally {
+      setAttendActionLoading(prev => ({ ...prev, [eventId]: false }));
+    }
   };
 
   const toggleGuestList = (eventId) => {
@@ -921,6 +966,7 @@ const Events = ({ theme }) => {
       return;
     }
     setExtraGuestContactError('');
+    setAddGuestLoading(true);
     // Check for duplicate
     const { data: existingGuests } = await supabase
       .from(EVENT_GUESTS_TABLE)
@@ -971,6 +1017,7 @@ const Events = ({ theme }) => {
       setUserAttendance(userSet);
     };
     await fetchAll();
+    setAddGuestLoading(false);
     setExtraGuestForm({ name: '', contact: '' });
     setShowAddGuestForm(false);
   };
@@ -1101,8 +1148,8 @@ const Events = ({ theme }) => {
                 required
               />
               <div className="modal-actions">
-                <button type="submit">Login</button>
-                <button type="button" onClick={() => setShowLogin(false)}>Cancel</button>
+                <button type="submit" disabled={loginLoading}>{loginLoading ? 'Logging in…' : 'Login'}</button>
+                <button type="button" onClick={() => setShowLogin(false)} disabled={loginLoading}>Cancel</button>
               </div>
             </form>
           </div>
@@ -1161,17 +1208,47 @@ const Events = ({ theme }) => {
                 <p style={{ margin: '0 0 6px', fontSize: '0.82rem', color: 'var(--muted-color)' }}>Poster Images (up to 4)</p>
                 {[0, 1, 2, 3].map((i) => (
                   <div key={i} style={{ marginBottom: i < 3 ? '10px' : 0 }}>
-                    <input
-                      type="url"
-                      placeholder={`Poster ${i + 1} URL${i === 0 ? ' (required for slideshow)' : ' (optional)'}`}
-                      value={newEvent.posters[i] || ''}
-                      onChange={(e) => {
-                        const updated = [...newEvent.posters];
-                        updated[i] = e.target.value;
-                        setNewEvent({ ...newEvent, posters: updated });
-                      }}
-                      style={{ marginBottom: '4px' }}
-                    />
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
+                      <input
+                        type="url"
+                        placeholder={`Poster ${i + 1} URL${i === 0 ? ' (required for slideshow)' : ' (optional)'}`}
+                        value={newEvent.posters[i] || ''}
+                        onChange={(e) => {
+                          const updated = [...newEvent.posters];
+                          updated[i] = e.target.value;
+                          setNewEvent({ ...newEvent, posters: updated });
+                        }}
+                        style={{ flex: 1, margin: 0 }}
+                      />
+                      <label style={{ cursor: posterUploading[i] ? 'wait' : 'pointer', whiteSpace: 'nowrap', fontSize: '0.8rem', padding: '0.35rem 0.7rem', borderRadius: '8px', border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--text-color)', userSelect: 'none' }}>
+                        {posterUploading[i] ? 'Uploading…' : 'Upload'}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          style={{ display: 'none' }}
+                          disabled={posterUploading[i]}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            e.target.value = '';
+                            const errs = [...posterUploadError]; errs[i] = null; setPosterUploadError(errs);
+                            const busy = [...posterUploading]; busy[i] = true; setPosterUploading(busy);
+                            try {
+                              const url = await uploadPosterImage(file, i);
+                              const updated = [...newEvent.posters]; updated[i] = url;
+                              setNewEvent(prev => ({ ...prev, posters: updated }));
+                            } catch (err) {
+                              const e2 = [...posterUploadError]; e2[i] = err.message; setPosterUploadError(e2);
+                            } finally {
+                              const done = [...posterUploading]; done[i] = false; setPosterUploading(done);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {posterUploadError[i] && (
+                      <p style={{ margin: '0 0 4px', fontSize: '0.78rem', color: 'var(--error-color, #e05)' }}>{posterUploadError[i]}</p>
+                    )}
                     {(newEvent.posters[i] || '').trim() && (
                       <select
                         value={newEvent.posterGalleryMap?.[i] || ''}
@@ -1210,8 +1287,8 @@ const Events = ({ theme }) => {
                 </label>
               </div>
               <div className="modal-actions">
-                <button type="submit">Add Event</button>
-                <button type="button" onClick={() => setShowAddEvent(false)}>Cancel</button>
+                <button type="submit" disabled={addEventLoading}>{addEventLoading ? 'Saving…' : 'Add Event'}</button>
+                <button type="button" onClick={() => setShowAddEvent(false)} disabled={addEventLoading}>Cancel</button>
               </div>
             </form>
           </div>
@@ -1270,17 +1347,47 @@ const Events = ({ theme }) => {
                 <p style={{ margin: '0 0 6px', fontSize: '0.82rem', color: 'var(--muted-color)' }}>Poster Images (up to 4)</p>
                 {[0, 1, 2, 3].map((i) => (
                   <div key={i} style={{ marginBottom: i < 3 ? '10px' : 0 }}>
-                    <input
-                      type="url"
-                      placeholder={`Poster ${i + 1} URL${i === 0 ? ' (required for slideshow)' : ' (optional)'}`}
-                      value={(editEventData.posters || ['', '', '', ''])[i] || ''}
-                      onChange={(e) => {
-                        const updated = [...(editEventData.posters || ['', '', '', ''])];
-                        updated[i] = e.target.value;
-                        setEditEventData({ ...editEventData, posters: updated });
-                      }}
-                      style={{ marginBottom: '4px' }}
-                    />
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
+                      <input
+                        type="url"
+                        placeholder={`Poster ${i + 1} URL${i === 0 ? ' (required for slideshow)' : ' (optional)'}`}
+                        value={(editEventData.posters || ['', '', '', ''])[i] || ''}
+                        onChange={(e) => {
+                          const updated = [...(editEventData.posters || ['', '', '', ''])];
+                          updated[i] = e.target.value;
+                          setEditEventData({ ...editEventData, posters: updated });
+                        }}
+                        style={{ flex: 1, margin: 0 }}
+                      />
+                      <label style={{ cursor: posterUploading[i] ? 'wait' : 'pointer', whiteSpace: 'nowrap', fontSize: '0.8rem', padding: '0.35rem 0.7rem', borderRadius: '8px', border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--text-color)', userSelect: 'none' }}>
+                        {posterUploading[i] ? 'Uploading…' : 'Upload'}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          style={{ display: 'none' }}
+                          disabled={posterUploading[i]}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            e.target.value = '';
+                            const errs = [...posterUploadError]; errs[i] = null; setPosterUploadError(errs);
+                            const busy = [...posterUploading]; busy[i] = true; setPosterUploading(busy);
+                            try {
+                              const url = await uploadPosterImage(file, i);
+                              const updated = [...(editEventData.posters || ['', '', '', ''])]; updated[i] = url;
+                              setEditEventData(prev => ({ ...prev, posters: updated }));
+                            } catch (err) {
+                              const e2 = [...posterUploadError]; e2[i] = err.message; setPosterUploadError(e2);
+                            } finally {
+                              const done = [...posterUploading]; done[i] = false; setPosterUploading(done);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {posterUploadError[i] && (
+                      <p style={{ margin: '0 0 4px', fontSize: '0.78rem', color: 'var(--error-color, #e05)' }}>{posterUploadError[i]}</p>
+                    )}
                     {((editEventData.posters || [])[i] || '').trim() && (
                       <select
                         value={(editEventData.posterGalleryMap || [null, null, null, null])[i] || ''}
@@ -1319,8 +1426,8 @@ const Events = ({ theme }) => {
                 </label>
               </div>
               <div className="modal-actions">
-                <button type="submit">Save Changes</button>
-                <button type="button" onClick={closeEditEventModal}>Cancel</button>
+                <button type="submit" disabled={editEventLoading}>{editEventLoading ? 'Saving…' : 'Save Changes'}</button>
+                <button type="button" onClick={closeEditEventModal} disabled={editEventLoading}>Cancel</button>
               </div>
             </form>
           </div>
@@ -1357,8 +1464,8 @@ const Events = ({ theme }) => {
               />
               {attendeeContactError && <p className="form-error">{attendeeContactError}</p>}
               <div className="modal-actions">
-                <button type="submit">Confirm</button>
-                <button type="button" onClick={closeAttendConfirm}>Cancel</button>
+                <button type="submit" disabled={attendConfirmLoading}>{attendConfirmLoading ? 'Confirming…' : 'Confirm'}</button>
+                <button type="button" onClick={closeAttendConfirm} disabled={attendConfirmLoading}>Cancel</button>
               </div>
             </form>
           </div>
@@ -1427,9 +1534,10 @@ const Events = ({ theme }) => {
                 />
                 {extraGuestContactError && <p className="form-error">{extraGuestContactError}</p>}
                 <div className="modal-actions add-guest-actions">
-                  <button type="submit">Save Guest</button>
+                  <button type="submit" disabled={addGuestLoading}>{addGuestLoading ? 'Saving…' : 'Save Guest'}</button>
                   <button
                     type="button"
+                    disabled={addGuestLoading}
                     onClick={() => {
                       setShowAddGuestForm(false);
                       setExtraGuestContactError('');
@@ -1452,7 +1560,12 @@ const Events = ({ theme }) => {
 
       {/* Events Grid */}
       <div className="events-grid">
-        {visibleEvents.length === 0 ? (
+        {loadingEvents ? (
+          <div className="card events-empty-state">
+            <p className="section-kicker">Loading</p>
+            <h3>Fetching events…</h3>
+          </div>
+        ) : visibleEvents.length === 0 ? (
           <div className="card events-empty-state">
             <p className="section-kicker">Nothing Unsealed</p>
             <h3>{phaseTitle}</h3>
@@ -1553,7 +1666,7 @@ const Events = ({ theme }) => {
                 )}
                 <button 
                   className={`attend-btn ${userAttendance.has(event.id) ? 'attending' : ''}`}
-                  disabled={checkoutLoading || (!userAttendance.has(event.id) && event.attendees >= event.maxAttendees)}
+                  disabled={checkoutLoading || attendActionLoading[event.id] || (!userAttendance.has(event.id) && event.attendees >= event.maxAttendees)}
                   onClick={async () => {
                     setCheckoutError('');
                     if (event.ticketed && !userAttendance.has(event.id)) {
@@ -1572,13 +1685,15 @@ const Events = ({ theme }) => {
                 >
                   {checkoutLoading
                     ? 'Opening checkout…'
-                    : userAttendance.has(event.id)
-                      ? 'Release Invitation'
-                      : event.attendees >= event.maxAttendees
-                        ? 'Sealed Full'
-                        : event.ticketed === false
-                          ? 'Attend Free'
-                          : 'Buy Ticket'}
+                    : attendActionLoading[event.id]
+                      ? 'Please wait…'
+                      : userAttendance.has(event.id)
+                        ? 'Release Invitation'
+                        : event.attendees >= event.maxAttendees
+                          ? 'Sealed Full'
+                          : event.ticketed === false
+                            ? 'Attend Free'
+                            : 'Buy Ticket'}
                 </button>
                 {checkoutError && (
                   <p style={{ color: '#e55', fontSize: '0.8rem', marginTop: '0.35rem' }}>{checkoutError}</p>
