@@ -222,11 +222,11 @@ const PosterSlideshow = ({ images }) => {
   const next = (e) => { e.stopPropagation(); setIdx((i) => (i + 1) % valid.length); };
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '0', lineHeight: 0 }}>
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '0', lineHeight: 0, width: '100%', height: '100%' }}>
       <img
         src={valid[idx]}
         alt={`Poster ${idx + 1}`}
-        style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block', transition: 'opacity 0.3s' }}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'opacity 0.3s' }}
       />
       {valid.length > 1 && (
         <>
