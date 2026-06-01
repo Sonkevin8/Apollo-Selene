@@ -38,10 +38,11 @@ const STATIC_ARTWORKS = [
   },
 ];
 
-const defaultUploadForm = { title: '', artist: '', description: '', medium: '', year: '', story: '' };
+const defaultUploadForm = { title: '', artist: '', description: '', medium: '', year: '', story: '', price: '' };
 
 export default function Artwork() {
   const isAdmin = window.localStorage.getItem('apollo-admin') === 'true';
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const [artworks, setArtworks] = useState(STATIC_ARTWORKS);
   const [selectedArtwork, setSelectedArtwork] = useState(null);
@@ -59,6 +60,9 @@ export default function Artwork() {
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
+    supabase.auth.getSession().then(({ data }) => {
+      setCurrentUserId(data?.session?.user?.id ?? null);
+    });
     supabase
       .from(GALLERY_TABLE)
       .select('*')
@@ -103,6 +107,8 @@ export default function Artwork() {
         year: uploadForm.year.trim(),
         story: uploadForm.story.trim(),
         image_url: publicUrl,
+        user_id: currentUserId ?? null,
+        price: uploadForm.price ? parseFloat(uploadForm.price) : null,
       })
       .select()
       .single();
@@ -190,6 +196,7 @@ export default function Artwork() {
                 <input placeholder="Year" value={uploadForm.year} onChange={(e) => setUploadForm((f) => ({ ...f, year: e.target.value }))} />
                 <textarea placeholder="Description" value={uploadForm.description} onChange={(e) => setUploadForm((f) => ({ ...f, description: e.target.value }))} />
                 <textarea placeholder="Story behind the art" value={uploadForm.story} onChange={(e) => setUploadForm((f) => ({ ...f, story: e.target.value }))} />
+                <input type="number" min="0" step="0.01" placeholder="Price (NZD) — leave blank if not for sale" value={uploadForm.price} onChange={(e) => setUploadForm((f) => ({ ...f, price: e.target.value }))} />
               </div>
               <button
                 type="button"

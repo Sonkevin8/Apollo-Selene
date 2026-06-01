@@ -626,7 +626,7 @@ function Earth() {
     }
 
     detailStateRef.current.terrainVisible = shouldShowTerrain;
-    globe.pointsData(getHotspotAndTerrainPoints(shouldShowTerrain));
+    globe.pointsData([]);
   };
 
   const updateMapSystemMode = (globe, force = false) => {
@@ -731,7 +731,7 @@ function Earth() {
       .showAtmosphere(true)
       .atmosphereColor('#8fe1ff')
       .atmosphereAltitude(0.34)
-      .pointsData(getHotspotAndTerrainPoints(false))
+      .pointsData([])
       .pointLat('lat')
       .pointLng('lng')
       .pointAltitude((point) => point.altitude ?? point.size)
@@ -1133,14 +1133,8 @@ function Earth() {
         </div>
 
         <div className="earth-phaser-section">
-          <h3 className="earth-phaser-title">Mixtape Delivery Map</h3>
-          <MapPhaser
-            userLocation={mapFocus}
-            mixtapePegs={[
-              ...nearbyHubPoints.map(hub => ({ lat: hub.lat, lng: hub.lng })),
-              ...nearbyCouriers.map(courier => ({ lat: courier.lat, lng: courier.lng }))
-            ]}
-          />
+          <h3 className="earth-phaser-title">Auckland Community Map</h3>
+          <MapPhaser />
         </div>
       </section>
     </div>

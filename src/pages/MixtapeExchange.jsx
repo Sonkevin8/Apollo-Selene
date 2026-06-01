@@ -86,6 +86,8 @@ const MixtapeExchange = ({ globeComponent }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadPrice, setUploadPrice] = useState('');
   const [uploadStatus, setUploadStatus] = useState('');
   const [uploading, setUploading] = useState(false);
 
@@ -436,8 +438,18 @@ const MixtapeExchange = ({ globeComponent }) => {
     if (error) {
       setUploadStatus(`Upload failed: ${error.message}`);
     } else {
+      // Save record to mixtape_uploads table
+      const { data: { publicUrl } } = supabase.storage.from('mixtapes').getPublicUrl(path);
+      await supabase.from('mixtape_uploads').insert({
+        user_id: session.user.id,
+        title: uploadTitle.trim() || uploadFile.name,
+        file_url: publicUrl,
+        price: uploadPrice ? parseFloat(uploadPrice) : null,
+      });
       setUploadStatus('Uploaded successfully!');
       setUploadFile(null);
+      setUploadTitle('');
+      setUploadPrice('');
     }
   };
 
@@ -817,6 +829,22 @@ const MixtapeExchange = ({ globeComponent }) => {
                 onChange={(e) => { setUploadFile(e.target.files[0] || null); setUploadStatus(''); }}
               />
             </label>
+            <input
+              type="text"
+              placeholder="Mixtape title"
+              value={uploadTitle}
+              onChange={(e) => setUploadTitle(e.target.value)}
+              style={{ marginTop: '0.5rem' }}
+            />
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Price (NZD) — leave blank if free"
+              value={uploadPrice}
+              onChange={(e) => setUploadPrice(e.target.value)}
+              style={{ marginTop: '0.5rem' }}
+            />
             <button
               type="button"
               className="button-link primary-link"
