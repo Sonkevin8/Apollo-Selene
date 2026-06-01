@@ -56,6 +56,8 @@ export default function Artwork() {
 
   // Edit state
   const [editingCard, setEditingCard] = useState(null);
+  const [editFile, setEditFile] = useState(null);
+  const [editUploading, setEditUploading] = useState(false);
   const [editStatus, setEditStatus] = useState('');
 
   useEffect(() => {
@@ -129,21 +131,51 @@ export default function Artwork() {
   const handleEditSave = async () => {
     if (!editingCard) return;
     const { id, title, artist, description, medium, year, story } = editingCard;
+    let newImageUrl = editingCard.image_url;
+
+    if (editFile) {
+      const ext = editFile.name.split('.').pop().toLowerCase();
+      if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+        setEditStatus('Only JPG, PNG, WEBP, or GIF images are allowed.');
+        return;
+      }
+      if (editFile.size > MAX_IMAGE_BYTES) {
+        setEditStatus('File is too large. Maximum size is 10 MB.');
+        return;
+      }
+      setEditUploading(true);
+      const safeName = editFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${Date.now()}-${safeName}`;
+      const { error: storageError } = await supabase.storage
+        .from(GALLERY_BUCKET)
+        .upload(path, editFile, { upsert: false });
+      if (storageError) {
+        setEditStatus(`Image upload failed: ${storageError.message}`);
+        setEditUploading(false);
+        return;
+      }
+      const { data: { publicUrl } } = supabase.storage.from(GALLERY_BUCKET).getPublicUrl(path);
+      newImageUrl = publicUrl;
+      setEditUploading(false);
+    }
+
     if (!isUuid(id) || !supabase) {
       // Static placeholder artwork — update local state only
-      setArtworks((prev) => prev.map((a) => (a.id === id ? { ...a, title, artist, description, medium, year, story } : a)));
+      setArtworks((prev) => prev.map((a) => (a.id === id ? { ...a, title, artist, description, medium, year, story, image_url: newImageUrl } : a)));
       setEditingCard(null);
+      setEditFile(null);
       return;
     }
     const { data: updated, error } = await supabase
       .from(GALLERY_TABLE)
-      .update({ title, artist, description, medium, year, story })
+      .update({ title, artist, description, medium, year, story, image_url: newImageUrl })
       .eq('id', id)
       .select()
       .single();
     if (error) { setEditStatus(`Save failed: ${error.message}`); return; }
     setArtworks((prev) => prev.map((a) => (a.id === id ? updated : a)));
     setEditingCard(null);
+    setEditFile(null);
     setEditStatus('');
   };
 
@@ -283,8 +315,24 @@ export default function Artwork() {
       {editingCard && (
         <div className="modal-overlay" onClick={() => setEditingCard(null)}>
           <div className="modal artwork-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setEditingCard(null)}>Ã—</button>
+            <button className="close-btn" onClick={() => { setEditingCard(null); setEditFile(null); setEditStatus(''); }}>Ã—</button>
             <h2 style={{ marginTop: 0 }}>Edit Card</h2>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <img
+                src={editFile ? URL.createObjectURL(editFile) : (editingCard.image_url || editingCard.image)}
+                alt={editingCard.title}
+                style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px' }}
+              />
+              <label className="gallery-upload-file-label" style={{ display: 'block', marginTop: '0.5rem', cursor: 'pointer' }}>
+                {editFile ? editFile.name : 'Replace image (JPG, PNG, WEBP, GIF — max 10 MB)'}
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
+                  className="gallery-upload-file-input"
+                  onChange={(e) => { setEditFile(e.target.files[0] || null); setEditStatus(''); }}
+                />
+              </label>
+            </div>
             <div className="gallery-upload-fields">
               <input placeholder="Title" value={editingCard.title} onChange={(e) => setEditingCard((c) => ({ ...c, title: e.target.value }))} />
               <input placeholder="Artist" value={editingCard.artist} onChange={(e) => setEditingCard((c) => ({ ...c, artist: e.target.value }))} />
@@ -294,8 +342,10 @@ export default function Artwork() {
               <textarea placeholder="Story" value={editingCard.story} onChange={(e) => setEditingCard((c) => ({ ...c, story: e.target.value }))} />
             </div>
             <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.75rem' }}>
-              <button type="button" className="button-link primary-link" onClick={handleEditSave}>Save</button>
-              <button type="button" className="button-link secondary-link" onClick={() => setEditingCard(null)}>Cancel</button>
+              <button type="button" className="button-link primary-link" onClick={handleEditSave} disabled={editUploading}>
+                {editUploading ? 'Uploading…' : 'Save'}
+              </button>
+              <button type="button" className="button-link secondary-link" onClick={() => { setEditingCard(null); setEditFile(null); setEditStatus(''); }}>Cancel</button>
             </div>
             {editStatus && <p className="gallery-status">{editStatus}</p>}
           </div>

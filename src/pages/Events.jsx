@@ -1573,17 +1573,21 @@ const Events = ({ theme }) => {
           </div>
         ) : visibleEvents.map(event => (
           <div key={event.id} className="event-card">
-            {resolvePosters(event).length > 0 && (
-              <div className="event-poster">
-                <PosterSlideshow images={resolvePosters(event)} />
-              </div>
-            )}
             <div className="event-content">
-              <div className="event-card-meta">
-                <p className="event-whisper">Sealed announcement</p>
-                <span className="event-seal">
-                  {event.phase === EVENT_PHASES.apollo ? 'Day Invitation' : 'Night Invitation'}
-                </span>
+              <div className="event-card-meta" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <p className="event-whisper">Sealed announcement</p>
+                  <span className="event-seal">
+                    {event.phase === EVENT_PHASES.apollo ? 'Day Invitation' : 'Night Invitation'}
+                  </span>
+                </div>
+                {resolvePosters(event).length > 0 && (
+                  <img
+                    src={resolvePosters(event)[0]}
+                    alt=""
+                    style={{ width: 48, height: 48, borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+                  />
+                )}
               </div>
               <h3>{event.title}</h3>
               {event.updatedAt && (
