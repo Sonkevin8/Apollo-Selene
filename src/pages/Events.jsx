@@ -355,7 +355,11 @@ const Events = ({ theme }) => {
     const { data, error } = await supabase.functions.invoke('verify-admin', {
       body: { username: loginData.username, password: loginData.password },
     });
-    if (error || !data?.success) {
+    if (error) {
+      alert(`Login error: ${error.message || JSON.stringify(error)}`);
+      return;
+    }
+    if (!data?.success) {
       alert('Invalid credentials.');
       return;
     }

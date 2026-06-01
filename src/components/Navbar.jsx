@@ -14,7 +14,7 @@ const navigationItems = [
   { to: '/ember-room', label: 'Ember Room' },
 ];
 
-const Navbar = ({ theme, onToggleTheme }) => {
+const Navbar = ({ theme, onToggleTheme, session }) => {
   return (
     <nav className="navbar">
       <div className="navbar-brand-block">
@@ -50,7 +50,9 @@ const Navbar = ({ theme, onToggleTheme }) => {
                         <MobileScrollGuide theme={theme} compact />
                       </span>
                     ) : null}
-                    <span className="navbar-link-label">{label}</span>
+                    <span className="navbar-link-label">
+                      {to === '/account' ? (session ? 'Account' : 'Login / Sign Up') : label}
+                    </span>
                   </span>
                 )}
               </NavLink>

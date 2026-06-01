@@ -65,6 +65,7 @@ const Account = () => {
   const [profileForm, setProfileForm] = useState(defaultProfileForm);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [authDebug, setAuthDebug] = useState(() =>
     readAuthDebugSnapshot({ session: null, eventLabel: 'init' })
   );
@@ -268,19 +269,39 @@ const Account = () => {
             </div>
             <div className="account-field">
               <label htmlFor="account-password">Password</label>
-              <input
-                id="account-password"
-                type="password"
-                value={authForm.password}
-                onChange={(event) =>
-                  setAuthForm((prev) => ({
-                    ...prev,
-                    password: event.target.value,
-                  }))
-                }
-                required
-                minLength={8}
-              />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  id="account-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={authForm.password}
+                  onChange={(event) =>
+                    setAuthForm((prev) => ({
+                      ...prev,
+                      password: event.target.value,
+                    }))
+                  }
+                  required
+                  minLength={8}
+                  style={{ flex: 1, paddingRight: '3rem' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '0.5rem',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    padding: '0.25rem',
+                    lineHeight: 1,
+                  }}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
             {authMode === 'signup' ? (
               <div className="account-field">

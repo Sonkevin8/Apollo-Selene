@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import { getCurrentSession, onAuthStateChange } from './lib/mixtapeExchange';
 import Home from './pages/Home';
 import Events from './pages/Events';
 import Experiences from './pages/Experiences';
@@ -24,6 +25,14 @@ const App = () => {
     return window.localStorage.getItem(THEME_STORAGE_KEY) || 'apollo';
   });
 
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    getCurrentSession().then(setSession).catch(() => {});
+    const { data: authSub } = onAuthStateChange((_, nextSession) => setSession(nextSession));
+    return () => authSub.subscription.unsubscribe();
+  }, []);
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.style.colorScheme = theme === 'apollo' ? 'light' : 'dark';
@@ -40,7 +49,7 @@ const App = () => {
       <Router>
         <div className="layout-container">
           <aside className="Navbar">
-            <Navbar theme={theme} onToggleTheme={toggleTheme} />
+            <Navbar theme={theme} onToggleTheme={toggleTheme} session={session} />
           </aside>
           <main className="content-container">
             <Suspense fallback={<div className="card">Loading Earth Explorer...</div>}>
