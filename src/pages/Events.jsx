@@ -1358,7 +1358,7 @@ const Events = ({ theme }) => {
                   <p style={{ color: '#e55', fontSize: '0.8rem', marginTop: '0.35rem' }}>{checkoutError}</p>
                 )}
                 {/* Voucher redemption */}
-                {event.ticketed && !userAttendance.has(event.id) && event.attendees < event.maxAttendees && (
+                {event.ticketed !== false && !userAttendance.has(event.id) && event.attendees < event.maxAttendees && (
                   <div style={{ marginTop: '0.5rem' }}>
                     {!voucherOpen[event.id] ? (
                       <button
