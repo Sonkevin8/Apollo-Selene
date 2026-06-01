@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import MobileScrollGuide from './MobileScrollGuide';
+import { supabase } from '../lib/supabaseClient';
 import '../styles/Navbar.css';
 
 const navigationItems = [
@@ -22,8 +23,21 @@ const getInitial = (session, isAdmin) => {
 
 const Navbar = ({ theme, onToggleTheme, session }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
   const isAdmin = window.localStorage.getItem('apollo-admin') === 'true';
   const initial = getInitial(session, isAdmin);
+
+  const handleLogout = async () => {
+    if (isAdmin) {
+      window.localStorage.removeItem('apollo-admin');
+      setMenuOpen(false);
+      window.location.reload();
+      return;
+    }
+    await supabase.auth.signOut();
+    setMenuOpen(false);
+    navigate('/');
+  };
 
   return (
     <nav className={`navbar${menuOpen ? ' navbar-open' : ''}`}>
@@ -31,13 +45,18 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
       <div className="navbar-mobile-header">
         <span className="navbar-mobile-brand">Apollo Selene</span>
         <div className="navbar-mobile-actions">
-          <NavLink to="/account" className="navbar-mobile-login" onClick={() => setMenuOpen(false)}>
-            {initial ? (
-              <span className={`navbar-avatar${isAdmin ? ' navbar-avatar--admin' : ''}`}>{initial}</span>
-            ) : (
-              'Login / Sign Up'
-            )}
-          </NavLink>
+          {initial ? (
+            <div className="navbar-mobile-user">
+              <NavLink to="/account" className="navbar-mobile-login" onClick={() => setMenuOpen(false)}>
+                <span className={`navbar-avatar${isAdmin ? ' navbar-avatar--admin' : ''}`}>{initial}</span>
+              </NavLink>
+              <button type="button" className="navbar-logout-btn" onClick={handleLogout}>Logout</button>
+            </div>
+          ) : (
+            <NavLink to="/account" className="navbar-mobile-login" onClick={() => setMenuOpen(false)}>
+              Login / Sign Up
+            </NavLink>
+          )}
           <button
             type="button"
             className="hamburger-btn"
@@ -59,10 +78,13 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
           A welcoming place to pause, check the next event, and ease into community.
         </p>
         {initial && (
-          <NavLink to="/account" className="navbar-avatar-row">
-            <span className={`navbar-avatar${isAdmin ? ' navbar-avatar--admin' : ''}`}>{initial}</span>
-            <span className="navbar-avatar-label">{isAdmin ? 'Admin' : session?.user?.email}</span>
-          </NavLink>
+          <>
+            <NavLink to="/account" className="navbar-avatar-row">
+              <span className={`navbar-avatar${isAdmin ? ' navbar-avatar--admin' : ''}`}>{initial}</span>
+              <span className="navbar-avatar-label">{isAdmin ? 'Admin' : session?.user?.email}</span>
+            </NavLink>
+            <button type="button" className="navbar-logout-btn" onClick={handleLogout}>Logout</button>
+          </>
         )}
         <button type="button" className="theme-toggle" onClick={onToggleTheme}>
           {theme === 'apollo' ? 'Switch to Selene Mode' : 'Switch to Apollo Mode'}
