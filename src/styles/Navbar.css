@@ -129,6 +129,11 @@
   transform: translateY(-1px);
 }
 
+/* Desktop: hide the mobile mode switcher */
+.navbar-mode-switcher {
+  display: none;
+}
+
 .navbar-menu {
   display: flex;
   flex-direction: column;
@@ -429,6 +434,42 @@
 
   .navbar-link-guide--selene {
     color: #c8d7f4;
+  }
+
+  /* Mode switcher — visible in open mobile menu */
+  .navbar-mode-switcher {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem 0 0.25rem;
+  }
+
+  .navbar-mode-btn {
+    flex: 1;
+    background: var(--button-secondary-bg);
+    color: var(--muted-color);
+    border: 1px solid var(--border-color-strong);
+    border-radius: 20px;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  .navbar-mode-btn--active {
+    background: var(--button-bg);
+    color: var(--button-text);
+    border-color: transparent;
+  }
+
+  .navbar-mode-btn:not(.navbar-mode-btn--active):hover {
+    border-color: var(--accent-strong);
+    color: var(--accent-strong);
+  }
+
+  /* Hide mode switcher when menu is closed */
+  .navbar:not(.navbar-open) .navbar-mode-switcher {
+    display: none;
   }
 }
 

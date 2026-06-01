@@ -309,7 +309,6 @@ export default function Artwork() {
   );
 }
 
-  const [artworks] = useState([
     {
       id: 1,
       title: 'Quiet Orbit',
