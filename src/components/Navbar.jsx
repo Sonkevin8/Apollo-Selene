@@ -43,7 +43,22 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
     <nav className={`navbar${menuOpen ? ' navbar-open' : ''}`}>
       {/* Mobile-only top bar */}
       <div className="navbar-mobile-header">
-        <span className="navbar-mobile-brand">Apollo Selene</span>
+        <div className="navbar-mobile-mode-switcher">
+          <button
+            type="button"
+            className={`navbar-mode-btn${theme === 'apollo' ? ' navbar-mode-btn--active' : ''}`}
+            onClick={() => theme !== 'apollo' && onToggleTheme()}
+          >
+            ☀ Apollo
+          </button>
+          <button
+            type="button"
+            className={`navbar-mode-btn${theme === 'selene' ? ' navbar-mode-btn--active' : ''}`}
+            onClick={() => theme !== 'selene' && onToggleTheme()}
+          >
+            ☽ Selene
+          </button>
+        </div>
         <div className="navbar-mobile-actions">
           {initial ? (
             <div className="navbar-mobile-user">

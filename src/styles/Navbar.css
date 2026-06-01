@@ -436,11 +436,15 @@
     color: #c8d7f4;
   }
 
-  /* Mode switcher — visible in open mobile menu */
+  /* Mode switcher — now lives in mobile header, hide the menu-bottom one */
   .navbar-mode-switcher {
+    display: none !important;
+  }
+
+  /* Wrapper for the header mode buttons */
+  .navbar-mobile-mode-switcher {
     display: flex;
-    gap: 0.5rem;
-    padding: 0.5rem 0 0.25rem;
+    gap: 0.4rem;
   }
 
   .navbar-mode-btn {
@@ -467,10 +471,6 @@
     color: var(--accent-strong);
   }
 
-  /* Hide mode switcher when menu is closed */
-  .navbar:not(.navbar-open) .navbar-mode-switcher {
-    display: none;
-  }
 }
 
 @media (max-width: 375px) {
