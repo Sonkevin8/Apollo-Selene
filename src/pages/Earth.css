@@ -215,6 +215,28 @@
   color: var(--muted-color);
 }
 
+.earth-phaser-section {
+  margin-top: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: #0a1e3c;
+  overflow: hidden;
+}
+
+.earth-phaser-title {
+  margin: 0;
+  padding: 0.75rem 1rem 0.5rem;
+  font-size: 0.95rem;
+  color: var(--heading-color);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.earth-phaser-section > div {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 .delivery-list {
   display: grid;
   gap: 0.65rem;

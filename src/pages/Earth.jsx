@@ -1142,55 +1142,19 @@ function Earth() {
 
         {/* Removed region jump actions, only globe and map system remain */}
 
-        {!mapSystemActive ? (
-          <section className="delivery-panel" aria-label="Live delivery status">
-            <h3>Live Stork Dispatch Board</h3>
-            <p>Airport-to-airport flight arcs with separate first/last-mile vehicle time estimates.</p>
-            <div className="delivery-list">
-              {liveDeliveries.map((delivery) => (
-                <article key={delivery.id} className="delivery-item">
-                  <div className="delivery-headline">
-                    <strong>{delivery.senderAirportCode || delivery.sender}</strong>
-                    <span>to</span>
-                    <strong>{delivery.receiverAirportCode || delivery.receiver}</strong>
-                  </div>
-                  <div className="delivery-meta">
-                    <span>{delivery.status}</span>
-                    <span>{delivery.progress}%</span>
-                  </div>
-                  <div className="delivery-meta">
-                    <span>Flight: {delivery.flightDurationMinutes || 0} min</span>
-                    <span>Vehicle: {delivery.totalVehicleMinutes || 0} min</span>
-                  </div>
-                  <div className="delivery-meta">
-                    <span>{delivery.senderAddress || 'Sender address not set'}</span>
-                    <span>{delivery.receiverAddress || 'Receiver address not set'}</span>
-                  </div>
-                  <div className="delivery-progress-track" aria-hidden="true">
-                    <span className="delivery-progress-fill" style={{ width: `${delivery.progress}%` }} />
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
+        <div className="earth-globe-wrap">
+          <div className="earth-globe" ref={globeContainerRef} aria-label="3D Earth globe simulation" />
+        </div>
 
-        <div className={`earth-globe-wrap ${mapSystemActive ? 'earth-globe-wrap--map-mode' : ''}`}>
-          {mapSystemActive ? (
-            <>
-              {/* Pause globe animation when map is active */}
-              {globeRef.current && globeRef.current.pauseAnimation && globeRef.current.pauseAnimation()}
-              <MapPhaser
-                userLocation={mapFocus}
-                mixtapePegs={[
-                  ...nearbyHubPoints.map(hub => ({ lat: hub.lat, lng: hub.lng })),
-                  ...nearbyCouriers.map(courier => ({ lat: courier.lat, lng: courier.lng }))
-                ]}
-              />
-            </>
-          ) : (
-            <div className="earth-globe" ref={globeContainerRef} aria-label="3D Earth globe simulation" />
-          )}
+        <div className="earth-phaser-section">
+          <h3 className="earth-phaser-title">Mixtape Delivery Map</h3>
+          <MapPhaser
+            userLocation={mapFocus}
+            mixtapePegs={[
+              ...nearbyHubPoints.map(hub => ({ lat: hub.lat, lng: hub.lng })),
+              ...nearbyCouriers.map(courier => ({ lat: courier.lat, lng: courier.lng }))
+            ]}
+          />
         </div>
       </section>
     </div>
