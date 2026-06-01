@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import LocationCapture from '../components/LocationCapture';
-import { isSupabaseConfigured, SUPABASE_AUTH_STORAGE_KEY } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured, SUPABASE_AUTH_STORAGE_KEY } from '../lib/supabaseClient';
 import {
   fetchMyProfile,
   getCurrentSession,
@@ -16,6 +16,11 @@ const defaultAuthForm = {
   email: '',
   password: '',
   displayName: '',
+};
+
+const defaultAdminForm = {
+  username: '',
+  password: '',
 };
 
 const defaultProfileForm = {
@@ -66,6 +71,8 @@ const Account = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [adminForm, setAdminForm] = useState(defaultAdminForm);
+  const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
   const [authDebug, setAuthDebug] = useState(() =>
     readAuthDebugSnapshot({ session: null, eventLabel: 'init' })
   );
@@ -168,6 +175,35 @@ const Account = () => {
     }
   };
 
+  const handleAdminLogin = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-admin', {
+        body: { username: adminForm.username, password: adminForm.password },
+      });
+      if (error || !data?.success) {
+        setMessage('Invalid admin credentials.');
+      } else {
+        window.localStorage.setItem('apollo-admin', 'true');
+        setIsAdmin(true);
+        setMessage('Admin access granted.');
+        setAdminForm(defaultAdminForm);
+      }
+    } catch {
+      setMessage('Could not reach admin verification service.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    window.localStorage.removeItem('apollo-admin');
+    setMessage('');
+  };
+
   const handleProfileSave = async (event) => {
     event.preventDefault();
     if (!session?.user?.id) {
@@ -254,8 +290,67 @@ const Account = () => {
             >
               Sign Up
             </button>
+            <button
+              type="button"
+              className={`button-link secondary-link ${authMode === 'admin' ? 'is-active' : ''}`}
+              onClick={() => setAuthMode('admin')}
+            >
+              Admin
+            </button>
           </div>
 
+          {authMode === 'admin' ? (
+            isAdmin ? (
+              <div className="account-form-grid">
+                <p style={{ gridColumn: '1 / -1' }}>Admin access is active.</p>
+                <div className="account-actions" style={{ gridColumn: '1 / -1' }}>
+                  <button type="button" className="button-link secondary-link" onClick={handleAdminLogout}>
+                    Revoke Admin Access
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleAdminLogin} className="account-form-grid">
+                <div className="account-field">
+                  <label htmlFor="admin-username">Username</label>
+                  <input
+                    id="admin-username"
+                    type="text"
+                    value={adminForm.username}
+                    onChange={(e) => setAdminForm((prev) => ({ ...prev, username: e.target.value }))}
+                    required
+                    autoComplete="username"
+                  />
+                </div>
+                <div className="account-field">
+                  <label htmlFor="admin-password">Password</label>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      id="admin-password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={adminForm.password}
+                      onChange={(e) => setAdminForm((prev) => ({ ...prev, password: e.target.value }))}
+                      required
+                      style={{ flex: 1, paddingRight: '3rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      style={{ position: 'absolute', right: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0.25rem', lineHeight: 1 }}
+                    >
+                      {showPassword ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                </div>
+                <div className="account-actions" style={{ gridColumn: '1 / -1' }}>
+                  <button type="submit" className="button-link primary-link" disabled={loading}>
+                    {loading ? 'Verifying…' : 'Login as Admin'}
+                  </button>
+                </div>
+              </form>
+            )
+          ) : (
           <form onSubmit={handleAuthSubmit} className="account-form-grid">
             <div className="account-field">
               <label htmlFor="account-email">Email</label>
@@ -326,6 +421,7 @@ const Account = () => {
               </button>
             </div>
           </form>
+          )}
 
           {message ? <p className="account-message">{message}</p> : null}
         </section>

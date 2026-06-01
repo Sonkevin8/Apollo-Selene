@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import MobileScrollGuide from './MobileScrollGuide';
 import '../styles/Navbar.css';
@@ -15,8 +15,29 @@ const navigationItems = [
 ];
 
 const Navbar = ({ theme, onToggleTheme, session }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <nav className="navbar">
+    <nav className={`navbar${menuOpen ? ' navbar-open' : ''}`}>
+      {/* Mobile-only top bar */}
+      <div className="navbar-mobile-header">
+        <span className="navbar-mobile-brand">Apollo Selene</span>
+        <div className="navbar-mobile-actions">
+          <NavLink to="/account" className="navbar-mobile-login" onClick={() => setMenuOpen(false)}>
+            {session ? 'Account' : 'Login / Sign Up'}
+          </NavLink>
+          <button
+            type="button"
+            className="hamburger-btn"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <span className="hamburger-line" />
+            <span className="hamburger-line" />
+            <span className="hamburger-line" />
+          </button>
+        </div>
+      </div>
       <div className="navbar-brand-block">
         <p className="navbar-kicker">
           Apollo Selene <span className="name-secret">secrets</span>
@@ -39,7 +60,7 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
                 </span>
               </span>
             ) : (
-              <NavLink to={to} className={({ isActive }) => (isActive ? 'active' : '')}>
+              <NavLink to={to} className={({ isActive }) => (isActive ? 'active' : '')} onClick={() => setMenuOpen(false)}>
                 {({ isActive }) => (
                   <span className="navbar-link-inner">
                     {isActive ? (
