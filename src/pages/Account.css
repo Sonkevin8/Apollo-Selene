@@ -123,6 +123,36 @@
   resize: vertical;
 }
 
+.location-capture {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+}
+
+.location-capture-btn {
+  background: none;
+  border: 1px solid var(--border-color-strong);
+  border-radius: 20px;
+  color: var(--muted-color);
+  font-size: 0.68rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.location-capture-btn:hover {
+  background: rgba(100,180,255,0.1);
+  color: var(--text-color);
+}
+
+.location-capture-status {
+  font-size: 0.68rem;
+  color: var(--muted-color);
+  margin: 0;
+}
+
 .account-actions {
   display: flex;
   flex-wrap: wrap;

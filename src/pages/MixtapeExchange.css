@@ -108,3 +108,58 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+
+.mixtape-upload {
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.mixtape-upload h2 {
+  margin-top: 0;
+}
+
+.mixtape-upload-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.mixtape-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color-strong);
+  color: var(--muted-color);
+  font-size: 0.82rem;
+  cursor: pointer;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mixtape-upload-label:hover {
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
+}
+
+.mixtape-upload-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mixtape-upload-status {
+  width: 100%;
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted-color);
+}

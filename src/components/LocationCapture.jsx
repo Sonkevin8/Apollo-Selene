@@ -32,15 +32,8 @@ const LocationCapture = ({ onLocationCaptured }) => {
 
   return (
     <div className="location-capture">
-      <h2>Set Your Location</h2>
-      <p>To participate, please allow location access. This will place your mixtape on the map.</p>
-      <button onClick={handleGetLocation}>Get My Location</button>
-      {status && <p>{status}</p>}
-      {coords && (
-        <p>
-          Coordinates: {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-        </p>
-      )}
+      <button type="button" className="location-capture-btn" onClick={handleGetLocation}>Get my location</button>
+      {status && <p className="location-capture-status">{status}</p>}
     </div>
   );
 };

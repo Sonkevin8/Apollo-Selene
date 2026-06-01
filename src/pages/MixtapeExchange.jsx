@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import {
   createMixtapeInvite,
   createMixtapeExchange,
@@ -85,6 +85,9 @@ const MixtapeExchange = ({ globeComponent }) => {
   const [exchanges, setExchanges] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const userId = session?.user?.id || null;
 
@@ -410,6 +413,34 @@ const MixtapeExchange = ({ globeComponent }) => {
     );
   }
 
+  const handleMixtapeUpload = async () => {
+    if (!uploadFile || !session || !supabase) return;
+    setUploading(true);
+    setUploadStatus('');
+    const ext = uploadFile.name.split('.').pop().toLowerCase();
+    if (ext !== 'mp3') {
+      setUploadStatus('Only MP3 files are allowed.');
+      setUploading(false);
+      return;
+    }
+    const maxBytes = 50 * 1024 * 1024; // 50 MB
+    if (uploadFile.size > maxBytes) {
+      setUploadStatus('File is too large. Maximum size is 50 MB.');
+      setUploading(false);
+      return;
+    }
+    const safeName = uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${session.user.id}/${Date.now()}-${safeName}`;
+    const { error } = await supabase.storage.from('mixtapes').upload(path, uploadFile, { contentType: 'audio/mpeg', upsert: false });
+    setUploading(false);
+    if (error) {
+      setUploadStatus(`Upload failed: ${error.message}`);
+    } else {
+      setUploadStatus('Uploaded successfully!');
+      setUploadFile(null);
+    }
+  };
+
   return (
     <div className="content-section mixtape-shell">
       {globeComponent ? (
@@ -418,34 +449,8 @@ const MixtapeExchange = ({ globeComponent }) => {
           <div className="mixtape-globe-embed">{globeComponent}</div>
         </section>
       ) : null}
-      <section className="mixtape-auth">
-        <h2>Mixtape Exchange Access</h2>
-        {session ? (
-          <>
-            <p>Signed in as {session.user.email}</p>
-            <div className="mixtape-actions">
-              <button type="button" className="button-link secondary-link" onClick={handleSignOut}>
-                Sign Out
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p>
-              This page now uses one shared sign-in flow. Go to Account to sign in or create your
-              profile, then return here to send deliveries.
-            </p>
-            <div className="mixtape-actions">
-              <Link to="/account" className="button-link primary-link">
-                Go To Account Sign-In
-              </Link>
-            </div>
-          </>
-        )}
-        {message ? <p className="mixtape-message">{message}</p> : null}
-      </section>
 
-      {session ? (
+      {false ? (
         <>
           <section className="mixtape-compose">
             <h2>Create Mixtape Delivery</h2>
@@ -793,6 +798,37 @@ const MixtapeExchange = ({ globeComponent }) => {
           </section>
         </>
       ) : null}
+
+      <section className="mixtape-upload">
+        <h2>Upload My Mixtape</h2>
+        {!session ? (
+          <p className="mixtape-helper-text">
+            <Link to="/account" className="button-link primary-link">Sign in</Link> to upload your mixtapes.
+          </p>
+        ) : (
+          <div className="mixtape-upload-form">
+            <label htmlFor="mixtape-file" className="mixtape-upload-label">
+              {uploadFile ? uploadFile.name : 'Choose an MP3 file'}
+              <input
+                id="mixtape-file"
+                type="file"
+                accept=".mp3,audio/mpeg"
+                className="mixtape-upload-input"
+                onChange={(e) => { setUploadFile(e.target.files[0] || null); setUploadStatus(''); }}
+              />
+            </label>
+            <button
+              type="button"
+              className="button-link primary-link"
+              onClick={handleMixtapeUpload}
+              disabled={uploading || !uploadFile}
+            >
+              {uploading ? 'Uploading…' : 'Upload'}
+            </button>
+            {uploadStatus ? <p className="mixtape-upload-status">{uploadStatus}</p> : null}
+          </div>
+        )}
+      </section>
     </div>
   );
 };

@@ -1125,18 +1125,7 @@ function Earth() {
   return (
     <div className="content-section earth-page">
       <section className={`earth-card ${mapSystemActive ? 'earth-card--map-mode' : ''}`}>
-        <div className="earth-header">
-          <p className="section-kicker">Interactive Planet View</p>
-          <h1>Stork Cassette Delivery Globe</h1>
-          <p>
-            Track music sets in a playful global simulation where storks carry cassette orders from
-            sender studios to DJ receivers in real time. Drag to orbit, scroll to zoom, and zoom in
-            for terrain detail.
-          </p>
-          <p className="earth-data-source">
-            Data Source: {dataSourceLabel} | Active Routes: {routeCount}
-          </p>
-        </div>
+
 
         {/* Removed visual and palette toggles, only realistic mode remains */}
 

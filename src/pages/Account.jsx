@@ -15,7 +15,7 @@ import './Account.css';
 const defaultAuthForm = {
   email: '',
   password: '',
-  displayName: '',
+  username: '',
 };
 
 const defaultAdminForm = {
@@ -159,7 +159,7 @@ const Account = () => {
         await signUpWithEmail({
           email: authForm.email,
           password: authForm.password,
-          displayName: authForm.displayName,
+          displayName: authForm.username,
         });
         setMessage('Account created. Confirm your email, then sign in.');
       } else {
@@ -400,18 +400,20 @@ const Account = () => {
             </div>
             {authMode === 'signup' ? (
               <div className="account-field">
-                <label htmlFor="account-display-name">Display Name</label>
+                <label htmlFor="account-username">Username</label>
                 <input
-                  id="account-display-name"
+                  id="account-username"
                   type="text"
-                  value={authForm.displayName}
+                  value={authForm.username}
                   onChange={(event) =>
                     setAuthForm((prev) => ({
                       ...prev,
-                      displayName: event.target.value,
+                      username: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''),
                     }))
                   }
                   required
+                  maxLength={24}
+                  autoComplete="username"
                 />
               </div>
             ) : null}
@@ -427,38 +429,8 @@ const Account = () => {
         </section>
       ) : (
         <section className="account-card">
-          <h2>My Account</h2>
           <p>Signed in as {session.user.email}</p>
-          <div className="account-plan-row">
-            <span className="account-plan-badge">{(profileForm.plan_tier || 'free').toUpperCase()} Plan</span>
-            <span className="account-plan-note">You are not being charged right now.</span>
-          </div>
-          {profileForm.subscription_status ? (
-            <p className="account-subscription-status">
-              Subscription Status: {profileForm.subscription_status}
-            </p>
-          ) : null}
           <form onSubmit={handleProfileSave} className="account-form-grid">
-                        <div className="account-field" style={{ gridColumn: '1 / -1' }}>
-                          <label>Set Your Location (Required)</label>
-                          <LocationCapture
-                            onLocationCaptured={({ lat, lng, address }) =>
-                              setProfileForm((prev) => ({
-                                ...prev,
-                                address: address || prev.address,
-                                address_lat: lat,
-                                address_lng: lng,
-                              }))
-                            }
-                          />
-                          {profileForm.address_lat && profileForm.address_lng ? (
-                            <p className="account-helper-text">
-                              Location set: {profileForm.address_lat}, {profileForm.address_lng}
-                            </p>
-                          ) : (
-                            <p className="account-helper-text">Location not set yet.</p>
-                          )}
-                        </div>
             <div className="account-field">
               <label htmlFor="profile-display-name">Display Name</label>
               <input
@@ -489,12 +461,22 @@ const Account = () => {
             </div>
 
             <div className="account-field">
-              <label htmlFor="profile-city">City</label>
+              <label htmlFor="profile-city">Address</label>
               <input
                 id="profile-city"
                 type="text"
                 value={profileForm.city}
                 onChange={(event) => setProfileForm((prev) => ({ ...prev, city: event.target.value }))}
+              />
+              <LocationCapture
+                onLocationCaptured={({ lat, lng, address }) =>
+                  setProfileForm((prev) => ({
+                    ...prev,
+                    address: address || prev.address,
+                    address_lat: lat,
+                    address_lng: lng,
+                  }))
+                }
               />
             </div>
 
