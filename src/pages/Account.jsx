@@ -71,6 +71,7 @@ const Account = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
   const [adminForm, setAdminForm] = useState(defaultAdminForm);
   const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
   const [authDebug, setAuthDebug] = useState(() =>
@@ -204,12 +205,27 @@ const Account = () => {
     setMessage('');
   };
 
+  const validateUsername = (value) => {
+    if (!value) return '';
+    if (value.length < 3 || value.length > 24) return 'Username must be 3–24 characters.';
+    if (!/^[a-z0-9_]+$/.test(value)) return 'Only lowercase letters, numbers, and underscores allowed.';
+    if (value.startsWith('_') || value.endsWith('_')) return 'Username cannot start or end with an underscore.';
+    if (value.includes('__')) return 'Username cannot contain consecutive underscores.';
+    return '';
+  };
+
   const handleProfileSave = async (event) => {
     event.preventDefault();
     if (!session?.user?.id) {
       return;
     }
 
+    const uErr = validateUsername(profileForm.username);
+    if (uErr) {
+      setUsernameError(uErr);
+      return;
+    }
+    setUsernameError('');
     setLoading(true);
     setMessage('');
 
@@ -480,11 +496,15 @@ const Account = () => {
                 id="profile-username"
                 type="text"
                 value={profileForm.username}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({ ...prev, username: event.target.value }))
-                }
-                placeholder="dj-solar"
+                onChange={(event) => {
+                  const val = event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                  setProfileForm((prev) => ({ ...prev, username: val }));
+                  setUsernameError(validateUsername(val));
+                }}
+                placeholder="dj_solar"
+                maxLength={24}
               />
+              {usernameError && <p className="form-error" style={{ marginTop: '0.25rem' }}>{usernameError}</p>}
             </div>
 
             <div className="account-field">
