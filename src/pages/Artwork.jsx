@@ -117,9 +117,18 @@ export default function Artwork() {
     setShowUploadForm(false);
   };
 
+  const isUuid = (id) =>
+    typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
   const handleEditSave = async () => {
-    if (!editingCard || !supabase) return;
+    if (!editingCard) return;
     const { id, title, artist, description, medium, year, story } = editingCard;
+    if (!isUuid(id) || !supabase) {
+      // Static placeholder artwork — update local state only
+      setArtworks((prev) => prev.map((a) => (a.id === id ? { ...a, title, artist, description, medium, year, story } : a)));
+      setEditingCard(null);
+      return;
+    }
     const { data: updated, error } = await supabase
       .from(GALLERY_TABLE)
       .update({ title, artist, description, medium, year, story })
@@ -133,8 +142,9 @@ export default function Artwork() {
   };
 
   const handleDelete = async (id) => {
-    if (!supabase) return;
-    await supabase.from(GALLERY_TABLE).delete().eq('id', id);
+    if (isUuid(id) && supabase) {
+      await supabase.from(GALLERY_TABLE).delete().eq('id', id);
+    }
     setArtworks((prev) => prev.filter((a) => a.id !== id));
   };
 

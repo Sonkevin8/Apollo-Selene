@@ -906,8 +906,6 @@ function Earth() {
         };
       });
 
-      globe.htmlElementsData(courierPositions);
-
       if (timeStamp - deliveryAnimationRef.current.lastUiUpdate > 350) {
         setLiveDeliveries(
           courierPositions.map((courier) => {
@@ -1024,7 +1022,6 @@ function Earth() {
       return;
     }
 
-    globeRef.current.arcsData(deliveryRoutesData);
     applyZoomDetail(globeRef.current, true);
     updateMapSystemMode(globeRef.current, true);
   }, [deliveryRoutesData]);
