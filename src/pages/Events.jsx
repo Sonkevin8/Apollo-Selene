@@ -1358,7 +1358,7 @@ const Events = ({ theme }) => {
                   <p style={{ color: '#e55', fontSize: '0.8rem', marginTop: '0.35rem' }}>{checkoutError}</p>
                 )}
                 {/* Voucher redemption */}
-                {event.ticketed !== false && !userAttendance.has(event.id) && event.attendees < event.maxAttendees && (
+                {event.ticketed !== false && !userAttendance.has(event.id) && (event.maxAttendees == null || event.attendees < event.maxAttendees) && (
                   <div style={{ marginTop: '0.5rem' }}>
                     {!voucherOpen[event.id] ? (
                       <button
@@ -1415,9 +1415,6 @@ const Events = ({ theme }) => {
                   >
                     View Guest List
                   </button>
-                  <span className="guest-list-count">
-                    {(eventGuestLists[event.id] || []).length} names in ledger
-                  </span>
                 </div>
               </div>
             </div>
