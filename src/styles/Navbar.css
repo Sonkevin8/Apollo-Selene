@@ -16,7 +16,54 @@
   backdrop-filter: blur(18px);
 }
 
-/* Mobile top bar — hidden on desktop */
+/* ── User avatar bubble ───────────────────────────────────── */
+.navbar-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--nav-link-active-bg);
+  color: var(--nav-link-active-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--border-color-strong);
+  flex-shrink: 0;
+}
+
+.navbar-avatar--admin {
+  background: #c97b2a;
+  color: #fff;
+  border-color: #a8621e;
+}
+
+.navbar-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+  text-decoration: none;
+}
+
+.navbar-avatar-label {
+  font-size: 0.8rem;
+  color: var(--muted-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+/* Mobile: avatar sits inside the login link pill */
+.navbar-mobile-login .navbar-avatar {
+  width: 1.8rem;
+  height: 1.8rem;
+  font-size: 0.72rem;
+}
+
+/* ── Mobile top bar ────────────────────────────────────────── */
 .navbar-mobile-header {
   display: none;
 }
@@ -223,63 +270,63 @@
   }
 
   /* Show when open */
-  .navbar-open .navbar-brand-block,
+  .navbar-open .navbar-brand-block {
+    display: none;
+  }
   .navbar-open .navbar-menu {
-    display: block;
+    display: flex;
   }
 
   .navbar {
-    gap: 1rem;
-    padding: 0.75rem;
+    gap: 0.5rem;
+    padding: 0.5rem;
   }
 
   .navbar-menu {
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.3rem;
   }
 
   .navbar-menu li {
-    flex: 1 1 calc(50% - 0.5rem);
-    min-width: 140px;
+    flex: 1 1 calc(50% - 0.3rem);
+    min-width: 120px;
   }
 
   .navbar-menu a {
     text-align: center;
-    padding: 0.85rem 0.75rem;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.78rem;
+    border-radius: 10px;
   }
 
   .navbar-link-disabled {
     text-align: center;
-    padding: 0.85rem 0.75rem;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.78rem;
+    border-radius: 10px;
   }
 
   .navbar-menu a:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
 
   .navbar-link-inner {
-    gap: 0.55rem;
+    gap: 0.3rem;
   }
 
   .navbar-link-guide {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 5.7rem;
-    height: 5.7rem;
-    flex: 0 0 auto;
-    transform: translateY(0) scale(1);
+    display: none;
   }
 
   .navbar-menu .active {
-    min-height: 6.2rem;
+    min-height: unset;
     overflow: visible;
   }
 
   .navbar-menu .active .navbar-link-inner {
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.25rem;
   }
 
   .navbar-menu .active .navbar-link-label {

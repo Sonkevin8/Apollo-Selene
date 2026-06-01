@@ -1202,6 +1202,12 @@ select:focus {
   margin: 0;
 }
 
+@media (max-width: 600px) {
+  .admin-btn {
+    display: none;
+  }
+}
+
 .logout-btn {
   background: var(--button-secondary-bg);
   color: var(--button-secondary-text);

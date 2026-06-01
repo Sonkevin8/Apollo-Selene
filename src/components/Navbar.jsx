@@ -14,8 +14,16 @@ const navigationItems = [
   { to: '/ember-room', label: 'Ember Room' },
 ];
 
+const getInitial = (session, isAdmin) => {
+  if (isAdmin) return 'Ad';
+  if (session?.user?.email) return session.user.email[0].toUpperCase();
+  return null;
+};
+
 const Navbar = ({ theme, onToggleTheme, session }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const isAdmin = window.localStorage.getItem('apollo-admin') === 'true';
+  const initial = getInitial(session, isAdmin);
 
   return (
     <nav className={`navbar${menuOpen ? ' navbar-open' : ''}`}>
@@ -24,7 +32,11 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
         <span className="navbar-mobile-brand">Apollo Selene</span>
         <div className="navbar-mobile-actions">
           <NavLink to="/account" className="navbar-mobile-login" onClick={() => setMenuOpen(false)}>
-            {session ? 'Account' : 'Login / Sign Up'}
+            {initial ? (
+              <span className={`navbar-avatar${isAdmin ? ' navbar-avatar--admin' : ''}`}>{initial}</span>
+            ) : (
+              'Login / Sign Up'
+            )}
           </NavLink>
           <button
             type="button"
@@ -46,6 +58,12 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
         <p className="navbar-copy">
           A welcoming place to pause, check the next event, and ease into community.
         </p>
+        {initial && (
+          <NavLink to="/account" className="navbar-avatar-row">
+            <span className={`navbar-avatar${isAdmin ? ' navbar-avatar--admin' : ''}`}>{initial}</span>
+            <span className="navbar-avatar-label">{isAdmin ? 'Admin' : session?.user?.email}</span>
+          </NavLink>
+        )}
         <button type="button" className="theme-toggle" onClick={onToggleTheme}>
           {theme === 'apollo' ? 'Switch to Selene Mode' : 'Switch to Apollo Mode'}
         </button>

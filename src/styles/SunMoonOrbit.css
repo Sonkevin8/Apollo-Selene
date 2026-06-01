@@ -14,17 +14,13 @@
 }
 
 .orbit-track--day {
-  border: 1px solid rgba(255, 185, 40, 0.28);
-  box-shadow:
-    0 0 18px rgba(255, 185, 40, 0.06),
-    inset 0 0 18px rgba(255, 185, 40, 0.04);
+  border: none;
+  box-shadow: none;
 }
 
 .orbit-track--night {
-  border: 1px solid rgba(180, 205, 255, 0.2);
-  box-shadow:
-    0 0 18px rgba(180, 205, 255, 0.06),
-    inset 0 0 18px rgba(180, 205, 255, 0.03);
+  border: none;
+  box-shadow: none;
 }
 
 /* ── Shared icon base ────────────────────────────────────────── */

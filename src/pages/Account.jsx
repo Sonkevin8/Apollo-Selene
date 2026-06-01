@@ -269,25 +269,6 @@ const Account = () => {
 
   return (
     <div className="content-section account-shell">
-      <section className="account-card account-auth-debug" aria-label="Session persistence debug">
-        <h3>Auth Session Debug</h3>
-        <p>Use this to verify login persistence after refresh. No token contents are shown.</p>
-        <div className="account-auth-debug-grid">
-          <span>Last Auth Event</span>
-          <strong>{authDebug.eventLabel}</strong>
-          <span>Storage Key</span>
-          <strong>{authDebug.storageKey}</strong>
-          <span>Storage Available</span>
-          <strong>{authDebug.storageAvailable ? 'yes' : 'no'}</strong>
-          <span>Stored Session Found</span>
-          <strong>{authDebug.hasStoredSession ? 'yes' : 'no'}</strong>
-          <span>Stored Payload Size</span>
-          <strong>{authDebug.storedBytes} bytes</strong>
-          <span>Current Session User</span>
-          <strong>{authDebug.sessionEmail || authDebug.sessionUserId || 'none'}</strong>
-        </div>
-      </section>
-
       {!session ? (
         <section className="account-card">
           <h2>Account Access</h2>
