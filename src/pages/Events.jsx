@@ -241,6 +241,45 @@ const Events = ({ theme }) => {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [ticketQuantities, setTicketQuantities] = useState({});
+  const [voucherInputs, setVoucherInputs] = useState({});   // eventId → code string
+  const [voucherMsgs, setVoucherMsgs] = useState({});       // eventId → {text, ok}
+  const [voucherOpen, setVoucherOpen] = useState({});       // eventId → bool
+  const [voucherRedeeming, setVoucherRedeeming] = useState({});
+
+  const redeemVoucher = async (event) => {
+    const code = (voucherInputs[event.id] || '').trim().toUpperCase();
+    if (!code) return;
+    setVoucherRedeeming((p) => ({ ...p, [event.id]: true }));
+    setVoucherMsgs((p) => ({ ...p, [event.id]: null }));
+
+    const { data, error } = await supabase
+      .from('vouchers')
+      .select('id, used')
+      .eq('code', code)
+      .single();
+
+    if (error || !data) {
+      setVoucherMsgs((p) => ({ ...p, [event.id]: { text: 'Voucher not found.', ok: false } }));
+      setVoucherRedeeming((p) => ({ ...p, [event.id]: false }));
+      return;
+    }
+    if (data.used) {
+      setVoucherMsgs((p) => ({ ...p, [event.id]: { text: 'This voucher has already been used.', ok: false } }));
+      setVoucherRedeeming((p) => ({ ...p, [event.id]: false }));
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const usedBy = session?.user?.email || session?.user?.id || 'guest';
+
+    await supabase.from('vouchers').update({ used: true, used_at: new Date().toISOString(), used_by: usedBy }).eq('id', data.id);
+    await handleAttendEvent(event.id);
+
+    setVoucherMsgs((p) => ({ ...p, [event.id]: { text: '✓ Voucher accepted — you\'re on the list!', ok: true } }));
+    setVoucherOpen((p) => ({ ...p, [event.id]: false }));
+    setVoucherInputs((p) => ({ ...p, [event.id]: '' }));
+    setVoucherRedeeming((p) => ({ ...p, [event.id]: false }));
+  };
 
 
   // Fetch events, guests, and attendance from Supabase on mount
@@ -1317,6 +1356,52 @@ const Events = ({ theme }) => {
                 </button>
                 {checkoutError && (
                   <p style={{ color: '#e55', fontSize: '0.8rem', marginTop: '0.35rem' }}>{checkoutError}</p>
+                )}
+                {/* Voucher redemption */}
+                {event.ticketed && !userAttendance.has(event.id) && event.attendees < event.maxAttendees && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    {!voucherOpen[event.id] ? (
+                      <button
+                        type="button"
+                        onClick={() => setVoucherOpen((p) => ({ ...p, [event.id]: true }))}
+                        style={{ background: 'none', border: 'none', color: 'var(--muted-color)', fontSize: '0.78rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                      >
+                        Have a voucher?
+                      </button>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          placeholder="Enter code"
+                          value={voucherInputs[event.id] || ''}
+                          onChange={(e) => setVoucherInputs((p) => ({ ...p, [event.id]: e.target.value.toUpperCase() }))}
+                          onKeyDown={(e) => e.key === 'Enter' && redeemVoucher(event)}
+                          maxLength={8}
+                          style={{ fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.1em', width: '8rem', padding: '0.3rem 0.5rem', borderRadius: '8px', border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--text-color)', fontSize: '0.9rem', textTransform: 'uppercase' }}
+                        />
+                        <button
+                          type="button"
+                          disabled={voucherRedeeming[event.id]}
+                          onClick={() => redeemVoucher(event)}
+                          style={{ padding: '0.3rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer', fontSize: '0.82rem' }}
+                        >
+                          {voucherRedeeming[event.id] ? '…' : 'Redeem'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setVoucherOpen((p) => ({ ...p, [event.id]: false }))}
+                          style={{ background: 'none', border: 'none', color: 'var(--muted-color)', cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                    {voucherMsgs[event.id] && (
+                      <p style={{ margin: '0.3rem 0 0', fontSize: '0.8rem', color: voucherMsgs[event.id].ok ? '#5cb85c' : '#e55' }}>
+                        {voucherMsgs[event.id].text}
+                      </p>
+                    )}
+                  </div>
                 )}
                 <div style={{ marginTop: 4, fontSize: 13, color: '#888' }}>
                   {event.ticketed === false ? 'Free event' : 'Ticketed event'}

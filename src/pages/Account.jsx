@@ -78,6 +78,13 @@ const Account = () => {
     readAuthDebugSnapshot({ session: null, eventLabel: 'init' })
   );
 
+  // ── Voucher admin state ───────────────────────────────────
+  const [vouchers, setVouchers] = useState([]);
+  const [voucherNote, setVoucherNote] = useState('');
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [voucherMsg, setVoucherMsg] = useState('');
+  const [copiedId, setCopiedId] = useState(null);
+
   useEffect(() => {
     if (!isSupabaseConfigured) {
       return undefined;
@@ -203,6 +210,48 @@ const Account = () => {
     setIsAdmin(false);
     window.localStorage.removeItem('apollo-admin');
     setMessage('');
+  };
+
+  // ── Voucher helpers ───────────────────────────────────────
+  const generateCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  };
+
+  const loadVouchers = React.useCallback(async () => {
+    if (!isSupabaseConfigured || !supabase) return;
+    setVoucherLoading(true);
+    const { data } = await supabase.from('vouchers').select('*').order('created_at', { ascending: false });
+    setVouchers(data || []);
+    setVoucherLoading(false);
+  }, []);
+
+  useEffect(() => { if (isAdmin) loadVouchers(); }, [isAdmin, loadVouchers]);
+
+  const handleGenerateVoucher = async (e) => {
+    e.preventDefault();
+    if (!isSupabaseConfigured || !supabase) return;
+    const code = generateCode();
+    const { error } = await supabase.from('vouchers').insert({ code, note: voucherNote.trim() || null });
+    if (error) {
+      setVoucherMsg('Error generating voucher.');
+    } else {
+      setVoucherNote('');
+      setVoucherMsg('');
+      await loadVouchers();
+    }
+  };
+
+  const handleDeleteVoucher = async (id) => {
+    if (!supabase) return;
+    await supabase.from('vouchers').delete().eq('id', id);
+    setVouchers((prev) => prev.filter((v) => v.id !== id));
+  };
+
+  const copyCode = (voucher) => {
+    navigator.clipboard.writeText(voucher.code).catch(() => {});
+    setCopiedId(voucher.id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const validateUsername = (value) => {
@@ -511,6 +560,92 @@ const Account = () => {
           </form>
 
           {message ? <p className="account-message">{message}</p> : null}
+        </section>
+      )}
+
+      {/* ── Admin: Voucher Manager ──────────────────────────────────── */}
+      {isAdmin && (
+        <section className="account-card" style={{ marginTop: '1.5rem' }}>
+          <h2 style={{ marginBottom: '1rem' }}>Vouchers</h2>
+          <p style={{ opacity: 0.65, fontSize: '0.85rem', marginBottom: '1rem' }}>
+            Generate single-use codes that let anyone claim a free ticket at checkout.
+          </p>
+
+          {/* Generate form */}
+          <form onSubmit={handleGenerateVoucher} className="account-form-grid" style={{ marginBottom: '1.25rem' }}>
+            <div className="account-field">
+              <label htmlFor="voucher-note">Note (optional)</label>
+              <input
+                id="voucher-note"
+                type="text"
+                placeholder="e.g. For Sarah — opening night"
+                value={voucherNote}
+                onChange={(e) => setVoucherNote(e.target.value)}
+                maxLength={80}
+              />
+            </div>
+            <div className="account-actions" style={{ gridColumn: '1 / -1' }}>
+              <button type="submit" className="button-link primary-link">
+                Generate Voucher
+              </button>
+            </div>
+          </form>
+          {voucherMsg && <p className="account-message">{voucherMsg}</p>}
+
+          {/* Voucher list */}
+          {voucherLoading ? (
+            <p style={{ opacity: 0.5 }}>Loading…</p>
+          ) : vouchers.length === 0 ? (
+            <p style={{ opacity: 0.5, fontSize: '0.85rem' }}>No vouchers yet.</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+              <thead>
+                <tr style={{ opacity: 0.5, textAlign: 'left' }}>
+                  <th style={{ padding: '0.3rem 0.5rem' }}>Code</th>
+                  <th style={{ padding: '0.3rem 0.5rem' }}>Note</th>
+                  <th style={{ padding: '0.3rem 0.5rem' }}>Status</th>
+                  <th style={{ padding: '0.3rem 0.5rem' }}>Used by</th>
+                  <th style={{ padding: '0.3rem 0.5rem' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {vouchers.map((v) => (
+                  <tr key={v.id} style={{ borderTop: '1px solid var(--border-color)', opacity: v.used ? 0.5 : 1 }}>
+                    <td style={{ padding: '0.45rem 0.5rem', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.08em' }}>
+                      {v.code}
+                      {!v.used && (
+                        <button
+                          type="button"
+                          onClick={() => copyCode(v)}
+                          style={{ marginLeft: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.78rem', color: 'var(--accent-strong)', padding: 0 }}
+                        >
+                          {copiedId === v.id ? '✓ Copied' : 'Copy'}
+                        </button>
+                      )}
+                    </td>
+                    <td style={{ padding: '0.45rem 0.5rem', opacity: 0.7 }}>{v.note || '—'}</td>
+                    <td style={{ padding: '0.45rem 0.5rem' }}>
+                      <span style={{ padding: '0.15rem 0.5rem', borderRadius: '999px', fontSize: '0.72rem', background: v.used ? 'rgba(150,150,150,0.15)' : 'rgba(80,200,100,0.15)', color: v.used ? '#aaa' : '#5cb85c' }}>
+                        {v.used ? 'Used' : 'Active'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.45rem 0.5rem', opacity: 0.65 }}>
+                      {v.used_by || '—'}
+                    </td>
+                    <td style={{ padding: '0.45rem 0.5rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteVoucher(v.id)}
+                        style={{ background: 'none', border: '1px solid rgba(255,80,80,0.35)', borderRadius: '20px', color: '#ff6060', cursor: 'pointer', fontSize: '0.72rem', padding: '0.2rem 0.55rem' }}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </section>
       )}
     </div>
