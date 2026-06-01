@@ -273,33 +273,8 @@ const Account = () => {
       </section>
 
       {!session ? (
-        <section className="account-card" style={{ position: 'relative' }}>
+        <section className="account-card">
           <h2>Account Access</h2>
-          {/* Pencil-sketch eye toggle — top-right corner of card */}
-          {(authMode !== 'admin' || !isAdmin) && (
-            <button
-              type="button"
-              className="sketch-eye-toggle"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              onClick={() => setShowPassword((v) => !v)}
-            >
-              {showPassword ? (
-                <svg key="closed" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path className="sketch-path" d="M2,12 C5,7 9,5 12,5 C15,5 19,7 22,12" />
-                  <path className="sketch-path" style={{animationDelay:'0.1s'}} d="M5,14 Q9,17.5 12,17.5 Q15,17.5 19,14" />
-                  <line className="sketch-path" style={{animationDelay:'0.18s'}} x1="8" y1="15.5" x2="7" y2="19" />
-                  <line className="sketch-path" style={{animationDelay:'0.22s'}} x1="12" y1="17.5" x2="12" y2="21" />
-                  <line className="sketch-path" style={{animationDelay:'0.26s'}} x1="16" y1="15.5" x2="17" y2="19" />
-                </svg>
-              ) : (
-                <svg key="open" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path className="sketch-path" d="M2,12 C5,6 9,4 12,4 C15,4 19,6 22,12 C19,18 15,20 12,20 C9,20 5,18 2,12 Z" />
-                  <circle className="sketch-path" style={{animationDelay:'0.22s'}} cx="12" cy="12" r="3.5" />
-                  <circle cx="13.5" cy="10.5" r="1" fill="currentColor" />
-                </svg>
-              )}
-            </button>
-          )}
           <div className="account-actions">
             <button
               type="button"
@@ -349,13 +324,30 @@ const Account = () => {
                 </div>
                 <div className="account-field">
                   <label htmlFor="admin-password">Password</label>
-                  <input
-                    id="admin-password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={adminForm.password}
-                    onChange={(e) => setAdminForm((prev) => ({ ...prev, password: e.target.value }))}
-                    required
-                  />
+                  <div className="password-row">
+                    <input
+                      id="admin-password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={adminForm.password}
+                      onChange={(e) => setAdminForm((prev) => ({ ...prev, password: e.target.value }))}
+                      required
+                    />
+                    <button type="button" className="sketch-eye-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((v) => !v)}>
+                      {showPassword ? (
+                        <svg key="closed" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path className="sketch-path" d="M2,12 C5,7 9,5 12,5 C15,5 19,7 22,12" />
+                          <path className="sketch-path" style={{animationDelay:'0.1s'}} d="M5,14 Q9,17.5 12,17.5 Q15,17.5 19,14" />
+                          <line className="sketch-path" style={{animationDelay:'0.18s'}} x1="8" y1="15.5" x2="7" y2="19" />
+                          <line className="sketch-path" style={{animationDelay:'0.22s'}} x1="12" y1="17.5" x2="12" y2="21" />
+                        </svg>
+                      ) : (
+                        <svg key="open" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path className="sketch-path" d="M2,12 C5,6 9,4 12,4 C15,4 19,6 22,12 C19,18 15,20 12,20 C9,20 5,18 2,12 Z" />
+                          <circle className="sketch-path" style={{animationDelay:'0.2s'}} cx="12" cy="12" r="3.5" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div className="account-actions" style={{ gridColumn: '1 / -1' }}>
                   <button type="submit" className="button-link primary-link" disabled={loading}>
@@ -378,19 +370,36 @@ const Account = () => {
             </div>
             <div className="account-field">
               <label htmlFor="account-password">Password</label>
-              <input
-                id="account-password"
-                type={showPassword ? 'text' : 'password'}
-                value={authForm.password}
-                onChange={(event) =>
-                  setAuthForm((prev) => ({
-                    ...prev,
-                    password: event.target.value,
-                  }))
-                }
-                required
-                minLength={8}
-              />
+              <div className="password-row">
+                <input
+                  id="account-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={authForm.password}
+                  onChange={(event) =>
+                    setAuthForm((prev) => ({
+                      ...prev,
+                      password: event.target.value,
+                    }))
+                  }
+                  required
+                  minLength={8}
+                />
+                <button type="button" className="sketch-eye-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((v) => !v)}>
+                  {showPassword ? (
+                    <svg key="closed" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path className="sketch-path" d="M2,12 C5,7 9,5 12,5 C15,5 19,7 22,12" />
+                      <path className="sketch-path" style={{animationDelay:'0.1s'}} d="M5,14 Q9,17.5 12,17.5 Q15,17.5 19,14" />
+                      <line className="sketch-path" style={{animationDelay:'0.18s'}} x1="8" y1="15.5" x2="7" y2="19" />
+                      <line className="sketch-path" style={{animationDelay:'0.22s'}} x1="12" y1="17.5" x2="12" y2="21" />
+                    </svg>
+                  ) : (
+                    <svg key="open" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path className="sketch-path" d="M2,12 C5,6 9,4 12,4 C15,4 19,6 22,12 C19,18 15,20 12,20 C9,20 5,18 2,12 Z" />
+                      <circle className="sketch-path" style={{animationDelay:'0.2s'}} cx="12" cy="12" r="3.5" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
             {authMode === 'signup' ? (
               <div className="account-field">

@@ -1,0 +1,51 @@
+/* ── Layer ──────────────────────────────────────────────────── */
+.raver-sprites-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9997; /* below sun/moon orbit (9998+) */
+}
+
+/* ── Individual sprite ──────────────────────────────────────── */
+.raver-sprite {
+  position: absolute;
+  left: -300px;
+  top: -300px;
+  /* anchor: feet at the tracked point */
+  transform: translate(-50%, -100%);
+}
+
+.raver-sprite svg {
+  width: 22px;
+  height: 36px;
+  /* crisp edges for the hand-drawn pixel feel */
+  shape-rendering: crispEdges;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Choppy 2-frame dance animations — steps(1) snaps between
+   keyframes like ancient Greek pottery movement sequences.
+   Each variant gives a different rhythm to the crowd.
+────────────────────────────────────────────────────────────── */
+
+/* Variant 1 — rock side to side */
+@keyframes greek-rock {
+  0%,  49% { transform: translate(-50%, -100%) rotate(-6deg) scaleX( 1); }
+  50%, 100% { transform: translate(-50%, -100%) rotate( 6deg) scaleX( 1); }
+}
+
+/* Variant 2 — bob and mirror (flips to face opposite way mid-dance) */
+@keyframes greek-bob {
+  0%,  49% { transform: translate(-50%, -100%) translateY(0)    scaleX( 1); }
+  50%, 100% { transform: translate(-50%, -100%) translateY(-5px) scaleX(-1); }
+}
+
+/* Variant 3 — stomp with slight tilt */
+@keyframes greek-stomp {
+  0%,  49% { transform: translate(-50%, -100%) rotate( 4deg) skewX( 6deg); }
+  50%, 100% { transform: translate(-50%, -100%) rotate(-5deg) skewX(-6deg); }
+}
+
+.raver-dance-1 { animation: greek-rock  0.72s steps(1) infinite; }
+.raver-dance-2 { animation: greek-bob   0.88s steps(1) infinite; }
+.raver-dance-3 { animation: greek-stomp 0.65s steps(1) infinite; }

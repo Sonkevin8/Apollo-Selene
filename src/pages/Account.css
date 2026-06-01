@@ -12,15 +12,25 @@
   box-shadow: var(--shadow-soft);
 }
 
+/* ── Password row: input + tiny eye toggle side by side ───── */
+.password-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.password-row input {
+  flex: 1;
+  min-width: 0;
+}
+
 /* ── Pencil-sketch eye toggle ─────────────────────────────── */
 .sketch-eye-toggle {
-  position: absolute;
-  top: 0.9rem;
-  right: 0.9rem;
+  flex-shrink: 0;
   background: none;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 0.3rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.2rem;
   cursor: pointer;
   color: var(--text-color-muted, #888);
   opacity: 0.6;
@@ -30,7 +40,7 @@
 
 .sketch-eye-toggle:hover {
   opacity: 1;
-  border-color: var(--border-color);
+  border-color: var(--border-color-strong);
 }
 
 /* Draw-in animation for SVG paths */
