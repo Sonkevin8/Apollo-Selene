@@ -242,13 +242,19 @@ const Events = ({ theme }) => {
   const [checkoutError, setCheckoutError] = useState('');
   const [ticketQuantities, setTicketQuantities] = useState({});
   const [voucherInputs, setVoucherInputs] = useState({});   // eventId → code string
+  const [voucherNames, setVoucherNames] = useState({});     // eventId → display name string
   const [voucherMsgs, setVoucherMsgs] = useState({});       // eventId → {text, ok}
   const [voucherOpen, setVoucherOpen] = useState({});       // eventId → bool
   const [voucherRedeeming, setVoucherRedeeming] = useState({});
 
   const redeemVoucher = async (event) => {
     const code = (voucherInputs[event.id] || '').trim().toUpperCase();
+    const displayName = (voucherNames[event.id] || '').trim();
     if (!code) return;
+    if (!displayName) {
+      setVoucherMsgs((p) => ({ ...p, [event.id]: { text: 'Please enter your name.', ok: false } }));
+      return;
+    }
     setVoucherRedeeming((p) => ({ ...p, [event.id]: true }));
     setVoucherMsgs((p) => ({ ...p, [event.id]: null }));
 
@@ -283,12 +289,12 @@ const Events = ({ theme }) => {
     if (!existingAttendance || existingAttendance.length === 0) {
       const { data: newGuest } = await supabase
         .from(EVENT_GUESTS_TABLE)
-        .insert([{ event_id: event.id, name: usedBy, contact: usedBy, added_by: currentUserId }])
+        .insert([{ event_id: event.id, name: displayName, contact: usedBy, added_by: currentUserId }])
         .select();
       const guestId = newGuest && newGuest[0]?.id;
       await supabase
         .from(EVENT_ATTENDANCE_TABLE)
-        .upsert({ event_id: event.id, user_id: currentUserId, guest_id: guestId, name: usedBy, contact: usedBy });
+        .upsert({ event_id: event.id, user_id: currentUserId, guest_id: guestId, name: displayName, contact: usedBy });
       const { data: evData } = await supabase.from(EVENTS_TABLE).select('*').eq('id', event.id).maybeSingle();
       if (evData) {
         await supabase.from(EVENTS_TABLE).update({ attendees: (evData.attendees || 0) + 1 }).eq('id', event.id);
@@ -341,6 +347,7 @@ const Events = ({ theme }) => {
     setVoucherMsgs((p) => ({ ...p, [event.id]: { text: '✓ Voucher accepted — you\'re on the list!', ok: true } }));
     setVoucherOpen((p) => ({ ...p, [event.id]: false }));
     setVoucherInputs((p) => ({ ...p, [event.id]: '' }));
+    setVoucherNames((p) => ({ ...p, [event.id]: '' }));
     setVoucherRedeeming((p) => ({ ...p, [event.id]: false }));
   };
 
@@ -1437,7 +1444,16 @@ const Events = ({ theme }) => {
                       <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
                         <input
                           type="text"
-                          placeholder="Enter code"
+                          placeholder="Your name"
+                          value={voucherNames[event.id] || ''}
+                          onChange={(e) => setVoucherNames((p) => ({ ...p, [event.id]: e.target.value }))}
+                          onKeyDown={(e) => e.key === 'Enter' && redeemVoucher(event)}
+                          maxLength={80}
+                          style={{ width: '9rem', padding: '0.3rem 0.5rem', borderRadius: '8px', border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--text-color)', fontSize: '0.9rem' }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Voucher code"
                           value={voucherInputs[event.id] || ''}
                           onChange={(e) => setVoucherInputs((p) => ({ ...p, [event.id]: e.target.value.toUpperCase() }))}
                           onKeyDown={(e) => e.key === 'Enter' && redeemVoucher(event)}
