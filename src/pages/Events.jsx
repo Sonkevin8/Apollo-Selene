@@ -1582,11 +1582,9 @@ const Events = ({ theme }) => {
                   </span>
                 </div>
                 {resolvePosters(event).length > 0 && (
-                  <img
-                    src={resolvePosters(event)[0]}
-                    alt=""
-                    style={{ width: 48, height: 48, borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
-                  />
+                  <div style={{ width: 200, height: 200, borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
+                    <PosterSlideshow images={resolvePosters(event)} />
+                  </div>
                 )}
               </div>
               <h3>{event.title}</h3>
