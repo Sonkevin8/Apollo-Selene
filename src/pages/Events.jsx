@@ -187,12 +187,71 @@ const inferEventPhase = (timeRange = '') => {
   return startsAfterDaylight ? EVENT_PHASES.selene : EVENT_PHASES.apollo;
 };
 
+// Resolve an ordered array of up to 4 non-empty poster URLs from an event object.
+// Supports both the new `posters` text[] column and the legacy `poster` string.
+const resolvePosters = (event) => {
+  const arr = Array.isArray(event?.posters) && event.posters.length
+    ? event.posters
+    : event?.poster
+      ? [event.poster]
+      : [];
+  return arr.filter(Boolean).slice(0, 4);
+};
+
 const normalizeEvent = (event) => ({
   ...event,
   phase: event?.phase || inferEventPhase(event?.time)
 });
 
 const normalizeEvents = (items) => (items || []).map(normalizeEvent);
+
+// ── Inline poster slideshow ──────────────────────────────────────────────────
+const PosterSlideshow = ({ images }) => {
+  const [idx, setIdx] = React.useState(0);
+  const valid = (images || []).filter(Boolean);
+  if (!valid.length) return null;
+
+  // Auto-advance
+  React.useEffect(() => {
+    if (valid.length <= 1) return;
+    const timer = setInterval(() => setIdx((i) => (i + 1) % valid.length), 4000);
+    return () => clearInterval(timer);
+  }, [valid.length]);
+
+  const prev = (e) => { e.stopPropagation(); setIdx((i) => (i - 1 + valid.length) % valid.length); };
+  const next = (e) => { e.stopPropagation(); setIdx((i) => (i + 1) % valid.length); };
+
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '0', lineHeight: 0 }}>
+      <img
+        src={valid[idx]}
+        alt={`Poster ${idx + 1}`}
+        style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block', transition: 'opacity 0.3s' }}
+      />
+      {valid.length > 1 && (
+        <>
+          <button
+            onClick={prev}
+            style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.45)', border: 'none', color: '#fff', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}
+          >‹</button>
+          <button
+            onClick={next}
+            style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.45)', border: 'none', color: '#fff', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}
+          >›</button>
+          <div style={{ position: 'absolute', bottom: 7, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 2 }}>
+            {valid.map((_, i) => (
+              <span
+                key={i}
+                onClick={(e) => { e.stopPropagation(); setIdx(i); }}
+                style={{ width: 6, height: 6, borderRadius: '50%', background: i === idx ? '#fff' : 'rgba(255,255,255,0.45)', cursor: 'pointer', display: 'inline-block', transition: 'background 0.2s' }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 const createEventDraft = (theme) => ({
   title: '',
@@ -202,6 +261,8 @@ const createEventDraft = (theme) => ({
   location: '',
   description: '',
   poster: '',
+  posters: ['', '', '', ''],
+  posterGalleryMap: [null, null, null, null],
   maxAttendees: 50
 });
 
@@ -209,6 +270,7 @@ const Events = ({ theme }) => {
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
+  const [galleryItems, setGalleryItems] = useState([]);
   const [showLogin, setShowLogin] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [showAddEvent, setShowAddEvent] = useState(false);
@@ -223,6 +285,8 @@ const Events = ({ theme }) => {
     location: '',
     description: '',
     poster: '',
+    posters: ['', '', '', ''],
+    posterGalleryMap: [null, null, null, null],
     maxAttendees: 50
   });
   const [currentUserId] = useState(() => getCurrentUserId());
@@ -500,6 +564,11 @@ const Events = ({ theme }) => {
     window.localStorage.setItem('apollo-admin', 'true');
     setShowLogin(false);
     setLoginData({ username: '', password: '' });
+    if (supabase) {
+      supabase.from('gallery_items').select('id, title, artist').order('title').then(({ data }) => {
+        if (data) setGalleryItems(data);
+      });
+    }
   };
 
   const handleAddEvent = async (e) => {
@@ -515,7 +584,8 @@ const Events = ({ theme }) => {
       phase: newEvent.phase || inferEventPhase(newEvent.time),
       location: newEvent.location,
       description: newEvent.description,
-      poster: newEvent.poster,
+      poster: newEvent.posters.filter(Boolean)[0] || newEvent.poster || '',
+      posters: newEvent.posters.filter(Boolean),
       max_attendees: newEvent.maxAttendees,
       attendees: 0,
       ticketed: newEvent.ticketed === true ? true : false,
@@ -531,6 +601,14 @@ const Events = ({ theme }) => {
       .select('*')
       .order('date', { ascending: true });
     setEvents(normalizeEvents(data));
+    // Apply gallery image assignments
+    for (let i = 0; i < 4; i++) {
+      const galleryId = newEvent.posterGalleryMap?.[i];
+      const url = (newEvent.posters[i] || '').trim();
+      if (galleryId && url) {
+        await supabase.from('gallery_items').update({ image_url: url }).eq('id', galleryId);
+      }
+    }
     setNewEvent(createEventDraft(theme));
     setShowAddEvent(false);
   };
@@ -545,8 +623,15 @@ const Events = ({ theme }) => {
       location: event.location,
       description: event.description,
       poster: event.poster,
+      posters: Array.isArray(event.posters) && event.posters.length ? [...event.posters, '', '', '', ''].slice(0, 4) : [event.poster || '', '', '', ''],
+      posterGalleryMap: [null, null, null, null],
       maxAttendees: event.maxAttendees
     });
+    if (isAdmin && supabase && galleryItems.length === 0) {
+      supabase.from('gallery_items').select('id, title, artist').order('title').then(({ data }) => {
+        if (data) setGalleryItems(data);
+      });
+    }
     setShowEditEvent(true);
   };
 
@@ -561,6 +646,8 @@ const Events = ({ theme }) => {
       location: '',
       description: '',
       poster: '',
+      posters: ['', '', '', ''],
+      posterGalleryMap: [null, null, null, null],
       maxAttendees: 50
     });
   };
@@ -576,14 +663,17 @@ const Events = ({ theme }) => {
       ? parsedMaxAttendees
       : 1;
 
+    const posterGalleryMap = editEventData.posterGalleryMap || [null, null, null, null];
     const update = {
       ...editEventData,
       phase: editEventData.phase || inferEventPhase(editEventData.time),
+      posters: (editEventData.posters || []).filter(Boolean),
       max_attendees: safeMaxAttendees,
       updated_at: new Date().toISOString()
     };
-    // Remove maxAttendees for DB update, use max_attendees
+    // Remove non-DB fields
     delete update.maxAttendees;
+    delete update.posterGalleryMap;
 
     await supabase
       .from(EVENTS_TABLE)
@@ -596,6 +686,14 @@ const Events = ({ theme }) => {
       .select('*')
       .order('date', { ascending: true });
     setEvents(normalizeEvents(data));
+    // Apply gallery image assignments
+    for (let i = 0; i < 4; i++) {
+      const galleryId = posterGalleryMap[i];
+      const url = ((editEventData.posters || [])[i] || '').trim();
+      if (galleryId && url) {
+        await supabase.from('gallery_items').update({ image_url: url }).eq('id', galleryId);
+      }
+    }
 
     closeEditEventModal();
   };
@@ -1059,12 +1157,40 @@ const Events = ({ theme }) => {
                 rows="4"
                 required
               />
-              <input
-                type="url"
-                placeholder="Poster Image URL (optional)"
-                value={newEvent.poster}
-                onChange={(e) => setNewEvent({...newEvent, poster: e.target.value})}
-              />
+              <div>
+                <p style={{ margin: '0 0 6px', fontSize: '0.82rem', color: 'var(--muted-color)' }}>Poster Images (up to 4)</p>
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} style={{ marginBottom: i < 3 ? '10px' : 0 }}>
+                    <input
+                      type="url"
+                      placeholder={`Poster ${i + 1} URL${i === 0 ? ' (required for slideshow)' : ' (optional)'}`}
+                      value={newEvent.posters[i] || ''}
+                      onChange={(e) => {
+                        const updated = [...newEvent.posters];
+                        updated[i] = e.target.value;
+                        setNewEvent({ ...newEvent, posters: updated });
+                      }}
+                      style={{ marginBottom: '4px' }}
+                    />
+                    {(newEvent.posters[i] || '').trim() && (
+                      <select
+                        value={newEvent.posterGalleryMap?.[i] || ''}
+                        onChange={(e) => {
+                          const updated = [...(newEvent.posterGalleryMap || [null, null, null, null])];
+                          updated[i] = e.target.value || null;
+                          setNewEvent({ ...newEvent, posterGalleryMap: updated });
+                        }}
+                        style={{ width: '100%', padding: '0.3rem 0.5rem', borderRadius: '8px', border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--text-color)', fontSize: '0.82rem' }}
+                      >
+                        <option value="">— Don't add to gallery —</option>
+                        {galleryItems.map((g) => (
+                          <option key={g.id} value={g.id}>{g.title}{g.artist ? ` · ${g.artist}` : ''}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                ))}
+              </div>
               <input
                 type="number"
                 placeholder="Max Attendees"
@@ -1140,12 +1266,40 @@ const Events = ({ theme }) => {
                 rows="4"
                 required
               />
-              <input
-                type="url"
-                placeholder="Poster Image URL (optional)"
-                value={editEventData.poster}
-                onChange={(e) => setEditEventData({ ...editEventData, poster: e.target.value })}
-              />
+              <div>
+                <p style={{ margin: '0 0 6px', fontSize: '0.82rem', color: 'var(--muted-color)' }}>Poster Images (up to 4)</p>
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} style={{ marginBottom: i < 3 ? '10px' : 0 }}>
+                    <input
+                      type="url"
+                      placeholder={`Poster ${i + 1} URL${i === 0 ? ' (required for slideshow)' : ' (optional)'}`}
+                      value={(editEventData.posters || ['', '', '', ''])[i] || ''}
+                      onChange={(e) => {
+                        const updated = [...(editEventData.posters || ['', '', '', ''])];
+                        updated[i] = e.target.value;
+                        setEditEventData({ ...editEventData, posters: updated });
+                      }}
+                      style={{ marginBottom: '4px' }}
+                    />
+                    {((editEventData.posters || [])[i] || '').trim() && (
+                      <select
+                        value={(editEventData.posterGalleryMap || [null, null, null, null])[i] || ''}
+                        onChange={(e) => {
+                          const updated = [...(editEventData.posterGalleryMap || [null, null, null, null])];
+                          updated[i] = e.target.value || null;
+                          setEditEventData({ ...editEventData, posterGalleryMap: updated });
+                        }}
+                        style={{ width: '100%', padding: '0.3rem 0.5rem', borderRadius: '8px', border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--text-color)', fontSize: '0.82rem' }}
+                      >
+                        <option value="">— Don't add to gallery —</option>
+                        {galleryItems.map((g) => (
+                          <option key={g.id} value={g.id}>{g.title}{g.artist ? ` · ${g.artist}` : ''}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                ))}
+              </div>
               <input
                 type="number"
                 placeholder="Max Attendees"
@@ -1306,9 +1460,9 @@ const Events = ({ theme }) => {
           </div>
         ) : visibleEvents.map(event => (
           <div key={event.id} className="event-card">
-            {event.poster && (
+            {resolvePosters(event).length > 0 && (
               <div className="event-poster">
-                <img src={event.poster} alt={event.title} />
+                <PosterSlideshow images={resolvePosters(event)} />
               </div>
             )}
             <div className="event-content">
