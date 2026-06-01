@@ -356,7 +356,8 @@ const Events = ({ theme }) => {
       body: { username: loginData.username, password: loginData.password },
     });
     if (error) {
-      alert(`Login error: ${error.message || JSON.stringify(error)}`);
+      const detail = error?.context ? JSON.stringify(await error.context?.json?.().catch(() => error.context)) : '';
+      alert(`Login error: ${error.message}\nStatus: ${error.status || 'unknown'}\nDetail: ${detail || JSON.stringify(error)}`);
       return;
     }
     if (!data?.success) {
