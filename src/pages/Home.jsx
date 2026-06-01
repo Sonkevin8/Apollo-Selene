@@ -70,26 +70,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-timeline card">
-        <div>
-          <p className="section-kicker">The Rhythm</p>
-          <h2>Day, night, and the space between</h2>
-        </div>
-        <div className="timeline-grid">
-          <div>
-            <h4>Before the event</h4>
-            <p>Apollo Selene gives people a quiet way to check the details, understand the mood, and decide in their own time.</p>
-          </div>
-          <div>
-            <h4>During the event</h4>
-            <p>The experience carries that same tone forward with thoughtful programming, conversation, and room to breathe.</p>
-          </div>
-          <div>
-            <h4>After the event</h4>
-            <p>Reflections, artwork, and the ember page let the feeling of the gathering linger without turning the homepage into noise.</p>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

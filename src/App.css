@@ -2051,6 +2051,116 @@ select:focus {
   color: var(--text-color);
 }
 
+/* Gallery admin controls */
+.gallery-admin-bar {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.gallery-upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color-strong);
+  width: 100%;
+  max-width: 480px;
+}
+
+.gallery-upload-file-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color-strong);
+  color: var(--muted-color);
+  font-size: 0.82rem;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gallery-upload-file-label:hover {
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
+}
+
+.gallery-upload-file-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gallery-upload-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gallery-upload-fields input,
+.gallery-upload-fields textarea {
+  width: 100%;
+  padding: 0.4rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color-strong);
+  background: var(--surface-color);
+  color: var(--text-color);
+  font-size: 0.85rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.gallery-upload-fields textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.gallery-status {
+  font-size: 0.8rem;
+  color: var(--muted-color);
+  margin: 0.25rem 0 0;
+}
+
+.artwork-admin-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.35rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.artwork-card:hover .artwork-admin-actions {
+  opacity: 1;
+}
+
+.artwork-admin-actions button {
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.28rem 0.6rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.artwork-admin-actions button:hover {
+  background: rgba(0,0,0,0.85);
+}
+
+.artwork-delete-btn:hover {
+  background: rgba(200,40,40,0.85) !important;
+}
+
 .artwork-modal {
   max-width: 900px;
   max-height: 90vh;
