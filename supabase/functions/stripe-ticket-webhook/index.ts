@@ -1,5 +1,6 @@
 import Stripe from 'npm:stripe@14.25.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
+import { Resend } from 'npm:resend@3.2.0';
 
 // Helper to generate a short unique reference number (8-char alphanumeric)
 function generateReferenceNumber() {
@@ -146,6 +147,40 @@ Deno.serve(async (request) => {
 
     if (upsertError) {
       return jsonResponse(500, { error: upsertError.message });
+    }
+
+    // Send confirmation email for paid events
+    if (paymentStatus === 'paid' && row.purchaser_email) {
+      try {
+        const resendApiKey = Deno.env.get('RESEND_API_KEY');
+        if (resendApiKey) {
+          const resend = new Resend(resendApiKey);
+          const fromAddress = Deno.env.get('INVITES_FROM_EMAIL') || 'Apollo Selene <onboarding@resend.dev>';
+          const appUrl = Deno.env.get('APP_URL') || 'https://apollo-selene.vercel.app';
+          const eventTitle = row.event_title || 'the event';
+          const eventDate = row.event_date ? ` on ${row.event_date}` : '';
+          const eventLocation = row.event_location ? ` at ${row.event_location}` : '';
+          await resend.emails.send({
+            from: fromAddress,
+            to: [row.purchaser_email],
+            subject: `Your ticket for ${eventTitle} — Ref: ${referenceNumber}`,
+            html: `
+              <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto; line-height: 1.6; color: #1a1a1a; max-width: 560px; margin: 0 auto;">
+                <h2 style="margin-bottom: 4px;">You're on the list ✓</h2>
+                <p style="margin-top: 0; color: #555;">Your ticket has been confirmed for <strong>${eventTitle}</strong>${eventDate}${eventLocation}.</p>
+                <div style="background: #f5f5f5; border-radius: 8px; padding: 16px 20px; margin: 20px 0;">
+                  <p style="margin: 0; font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 0.05em;">Reference Number</p>
+                  <p style="margin: 4px 0 0; font-size: 26px; font-weight: 700; letter-spacing: 0.1em; color: #1a1a1a;">${referenceNumber}</p>
+                </div>
+                <p style="color: #555; font-size: 14px;">Keep this reference number — you may be asked to show it at the door.</p>
+                <p style="margin-top: 24px; font-size: 13px; color: #aaa;">Apollo Selene · <a href="${appUrl}/events" style="color: #aaa;">View Events</a></p>
+              </div>
+            `,
+          });
+        }
+      } catch (_emailErr) {
+        // Don't fail the webhook response if email sending fails
+      }
     }
 
     return jsonResponse(200, { ok: true, processed: stripeEvent.type, sessionId: session.id, referenceNumber });

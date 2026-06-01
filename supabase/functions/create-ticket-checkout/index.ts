@@ -104,6 +104,27 @@ Deno.serve(async (request) => {
       },
     });
 
+    // Write a pending row immediately so the client can poll for it on return
+    if (supabaseUrl && supabaseAnonKey) {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      await supabase.from('event_ticket_purchases').upsert(
+        {
+          user_id: user?.id || null,
+          event_id: eventId,
+          event_title: eventTitle || null,
+          event_date: eventDate || null,
+          event_location: eventLocation || null,
+          purchaser_email: user?.email || null,
+          stripe_checkout_session_id: session.id,
+          payment_status: 'pending',
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'stripe_checkout_session_id' }
+      );
+    }
+
     return jsonResponse(200, {
       ok: true,
       sessionId: session.id,
