@@ -1267,7 +1267,7 @@ const Events = ({ theme }) => {
                     className="guest-list-btn"
                     onClick={() => toggleGuestList(event.id)}
                   >
-                    View Guest Ledger
+                    View Guest List
                   </button>
                   <span className="guest-list-count">
                     {(eventGuestLists[event.id] || []).length} names in ledger

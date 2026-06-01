@@ -12,6 +12,7 @@ import MixtapeExchange from './pages/MixtapeExchange';
 import Account from './pages/Account';
 import ApolloDayVibe from './components/ApolloDayVibe';
 import SeleneNightVibe from './components/SeleneNightVibe';
+import SunMoonOrbit from './components/SunMoonOrbit';
 
 const THEME_STORAGE_KEY = 'apollo-selene-theme';
 import Earth from './pages/Earth';
@@ -22,7 +23,13 @@ const App = () => {
       return 'apollo';
     }
 
-    return window.localStorage.getItem(THEME_STORAGE_KEY) || 'apollo';
+    const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved) {
+      return saved;
+    }
+
+    const hour = new Date().getHours();
+    return hour >= 6 && hour < 18 ? 'apollo' : 'selene';
   });
 
   const [session, setSession] = useState(null);
@@ -46,6 +53,7 @@ const App = () => {
   return (
     <div className="app-shell">
       {theme === 'apollo' ? <ApolloDayVibe /> : <SeleneNightVibe />}
+      <SunMoonOrbit theme={theme} />
       <Router>
         <div className="layout-container">
           <aside className="Navbar">

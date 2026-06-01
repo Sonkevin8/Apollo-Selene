@@ -1,0 +1,49 @@
+/* ── Orbit container ─────────────────────────────────────────── */
+.sun-moon-orbit {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Track ───────────────────────────────────────────────────── */
+.orbit-track {
+  position: absolute;
+  inset: 16px;
+  border-radius: 20px;
+}
+
+.orbit-track--day {
+  border: 1px solid rgba(255, 185, 40, 0.28);
+  box-shadow:
+    0 0 18px rgba(255, 185, 40, 0.06),
+    inset 0 0 18px rgba(255, 185, 40, 0.04);
+}
+
+.orbit-track--night {
+  border: 1px solid rgba(180, 205, 255, 0.2);
+  box-shadow:
+    0 0 18px rgba(180, 205, 255, 0.06),
+    inset 0 0 18px rgba(180, 205, 255, 0.03);
+}
+
+/* ── Icon ────────────────────────────────────────────────────── */
+.orbit-icon {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  line-height: 1;
+  /* No CSS transition — movement is imperceptibly slow (< 0.06px/s) */
+}
+
+.orbit-icon--sun {
+  filter:
+    drop-shadow(0 0 8px rgba(255, 200, 50, 0.95))
+    drop-shadow(0 0 22px rgba(255, 170, 20, 0.55));
+}
+
+.orbit-icon--moon {
+  filter:
+    drop-shadow(0 0 8px rgba(210, 225, 255, 0.95))
+    drop-shadow(0 0 22px rgba(160, 190, 255, 0.55));
+}
