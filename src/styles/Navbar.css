@@ -324,6 +324,13 @@
     box-shadow: var(--shadow-soft);
   }
 
+  /* Full-screen tap-to-close backdrop */
+  .navbar-dropdown-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+  }
+
   .navbar-user-dropdown-item {
     display: block;
     padding: 0.5rem 0.75rem;

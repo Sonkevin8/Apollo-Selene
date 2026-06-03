@@ -63,63 +63,23 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
         </div>
         <div className="navbar-mobile-actions">
           {initial ? (
-            <div className="navbar-mobile-user">
-              <button
-                type="button"
-                className="navbar-avatar-btn"
-                onClick={() => setUserMenuOpen((v) => !v)}
-                aria-label="User menu"
-              >
-                <span className={`navbar-avatar${isAdmin ? ' navbar-avatar--admin' : ''}`}>{initial}</span>
-              </button>
-              {userMenuOpen && (
-                <div className="navbar-user-dropdown">
-                  <NavLink
-                    to="/account"
-                    className="navbar-user-dropdown-item"
-                    onClick={() => { setUserMenuOpen(false); setMenuOpen(false); }}
-                  >
-                    Account
-                  </NavLink>
-                  <button
-                    type="button"
-                    className="navbar-user-dropdown-item navbar-user-dropdown-logout"
-                    onClick={() => { setUserMenuOpen(false); handleLogout(); }}
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              className="navbar-avatar-btn"
+              onClick={() => setUserMenuOpen((v) => !v)}
+              aria-label="User menu"
+            >
+              <span className={`navbar-avatar${isAdmin ? ' navbar-avatar--admin' : ''}`}>{initial}</span>
+            </button>
           ) : (
-            <div className="navbar-mobile-user">
-              <button
-                type="button"
-                className="navbar-login-btn"
-                onClick={() => setLoginMenuOpen((v) => !v)}
-                aria-label="Login or sign up"
-              >
-                Login
-              </button>
-              {loginMenuOpen && (
-                <div className="navbar-user-dropdown navbar-login-dropdown">
-                  <NavLink
-                    to="/account"
-                    className="navbar-user-dropdown-item"
-                    onClick={() => { setLoginMenuOpen(false); setMenuOpen(false); }}
-                  >
-                    Sign In
-                  </NavLink>
-                  <NavLink
-                    to="/account"
-                    className="navbar-user-dropdown-item"
-                    onClick={() => { setLoginMenuOpen(false); setMenuOpen(false); }}
-                  >
-                    Sign Up
-                  </NavLink>
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              className="navbar-login-btn"
+              onClick={() => setLoginMenuOpen((v) => !v)}
+              aria-label="Login or sign up"
+            >
+              Login
+            </button>
           )}
           <button
             type="button"
@@ -133,6 +93,50 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
           </button>
         </div>
       </div>
+
+      {/* Dropdowns rendered outside backdrop-filter header so position:fixed works correctly */}
+      {userMenuOpen && (
+        <>
+          <div className="navbar-dropdown-backdrop" onClick={() => setUserMenuOpen(false)} />
+          <div className="navbar-user-dropdown">
+            <NavLink
+              to="/account"
+              className="navbar-user-dropdown-item"
+              onClick={() => { setUserMenuOpen(false); setMenuOpen(false); }}
+            >
+              Account
+            </NavLink>
+            <button
+              type="button"
+              className="navbar-user-dropdown-item navbar-user-dropdown-logout"
+              onClick={() => { setUserMenuOpen(false); handleLogout(); }}
+            >
+              Logout
+            </button>
+          </div>
+        </>
+      )}
+      {loginMenuOpen && (
+        <>
+          <div className="navbar-dropdown-backdrop" onClick={() => setLoginMenuOpen(false)} />
+          <div className="navbar-user-dropdown">
+            <NavLink
+              to="/account"
+              className="navbar-user-dropdown-item"
+              onClick={() => { setLoginMenuOpen(false); setMenuOpen(false); }}
+            >
+              Sign In
+            </NavLink>
+            <NavLink
+              to="/account"
+              className="navbar-user-dropdown-item"
+              onClick={() => { setLoginMenuOpen(false); setMenuOpen(false); }}
+            >
+              Sign Up
+            </NavLink>
+          </div>
+        </>
+      )}
       <div className="navbar-brand-block">
         <p className="navbar-kicker">
           Apollo Selene <span className="name-secret">secrets</span>
