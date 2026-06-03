@@ -1,6 +1,8 @@
 .account-shell {
   display: grid;
   gap: 1rem;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .account-card {
@@ -10,6 +12,9 @@
   border: 1px solid var(--border-color);
   background: var(--surface-color-strong);
   box-shadow: var(--shadow-soft);
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* ── Password row: full-width with eye inside ─────────────── */
