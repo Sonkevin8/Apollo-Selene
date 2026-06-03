@@ -24,6 +24,7 @@ const getInitial = (session, isAdmin) => {
 const Navbar = ({ theme, onToggleTheme, session }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [loginMenuOpen, setLoginMenuOpen] = useState(false);
   const navigate = useNavigate();
   const isAdmin = window.localStorage.getItem('apollo-admin') === 'true';
   const initial = getInitial(session, isAdmin);
@@ -91,9 +92,34 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
               )}
             </div>
           ) : (
-            <NavLink to="/account" className="navbar-mobile-login" onClick={() => setMenuOpen(false)}>
-              Login / Sign Up
-            </NavLink>
+            <div className="navbar-mobile-user">
+              <button
+                type="button"
+                className="navbar-login-btn"
+                onClick={() => setLoginMenuOpen((v) => !v)}
+                aria-label="Login or sign up"
+              >
+                Login
+              </button>
+              {loginMenuOpen && (
+                <div className="navbar-user-dropdown navbar-login-dropdown">
+                  <NavLink
+                    to="/account"
+                    className="navbar-user-dropdown-item"
+                    onClick={() => { setLoginMenuOpen(false); setMenuOpen(false); }}
+                  >
+                    Sign In
+                  </NavLink>
+                  <NavLink
+                    to="/account"
+                    className="navbar-user-dropdown-item"
+                    onClick={() => { setLoginMenuOpen(false); setMenuOpen(false); }}
+                  >
+                    Sign Up
+                  </NavLink>
+                </div>
+              )}
+            </div>
           )}
           <button
             type="button"
