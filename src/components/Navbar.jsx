@@ -65,11 +65,11 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
           {initial ? (
             <button
               type="button"
-              className="navbar-avatar-btn"
+              className={`navbar-avatar navbar-avatar-btn${isAdmin ? ' navbar-avatar--admin' : ''}`}
               onClick={() => setUserMenuOpen((v) => !v)}
               aria-label="User menu"
             >
-              <span className={`navbar-avatar${isAdmin ? ' navbar-avatar--admin' : ''}`}>{initial}</span>
+              {initial}
             </button>
           ) : (
             <button
@@ -94,7 +94,7 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
         </div>
       </div>
 
-      {/* Dropdowns rendered outside backdrop-filter header so position:fixed works correctly */}
+      {/* Dropdowns outside backdrop-filter header so position:fixed overlays everything */}
       {userMenuOpen && (
         <>
           <div className="navbar-dropdown-backdrop" onClick={() => setUserMenuOpen(false)} />

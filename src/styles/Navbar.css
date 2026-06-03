@@ -331,6 +331,12 @@
     z-index: 999;
   }
 
+  /* Avatar used directly as button */
+  .navbar-avatar-btn {
+    cursor: pointer;
+    font-family: inherit;
+  }
+
   .navbar-user-dropdown-item {
     display: block;
     padding: 0.5rem 0.75rem;
