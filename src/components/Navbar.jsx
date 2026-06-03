@@ -23,6 +23,7 @@ const getInitial = (session, isAdmin) => {
 
 const Navbar = ({ theme, onToggleTheme, session }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
   const isAdmin = window.localStorage.getItem('apollo-admin') === 'true';
   const initial = getInitial(session, isAdmin);
@@ -62,10 +63,32 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
         <div className="navbar-mobile-actions">
           {initial ? (
             <div className="navbar-mobile-user">
-              <NavLink to="/account" className="navbar-mobile-login" onClick={() => setMenuOpen(false)}>
+              <button
+                type="button"
+                className="navbar-avatar-btn"
+                onClick={() => setUserMenuOpen((v) => !v)}
+                aria-label="User menu"
+              >
                 <span className={`navbar-avatar${isAdmin ? ' navbar-avatar--admin' : ''}`}>{initial}</span>
-              </NavLink>
-              <button type="button" className="navbar-logout-btn" onClick={handleLogout}>Logout</button>
+              </button>
+              {userMenuOpen && (
+                <div className="navbar-user-dropdown">
+                  <NavLink
+                    to="/account"
+                    className="navbar-user-dropdown-item"
+                    onClick={() => { setUserMenuOpen(false); setMenuOpen(false); }}
+                  >
+                    Account
+                  </NavLink>
+                  <button
+                    type="button"
+                    className="navbar-user-dropdown-item navbar-user-dropdown-logout"
+                    onClick={() => { setUserMenuOpen(false); handleLogout(); }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <NavLink to="/account" className="navbar-mobile-login" onClick={() => setMenuOpen(false)}>

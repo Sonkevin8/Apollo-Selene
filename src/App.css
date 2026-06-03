@@ -1069,6 +1069,8 @@ select:focus {
     max-width: 100% !important;
     width: 100% !important;
     height: auto;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   
   .content-container {
