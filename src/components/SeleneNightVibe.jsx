@@ -23,6 +23,13 @@ const SeleneNightVibe = () => (
       <span className="club-flare club-flare--three" />
     </div>
 
+    <div className="neon-scanners">
+      <span className="neon-scanner neon-scanner--one" />
+      <span className="neon-scanner neon-scanner--two" />
+      <span className="neon-scanner neon-scanner--three" />
+      <span className="neon-scanner neon-scanner--four" />
+    </div>
+
     <div className="club-dj-stage">
       <div className="club-dj-booth">
         <span className="dj-console-light dj-console-light--one" />
