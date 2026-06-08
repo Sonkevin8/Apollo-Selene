@@ -1094,7 +1094,16 @@ const Events = ({ theme }) => {
   return (
     <div className="content-section">
       <div className="flex justify-between items-center mb-4">
-        <h1>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span style={{
+            display: 'inline-block',
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            background: 'var(--accent-color)',
+            boxShadow: '0 0 8px 2px color-mix(in srgb, var(--accent-color) 65%, transparent)',
+            flexShrink: 0,
+          }} />
           Apollo Selene Events <span className="name-secret">confidential</span>
         </h1>
         <div className="flex gap-2">
@@ -1117,7 +1126,7 @@ const Events = ({ theme }) => {
       </div>
 
       <div className="card events-intro-card">
-        <p className="section-kicker">Invitation Circle</p>
+        <p className="section-kicker" style={{ color: 'var(--accent-color)', fontWeight: 700, letterSpacing: '0.22em' }}>Invitation Circle</p>
         <h2>{phaseTitle}</h2>
         <p>
           This is the private bulletin room of Apollo Selene. New gatherings appear here quietly, with limited seats and details shared only when each announcement is unsealed.
@@ -1578,6 +1587,7 @@ const Events = ({ theme }) => {
                 <div style={{ flex: 1 }}>
                   <p className="event-whisper">Sealed announcement</p>
                   <span className="event-seal">
+                    <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-color)', boxShadow: '0 0 5px 1px color-mix(in srgb, var(--accent-color) 70%, transparent)', marginRight: '0.35rem', flexShrink: 0 }} />
                     {event.phase === EVENT_PHASES.apollo ? 'Day Invitation' : 'Night Invitation'}
                   </span>
                 </div>
