@@ -28,10 +28,13 @@ const makePersonIcon = (seed = 0) => {
   const hues = [260, 200, 320, 160, 40, 0, 180];
   const h = hues[seed % hues.length];
   const delay = (seed * 0.17).toFixed(2);
+  const noteDelay = (seed * 0.53).toFixed(2);
+  const notes = ['♪', '♫', '♩'];
+  const note = notes[seed % notes.length];
   return L.divIcon({
     className: '',
     html: `
-      <div class="auck-person" style="animation-delay:${delay}s">
+      <div class="auck-person" style="animation-delay:${delay}s;overflow:visible">
         <div class="ap-hat" style="background:hsl(${h},60%,35%)"></div>
         <div class="ap-head"></div>
         <div class="ap-body" style="background:hsl(${h},55%,45%)"></div>
@@ -40,6 +43,7 @@ const makePersonIcon = (seed = 0) => {
           <div class="ap-leg ap-leg-r" style="animation-delay:${(parseFloat(delay)+0.22).toFixed(2)}s"></div>
         </div>
         <div class="ap-shadow"></div>
+        <div class="ap-note" style="animation-delay:${noteDelay}s;color:hsl(${h},85%,68%)">${note}</div>
       </div>`,
     iconSize: [20, 34],
     iconAnchor: [10, 34],
@@ -71,16 +75,40 @@ const youAreHereIcon = L.divIcon({
   html: `<div class="auck-you">
     <div class="auck-you-dot"></div>
     <div class="auck-you-ring"></div>
+    <div class="auck-you-ring auck-you-ring--2"></div>
+    <div class="auck-you-ring auck-you-ring--3"></div>
   </div>`,
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+});
+
+const cassettteHubIcon = L.divIcon({
+  className: '',
+  html: `<div class="auck-cassette">
+    <div class="ac-body">
+      <div class="ac-window">
+        <div class="ac-reel ac-reel-l"></div>
+        <div class="ac-reel ac-reel-r"></div>
+      </div>
+    </div>
+    <div class="ac-pulse"></div>
+    <div class="ac-pulse ac-pulse--2"></div>
+    <div class="ac-label">MIX</div>
+  </div>`,
+  iconSize: [38, 32],
+  iconAnchor: [19, 16],
 });
 
 const ANIM_CSS = `
-  @keyframes ap-bob  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-  @keyframes ap-walk { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(18deg)} }
-  @keyframes tree-sway{ 0%,100%{transform:rotate(0deg)} 40%{transform:rotate(2.5deg)} 70%{transform:rotate(-1.5deg)} }
-  @keyframes you-pulse{ 0%,100%{transform:scale(1);opacity:0.7} 50%{transform:scale(2.2);opacity:0} }
+  @keyframes ap-bob       { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+  @keyframes ap-walk      { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(18deg)} }
+  @keyframes tree-sway    { 0%,100%{transform:rotate(0deg)} 40%{transform:rotate(2.5deg)} 70%{transform:rotate(-1.5deg)} }
+  @keyframes you-pulse    { 0%,100%{transform:scale(1);opacity:0.7} 50%{transform:scale(2.8);opacity:0} }
+  @keyframes ap-note-rise { 0%{transform:translateX(-50%) translateY(0) scale(1);opacity:1} 100%{transform:translateX(-50%) translateY(-26px) scale(0.65);opacity:0} }
+  @keyframes ac-reel-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes ac-pulse     { 0%,100%{transform:scale(1);opacity:0.65} 50%{transform:scale(2.2);opacity:0} }
+  @keyframes map-note-drift{ 0%{transform:translateY(0) rotate(-8deg);opacity:0} 12%{opacity:0.65} 85%{opacity:0.4} 100%{transform:translateY(-340px) rotate(14deg);opacity:0} }
+  @keyframes map-scan     { 0%{transform:translateY(-100%)} 100%{transform:translateY(420px)} }
 
   .auck-person { position:relative; width:20px; height:34px; animation:ap-bob 1.1s ease-in-out infinite; cursor:pointer; }
   .ap-hat  { width:14px;height:5px;border-radius:3px 3px 0 0;margin:0 auto; }
@@ -89,6 +117,7 @@ const ANIM_CSS = `
   .ap-legs { display:flex;justify-content:center;gap:2px;width:14px;margin:0 auto; }
   .ap-leg  { width:5px;height:8px;border-radius:0 0 3px 3px;background:#3d2b60;animation:ap-walk 0.55s ease-in-out infinite alternate; }
   .ap-shadow{ width:10px;height:3px;border-radius:50%;background:rgba(0,0,0,0.2);margin:1px auto 0; }
+  .ap-note { position:absolute;top:-14px;left:50%;font-size:11px;font-style:normal;animation:ap-note-rise 2s ease-out infinite;pointer-events:none;text-shadow:0 0 4px currentColor; }
 
   .auck-tree { position:relative; width:28px; height:40px; animation:tree-sway 3.4s ease-in-out infinite; cursor:default; }
   .at-canopy-back{ position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:26px;height:20px;border-radius:50%;opacity:0.5; }
@@ -97,9 +126,31 @@ const ANIM_CSS = `
   .at-trunk      { position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:6px;height:14px;background:#6b3d1e;border-radius:2px; }
   .at-shadow     { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:14px;height:4px;border-radius:50%;background:rgba(0,0,0,0.18); }
 
-  .auck-you       { position:relative;width:20px;height:20px; }
-  .auck-you-dot   { position:absolute;inset:6px;border-radius:50%;background:#e63946;border:2px solid #fff;box-shadow:0 0 0 2px rgba(230,57,70,0.5); }
-  .auck-you-ring  { position:absolute;inset:0;border-radius:50%;border:2px solid rgba(230,57,70,0.6);animation:you-pulse 1.4s ease-out infinite; }
+  .auck-you       { position:relative;width:40px;height:40px; }
+  .auck-you-dot   { position:absolute;inset:14px;border-radius:50%;background:#e63946;border:2px solid #fff;box-shadow:0 0 0 2px rgba(230,57,70,0.5); }
+  .auck-you-ring  { position:absolute;inset:0;border-radius:50%;border:2px solid rgba(230,57,70,0.6);animation:you-pulse 1.6s ease-out infinite; }
+  .auck-you-ring--2 { animation-delay:0.55s; }
+  .auck-you-ring--3 { animation-delay:1.1s; }
+
+  .auck-cassette { position:relative;width:38px;height:32px;cursor:pointer; }
+  .ac-body { width:38px;height:22px;background:#1a003a;border-radius:4px;border:1.5px solid rgba(180,0,255,0.75);box-shadow:0 0 10px rgba(180,0,255,0.5),inset 0 0 6px rgba(180,0,255,0.2); }
+  .ac-window { display:flex;justify-content:space-around;align-items:center;height:100%;padding:0 6px; }
+  .ac-reel { width:8px;height:8px;border-radius:50%;border:2px solid rgba(210,0,255,0.9);box-shadow:0 0 4px rgba(200,0,255,0.6);animation:ac-reel-spin 1.1s linear infinite; }
+  .ac-reel-r { animation-direction:reverse;animation-duration:0.9s; }
+  .ac-pulse { position:absolute;inset:-5px;border-radius:8px;border:1.5px solid rgba(180,0,255,0.55);animation:ac-pulse 2s ease-out infinite; }
+  .ac-pulse--2 { animation-delay:1s; }
+  .ac-label { position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;letter-spacing:0.12em;color:rgba(210,100,255,0.9);text-shadow:0 0 6px rgba(180,0,255,0.8);white-space:nowrap; }
+
+  .map-float-note { position:absolute;font-size:17px;pointer-events:none;animation:map-note-drift linear infinite; }
+  .map-float-note--1 { left:7%;  bottom:0;animation-duration:7.2s;animation-delay:0s;   color:rgba(180,0,255,0.55); }
+  .map-float-note--2 { left:21%; bottom:0;animation-duration:5.8s;animation-delay:1.4s; color:rgba(100,149,237,0.55); }
+  .map-float-note--3 { left:44%; bottom:0;animation-duration:8.5s;animation-delay:2.9s; color:rgba(200,0,255,0.5); }
+  .map-float-note--4 { left:66%; bottom:0;animation-duration:6.4s;animation-delay:0.8s; color:rgba(180,0,255,0.52); }
+  .map-float-note--5 { left:84%; bottom:0;animation-duration:7.8s;animation-delay:3.6s; color:rgba(100,200,255,0.5); }
+  .map-scan-line { position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(180,0,255,0.18) 30%,rgba(200,100,255,0.22) 50%,rgba(180,0,255,0.18) 70%,transparent);pointer-events:none;animation:map-scan 5s linear infinite;z-index:910; }
+
+  .auck-map-panel { animation: panel-slide-in 0.22s ease-out both; }
+  @keyframes panel-slide-in { from{opacity:0;transform:translateX(18px)} to{opacity:1;transform:translateX(0)} }
 `;
 
 const MapPhaser = () => {
@@ -145,6 +196,11 @@ const MapPhaser = () => {
       const m = L.marker([spot.lat, spot.lng], { icon: makeTreeIcon(i), interactive: false }).addTo(map);
       treeMarkersRef.current.push(m);
     });
+
+    // Mixtape exchange hub at Auckland centre
+    L.marker([AUCKLAND.lat, AUCKLAND.lng], { icon: cassettteHubIcon, zIndexOffset: 300 })
+      .addTo(map)
+      .bindTooltip('Mixtape Exchange Hub', { direction: 'top', offset: [0, -18] });
 
     // Geolocation: zoom to visitor's position
     if (navigator.geolocation) {
@@ -236,6 +292,16 @@ const MapPhaser = () => {
       `}</style>
 
       <div ref={containerRef} style={{ width: '100%', height: '420px', borderRadius: '12px', overflow: 'hidden' }} />
+
+      {/* Drifting music notes + scan line overlay */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', borderRadius: '12px', zIndex: 900 }}>
+        <span className="map-float-note map-float-note--1">♪</span>
+        <span className="map-float-note map-float-note--2">♫</span>
+        <span className="map-float-note map-float-note--3">♩</span>
+        <span className="map-float-note map-float-note--4">♪</span>
+        <span className="map-float-note map-float-note--5">♫</span>
+        <div className="map-scan-line" />
+      </div>
 
       {selected && (
         <div className="auck-map-panel">
