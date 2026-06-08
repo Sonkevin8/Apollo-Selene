@@ -55,7 +55,7 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
           </button>
           <button
             type="button"
-            className={`navbar-mode-btn${theme === 'selene' ? ' navbar-mode-btn--active' : ''}`}
+            className={`navbar-mode-btn navbar-mode-btn--selene${theme === 'selene' ? ' navbar-mode-btn--active' : ''}`}
             onClick={() => theme !== 'selene' && onToggleTheme()}
           >
             ☽ Selene Mode
@@ -200,7 +200,7 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
         </button>
         <button
           type="button"
-          className={`navbar-mode-btn${theme === 'selene' ? ' navbar-mode-btn--active' : ''}`}
+          className={`navbar-mode-btn navbar-mode-btn--selene${theme === 'selene' ? ' navbar-mode-btn--active' : ''}`}
           onClick={() => theme !== 'selene' && onToggleTheme()}
         >
           ☽ Selene Mode
