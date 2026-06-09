@@ -67,6 +67,49 @@ const TREE_SPOTS = [
   { lat: -46.0000, lng: 167.5000 }, { lat: -45.8500, lng: 168.8000 },
 ];
 
+// Major NZ cities — pixel-art building markers
+const CITIES = [
+  { lat: -36.8509, lng: 174.7645, name: 'Auckland',        size: 'large'  },
+  { lat: -41.2865, lng: 174.7762, name: 'Wellington',      size: 'large'  },
+  { lat: -43.5321, lng: 172.6362, name: 'Christchurch',    size: 'large'  },
+  { lat: -45.8788, lng: 170.5028, name: 'Dunedin',         size: 'medium' },
+  { lat: -37.7870, lng: 175.2793, name: 'Hamilton',        size: 'medium' },
+  { lat: -37.6878, lng: 176.1651, name: 'Tauranga',        size: 'medium' },
+  { lat: -39.4928, lng: 176.9120, name: 'Napier',          size: 'small'  },
+  { lat: -39.0556, lng: 174.0752, name: 'New Plymouth',    size: 'small'  },
+  { lat: -41.2706, lng: 173.2840, name: 'Nelson',          size: 'small'  },
+  { lat: -45.0312, lng: 168.6626, name: 'Queenstown',      size: 'small'  },
+  { lat: -38.1368, lng: 176.2497, name: 'Rotorua',         size: 'small'  },
+  { lat: -46.4132, lng: 168.3538, name: 'Invercargill',    size: 'small'  },
+  { lat: -39.9300, lng: 175.0500, name: 'Whanganui',       size: 'small'  },
+  { lat: -40.3523, lng: 175.6082, name: 'Palmerston North',size: 'small'  },
+];
+
+// Famous NZ landmarks
+const LANDMARKS = [
+  { lat: -36.8484, lng: 174.7622, name: 'Sky Tower',          type: 'tower'      },
+  { lat: -37.8726, lng: 175.6821, name: 'Hobbiton',           type: 'hobbit'     },
+  { lat: -38.0827, lng: 176.2761, name: 'Wai-O-Tapu',         type: 'geyser'     },
+  { lat: -43.5959, lng: 170.1415, name: 'Aoraki / Mt Cook',   type: 'mountain'   },
+  { lat: -44.6703, lng: 167.9270, name: 'Milford Sound',      type: 'fjord'      },
+  { lat: -34.4292, lng: 172.6762, name: 'Cape Reinga',        type: 'lighthouse' },
+  { lat: -43.3868, lng: 170.1856, name: 'Franz Josef Glacier',type: 'glacier'    },
+  { lat: -38.6833, lng: 176.0731, name: 'Lake Taupō',         type: 'lake'       },
+  { lat: -39.2987, lng: 175.5644, name: 'Mt Ruapehu',         type: 'volcano'    },
+  { lat: -44.7000, lng: 169.1500, name: 'Lake Wānaka',        type: 'lake'       },
+];
+
+// Major NZ rivers as simplified polyline paths
+const RIVERS = [
+  { name: 'Waikato River',          coords: [[-38.69,176.07],[-38.37,175.85],[-38.04,175.65],[-37.79,175.28],[-37.55,175.19],[-37.24,174.98]] },
+  { name: 'Whanganui River',        coords: [[-39.06,175.57],[-38.88,175.26],[-39.32,175.05],[-39.93,175.05]] },
+  { name: 'Rangitīkei River',       coords: [[-39.30,175.90],[-39.70,175.70],[-40.13,175.38],[-40.28,175.26]] },
+  { name: 'Clutha / Mata-Au River', coords: [[-44.70,169.13],[-45.04,169.33],[-45.25,169.38],[-45.83,169.70],[-46.24,169.75]] },
+  { name: 'Waitaki River',          coords: [[-44.24,169.87],[-44.51,170.18],[-44.73,170.46],[-44.95,171.18]] },
+  { name: 'Buller / Kawatiri River',coords: [[-41.80,172.50],[-41.87,171.98],[-41.75,171.60]] },
+  { name: 'Manawatū River',         coords: [[-40.26,175.84],[-40.35,175.62],[-40.47,175.36],[-40.46,175.11]] },
+];
+
 // Heuristic gender prediction from first name (for sprite variety only)
 const predictGender = (name = '') => {
   const first = (name || '').trim().split(/[\s,]+/)[0].toLowerCase().replace(/[^a-z]/g, '');
@@ -188,6 +231,79 @@ const makeTreeIcon = (seed = 0) => {
   });
 };
 
+// Pixel-art SVGs for landmark types
+const LANDMARK_SVGS = {
+  tower:      `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="36" viewBox="0 0 14 36" style="image-rendering:pixelated;display:block"><rect x="5" y="0" width="4" height="8" fill="#ddd"/><rect x="3" y="8" width="8" height="3" fill="#bbb"/><rect x="4" y="11" width="6" height="20" fill="#999"/><rect x="2" y="29" width="10" height="3" fill="#777"/><rect x="0" y="32" width="14" height="4" fill="#555"/></svg>`,
+  hobbit:     `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="22" viewBox="0 0 28 22" style="image-rendering:pixelated;display:block"><ellipse cx="14" cy="14" rx="12" ry="8" fill="#3a7a18"/><ellipse cx="14" cy="12" rx="7" ry="7" fill="#7a4820"/><ellipse cx="14" cy="12" rx="5" ry="5" fill="#4a8a22"/><rect x="12" y="8" width="4" height="8" fill="#5a3015"/><rect x="11" y="7" width="6" height="2" fill="#3a6a18"/></svg>`,
+  geyser:     `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="28" viewBox="0 0 20 28" style="image-rendering:pixelated;display:block"><rect x="8" y="18" width="4" height="10" fill="#7a4820"/><ellipse cx="10" cy="18" rx="5" ry="4" fill="#5ab5cc"/><rect x="7" y="2" width="2" height="16" fill="#aadeee" class="geyser-steam"/><rect x="11" y="0" width="2" height="18" fill="#cceeee" class="geyser-steam"/><rect x="9" y="1" width="2" height="17" fill="#88ccdd" class="geyser-steam"/></svg>`,
+  mountain:   `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="26" viewBox="0 0 36 26" style="image-rendering:pixelated;display:block"><polygon points="18,2 2,24 34,24" fill="#6a7a8a"/><polygon points="18,2 11,14 25,14" fill="#c8dce8"/><polygon points="18,2 14,10 22,10" fill="#f0f8ff"/></svg>`,
+  fjord:      `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="26" viewBox="0 0 32 26" style="image-rendering:pixelated;display:block"><polygon points="4,2 12,20 2,24" fill="#5a6a7a"/><polygon points="28,2 20,20 30,24" fill="#5a6a7a"/><rect x="0" y="20" width="32" height="6" fill="#3a7aaa"/></svg>`,
+  lighthouse: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="34" viewBox="0 0 14 34" style="image-rendering:pixelated;display:block"><rect x="4" y="0" width="6" height="8" fill="#eee"/><rect x="2" y="8" width="10" height="3" fill="#ccc"/><rect x="3" y="11" width="3" height="14" fill="#ddd"/><rect x="8" y="11" width="3" height="14" fill="#ddd"/><rect x="3" y="13" width="8" height="5" fill="#e84040" class="lh-flash"/><rect x="2" y="25" width="10" height="9" fill="#bbb"/></svg>`,
+  glacier:    `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" viewBox="0 0 30 24" style="image-rendering:pixelated;display:block"><polygon points="15,1 3,18 27,18" fill="#b8d8f0"/><polygon points="15,1 9,12 21,12" fill="#daf0ff"/><polygon points="15,1 12,8 18,8" fill="#ffffff"/><rect x="2" y="18" width="26" height="4" fill="#9ac4e0"/></svg>`,
+  lake:       `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="18" viewBox="0 0 32 18" style="image-rendering:pixelated;display:block"><ellipse cx="16" cy="9" rx="14" ry="7" fill="#2a7aaa"/><ellipse cx="16" cy="9" rx="10" ry="4" fill="#3a8abb" opacity="0.6"/></svg>`,
+  volcano:    `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="28" viewBox="0 0 36 28" style="image-rendering:pixelated;display:block"><polygon points="18,4 2,26 34,26" fill="#5a3a2a"/><polygon points="18,4 13,14 23,14" fill="#8a4a2a"/><rect x="14" y="1" width="8" height="5" fill="#ff4400" class="volcano-smoke" rx="2"/><rect x="13" y="0" width="10" height="3" fill="#ff7700" class="volcano-smoke" rx="2" opacity="0.7"/></svg>`,
+};
+
+const makeLandmarkIcon = (type, name) => {
+  const svg = LANDMARK_SVGS[type] || LANDMARK_SVGS.mountain;
+  return L.divIcon({
+    className: '',
+    html: `<div class="landmark-marker landmark-marker--${type}" style="position:relative;display:inline-block">${svg}<div class="lm-label">${name}</div></div>`,
+    iconSize: [36, 52],
+    iconAnchor: [18, 52],
+  });
+};
+
+// Pixel-art city building icon (3 sizes)
+const makeCityIcon = (name, size, seed = 0) => {
+  const delay = (seed * 0.23).toFixed(2);
+  const pal = size === 'large'
+    ? { body: '#1e3a6e', roof: '#132a5e', win: '#ffe066' }
+    : size === 'medium'
+    ? { body: '#1a4a1a', roof: '#0f3a0f', win: '#88ff88' }
+    : { body: '#3a1a4a', roof: '#2a0f3a', win: '#dd88ff' };
+
+  let floors = '';
+  let w, h;
+
+  if (size === 'large') {
+    w = 28; h = 34;
+    floors  = `<rect x="12" y="0" width="4" height="7" fill="#bbb"/>`;
+    floors += `<rect x="10" y="5" width="8" height="2" fill="#999"/>`;
+    floors += `<rect x="1" y="6" width="26" height="3" fill="${pal.roof}"/>`;
+    floors += `<rect x="3" y="9" width="22" height="22" fill="${pal.body}"/>`;
+    [[11],[16],[21]].forEach(([y]) => [5,12,19].forEach(x => {
+      floors += `<rect x="${x}" y="${y}" width="4" height="3" fill="${pal.win}" class="city-win"/>`;
+    }));
+    floors += `<rect x="10" y="27" width="8" height="4" fill="#050d1a"/>`;
+  } else if (size === 'medium') {
+    w = 24; h = 28;
+    floors  = `<rect x="1" y="4" width="22" height="3" fill="${pal.roof}"/>`;
+    floors += `<rect x="3" y="7" width="18" height="18" fill="${pal.body}"/>`;
+    [[9],[14]].forEach(([y]) => [5,15].forEach(x => {
+      floors += `<rect x="${x}" y="${y}" width="4" height="3" fill="${pal.win}" class="city-win"/>`;
+    }));
+    floors += `<rect x="9" y="21" width="6" height="4" fill="#050d1a"/>`;
+  } else {
+    w = 20; h = 24;
+    floors  = `<rect x="0" y="4" width="20" height="3" fill="${pal.roof}"/>`;
+    floors += `<rect x="2" y="7" width="16" height="14" fill="${pal.body}"/>`;
+    [4, 13].forEach(x => {
+      floors += `<rect x="${x}" y="9" width="3" height="3" fill="${pal.win}" class="city-win"/>`;
+    });
+    floors += `<rect x="7" y="17" width="6" height="4" fill="#050d1a"/>`;
+  }
+
+  return L.divIcon({
+    className: '',
+    html: `<div class="city-marker city-marker--${size}" style="animation-delay:${delay}s;position:relative;display:inline-block">` +
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;image-rendering:pixelated;overflow:visible">${floors}</svg>` +
+      `<div class="city-label">${name}</div></div>`,
+    iconSize: [w, h + 14],
+    iconAnchor: [Math.floor(w / 2), h + 14],
+  });
+};
+
 const youAreHereIcon = L.divIcon({
   className: '',
   html: `<div class="auck-you">
@@ -265,6 +381,52 @@ const ANIM_CSS = `
 
   .auck-map-panel { animation: panel-slide-in 0.22s ease-out both; }
   @keyframes panel-slide-in { from{opacity:0;transform:translateX(18px)} to{opacity:1;transform:translateX(0)} }
+
+  /* ── River flow ── */
+  .river-line { stroke-dasharray:8 5; animation:river-dash 2.4s linear infinite; }
+  @keyframes river-dash { to { stroke-dashoffset:-26; } }
+
+  /* ── City buildings ── */
+  @keyframes city-bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+  .city-marker { animation:city-bob 3s ease-in-out infinite; }
+  @keyframes city-win-flicker { 0%,88%,100%{opacity:1} 90%{opacity:0.1} 93%{opacity:1} 96%{opacity:0.3} }
+  .city-win { animation:city-win-flicker 5s ease-in-out infinite; }
+  .city-label { position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:5px;font-family:"Press Start 2P",monospace;color:#ffe066;text-shadow:0 0 5px #000,0 0 10px rgba(180,120,0,0.8);pointer-events:none;letter-spacing:0.05em; }
+
+  /* ── Landmarks ── */
+  @keyframes landmark-bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+  .landmark-marker { animation:landmark-bob 4s ease-in-out infinite; }
+  @keyframes lh-flash { 0%,100%{opacity:1;fill:#e84040} 50%{opacity:0.1;fill:#ffaa00} }
+  .lh-flash { animation:lh-flash 1.4s step-end infinite; }
+  @keyframes geyser-steam { 0%,100%{transform:translateY(0);opacity:0.9} 50%{transform:translateY(-4px);opacity:0.4} }
+  .geyser-steam { animation:geyser-steam 1.2s ease-in-out infinite; }
+  @keyframes volcano-puff { 0%,100%{transform:translateY(0) scaleX(1);opacity:0.9} 50%{transform:translateY(-4px) scaleX(1.4);opacity:0.5} }
+  .volcano-smoke { animation:volcano-puff 1.6s ease-in-out infinite; }
+  .lm-label { position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);white-space:nowrap;max-width:70px;text-align:center;font-size:4.5px;font-family:"Press Start 2P",monospace;color:#ffdd44;text-shadow:0 0 4px #000,0 0 8px rgba(160,100,0,0.8);pointer-events:none;line-height:1.3;letter-spacing:0.03em; }
+
+  /* ── Retro frame ── */
+  .retro-map-wrap { position:relative;border:3px solid #ffe066;box-shadow:0 0 0 2px #7a4a10,0 0 24px rgba(255,224,102,0.28),inset 0 0 50px rgba(0,0,0,0.45); }
+  .retro-scanlines { position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);pointer-events:none;z-index:920; }
+  .retro-vignette  { position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 38%,rgba(0,0,0,0.6) 100%);pointer-events:none;z-index:915; }
+  .retro-corner { position:absolute;width:16px;height:16px;pointer-events:none;z-index:925; }
+  .retro-corner--tl { top:0;left:0;border-top:3px solid #ffe066;border-left:3px solid #ffe066; }
+  .retro-corner--tr { top:0;right:0;border-top:3px solid #ffe066;border-right:3px solid #ffe066; }
+  .retro-corner--bl { bottom:0;left:0;border-bottom:3px solid #ffe066;border-left:3px solid #ffe066; }
+  .retro-corner--br { bottom:0;right:0;border-bottom:3px solid #ffe066;border-right:3px solid #ffe066; }
+  .retro-frame-header,.retro-status-bar { display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0.8rem;background:#08080e;border:3px solid #ffe066;font-family:"Press Start 2P",monospace; }
+  .retro-frame-header { border-bottom:none;font-size:8px; }
+  .retro-status-bar   { border-top:none;font-size:6.5px;color:#aaa; }
+  .retro-title  { color:#ffe066;text-shadow:0 0 10px rgba(255,224,102,0.7); }
+  .retro-subtitle { color:#888;font-size:6px; }
+  .retro-blink { animation:retro-blink 1s step-end infinite;color:#ffe066; }
+  @keyframes retro-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .retro-player-count { color:#88ff88;font-size:6px; }
+
+  /* ── Leaflet retro overrides ── */
+  .leaflet-tile { filter:sepia(0.22) saturate(0.72) brightness(0.80) contrast(1.12); }
+  .leaflet-container { background:#0d1020 !important; }
+  .leaflet-tooltip { font-family:"Press Start 2P",monospace !important;font-size:6px !important;background:#08080e !important;border:1px solid #ffe066 !important;color:#ffe066 !important;border-radius:2px !important;padding:3px 6px !important;box-shadow:0 0 6px rgba(255,224,102,0.4) !important; }
+  .leaflet-tooltip-top::before { border-top-color:#ffe066 !important; }
 `;
 
 const MapPhaser = () => {
@@ -315,6 +477,31 @@ const MapPhaser = () => {
     L.marker([AUCKLAND.lat, AUCKLAND.lng], { icon: cassettteHubIcon, zIndexOffset: 300 })
       .addTo(map)
       .bindTooltip('Mixtape Exchange Hub', { direction: 'top', offset: [0, -18] });
+
+    // Animated river polylines
+    RIVERS.forEach(({ name, coords }) => {
+      L.polyline(coords, {
+        color: '#4dd0e1',
+        weight: 2.5,
+        opacity: 0.75,
+        className: 'river-line',
+        dashArray: '8 5',
+      }).addTo(map).bindTooltip(name, { direction: 'center', sticky: true });
+    });
+
+    // City building markers
+    CITIES.forEach(({ lat, lng, name, size }, i) => {
+      L.marker([lat, lng], { icon: makeCityIcon(name, size, i), zIndexOffset: 150, interactive: true })
+        .addTo(map)
+        .bindTooltip(name, { direction: 'top', offset: [0, -20] });
+    });
+
+    // Landmark markers
+    LANDMARKS.forEach(({ lat, lng, name, type }) => {
+      L.marker([lat, lng], { icon: makeLandmarkIcon(type, name), zIndexOffset: 100, interactive: true })
+        .addTo(map)
+        .bindTooltip(name, { direction: 'top', offset: [0, -44] });
+    });
 
     // Geolocation: zoom to visitor's position
     if (navigator.geolocation) {
@@ -380,86 +567,117 @@ const MapPhaser = () => {
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
       <style>{ANIM_CSS}{`
         .auck-map-panel {
-          position:absolute; top:0; right:0; width:300px; max-height:400px;
-          overflow-y:auto; background:var(--card-bg,#1a1a2e);
-          border:1px solid var(--border-color,rgba(255,255,255,0.1));
-          border-radius:12px; padding:1rem; z-index:1000;
-          box-shadow:0 4px 24px rgba(0,0,0,0.4); font-size:0.85rem;
+          position:absolute; top:0; right:0; width:300px; max-height:420px;
+          overflow-y:auto; background:#08080e;
+          border:2px solid #ffe066;
+          border-radius:4px; padding:1rem; z-index:1000;
+          box-shadow:0 0 0 1px #7a4a10, 0 4px 24px rgba(0,0,0,0.7);
+          font-size:0.82rem;
+          font-family:"Press Start 2P", monospace;
         }
-        .auck-map-panel h3{margin:0 0 0.25rem;font-size:1rem}
-        .auck-close{float:right;background:none;border:none;color:inherit;cursor:pointer;font-size:1.1rem;margin-top:-2px}
-        .auck-section{margin-top:0.75rem}
-        .auck-section h4{margin:0 0 0.4rem;font-size:0.78rem;text-transform:uppercase;opacity:0.6}
-        .auck-item{display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+        .auck-map-panel h3{margin:0 0 0.4rem;font-size:0.72rem;color:#ffe066;text-shadow:0 0 6px rgba(255,224,102,0.5)}
+        .auck-close{float:right;background:none;border:1px solid #ffe066;color:#ffe066;cursor:pointer;font-size:0.9rem;padding:0 4px;line-height:1.4;margin-top:-2px}
+        .auck-section{margin-top:0.7rem}
+        .auck-section h4{margin:0 0 0.4rem;font-size:0.56rem;text-transform:uppercase;color:#88ff88;letter-spacing:0.1em}
+        .auck-item{display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid rgba(255,224,102,0.12)}
         .auck-item:last-child{border-bottom:none}
-        .auck-item img{width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0}
+        .auck-item img{width:40px;height:40px;object-fit:cover;border-radius:0;border:1px solid #ffe066;flex-shrink:0;image-rendering:pixelated}
         .auck-item-info{flex:1;min-width:0}
-        .auck-item-info strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .auck-item-info span{opacity:0.65;font-size:0.78rem}
-        .auck-buy-btn{flex-shrink:0;padding:0.22rem 0.55rem;border-radius:6px;border:1px solid var(--button-bg,#6c63ff);background:transparent;color:var(--button-bg,#6c63ff);cursor:pointer;font-size:0.76rem;white-space:nowrap}
-        .auck-buy-btn:hover{background:var(--button-bg,#6c63ff);color:#fff}
+        .auck-item-info strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.6rem;color:#ffe066}
+        .auck-item-info span{opacity:0.65;font-size:0.55rem}
+        .auck-buy-btn{flex-shrink:0;padding:0.22rem 0.5rem;border-radius:0;border:1px solid #ffe066;background:transparent;color:#ffe066;cursor:pointer;font-size:0.55rem;font-family:inherit;white-space:nowrap}
+        .auck-buy-btn:hover{background:#ffe066;color:#08080e}
         .auck-audio{width:100%;margin-top:0.25rem}
-        .auck-empty{opacity:0.5;font-style:italic;font-size:0.8rem}
+        .auck-empty{opacity:0.5;font-style:normal;font-size:0.6rem}
         .leaflet-container{font-family:inherit}
       `}</style>
 
-      <div ref={containerRef} style={{ width: '100%', height: '420px', borderRadius: '12px', overflow: 'hidden' }} />
-
-      {/* Drifting music notes + scan line overlay */}
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', borderRadius: '12px', zIndex: 900 }}>
-        <span className="map-float-note map-float-note--1">♪</span>
-        <span className="map-float-note map-float-note--2">♫</span>
-        <span className="map-float-note map-float-note--3">♩</span>
-        <span className="map-float-note map-float-note--4">♪</span>
-        <span className="map-float-note map-float-note--5">♫</span>
-        <div className="map-scan-line" />
+      {/* ── Retro game header ── */}
+      <div className="retro-frame-header">
+        <span className="retro-title">▶ MAP EXCHANGE</span>
+        <span className="retro-subtitle">AOTEAROA / NZ</span>
       </div>
 
-      {selected && (
-        <div className="auck-map-panel">
-          <button className="auck-close" onClick={() => setSelected(null)} aria-label="Close">✕</button>
-          <h3>{selected.profile.display_name || selected.profile.username || 'Member'}</h3>
-          {selected.profile.city && <div style={{ opacity: 0.6, fontSize: '0.76rem' }}>{selected.profile.city}</div>}
-          {selected.profile.bio && <p style={{ margin: '0.4rem 0 0', opacity: 0.85, fontSize: '0.82rem' }}>{selected.profile.bio}</p>}
-          {loadingProfile ? <p style={{ opacity: 0.5, marginTop: '0.75rem' }}>Loading…</p> : (
-            <>
-              <div className="auck-section">
-                <h4>Artwork</h4>
-                {selected.artwork.length === 0
-                  ? <p className="auck-empty">No artwork listed yet.</p>
-                  : selected.artwork.map((item) => (
-                    <div key={item.id} className="auck-item">
-                      {item.image_url && <img src={item.image_url} alt={item.title} />}
-                      <div className="auck-item-info">
-                        <strong>{item.title}</strong>
-                        <span>{item.medium}{item.year ? ` · ${item.year}` : ''}</span>
-                      </div>
-                      {item.price != null
-                        ? <button className="auck-buy-btn" onClick={() => handleBuy(item, 'artwork')}>NZD {Number(item.price).toFixed(2)}</button>
-                        : <span style={{ opacity: 0.4, fontSize: '0.72rem' }}>NFS</span>}
-                    </div>
-                  ))}
-              </div>
-              <div className="auck-section">
-                <h4>Mixtapes</h4>
-                {selected.mixtapes.length === 0
-                  ? <p className="auck-empty">No mixtapes uploaded yet.</p>
-                  : selected.mixtapes.map((item) => (
-                    <div key={item.id} className="auck-item" style={{ flexWrap: 'wrap' }}>
-                      <div className="auck-item-info" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <strong style={{ flex: 1 }}>{item.title || 'Untitled Mixtape'}</strong>
-                        {item.price != null && <button className="auck-buy-btn" onClick={() => handleBuy(item, 'mixtape')}>NZD {Number(item.price).toFixed(2)}</button>}
-                      </div>
-                      <audio className="auck-audio" controls src={item.file_url} />
-                    </div>
-                  ))}
-              </div>
-            </>
-          )}
+      {/* ── Map canvas with retro wrapper ── */}
+      <div className="retro-map-wrap">
+        <div ref={containerRef} style={{ width: '100%', height: '480px' }} />
+
+        {/* CRT scanlines */}
+        <div className="retro-scanlines" />
+        {/* Edge vignette */}
+        <div className="retro-vignette" />
+        {/* Pixel corner decorations */}
+        <div className="retro-corner retro-corner--tl" />
+        <div className="retro-corner retro-corner--tr" />
+        <div className="retro-corner retro-corner--bl" />
+        <div className="retro-corner retro-corner--br" />
+
+        {/* Drifting music notes + scan line overlay */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 900 }}>
+          <span className="map-float-note map-float-note--1">♪</span>
+          <span className="map-float-note map-float-note--2">♫</span>
+          <span className="map-float-note map-float-note--3">♩</span>
+          <span className="map-float-note map-float-note--4">♪</span>
+          <span className="map-float-note map-float-note--5">♫</span>
+          <div className="map-scan-line" />
         </div>
-      )}
+
+        {/* Profile panel */}
+        {selected && (
+          <div className="auck-map-panel">
+            <button className="auck-close" onClick={() => setSelected(null)} aria-label="Close">✕</button>
+            <h3>{selected.profile.display_name || selected.profile.username || 'Member'}</h3>
+            {selected.profile.city && <div style={{ opacity: 0.6, fontSize: '0.55rem', marginBottom: '0.3rem' }}>{selected.profile.city}</div>}
+            {selected.profile.bio && <p style={{ margin: '0.4rem 0 0', opacity: 0.85, fontSize: '0.6rem', lineHeight: 1.6 }}>{selected.profile.bio}</p>}
+            {loadingProfile ? <p style={{ opacity: 0.5, marginTop: '0.75rem', fontSize: '0.6rem' }}>Loading…</p> : (
+              <>
+                <div className="auck-section">
+                  <h4>Artwork</h4>
+                  {selected.artwork.length === 0
+                    ? <p className="auck-empty">No artwork listed yet.</p>
+                    : selected.artwork.map((item) => (
+                      <div key={item.id} className="auck-item">
+                        {item.image_url && <img src={item.image_url} alt={item.title} />}
+                        <div className="auck-item-info">
+                          <strong>{item.title}</strong>
+                          <span>{item.medium}{item.year ? ` · ${item.year}` : ''}</span>
+                        </div>
+                        {item.price != null
+                          ? <button className="auck-buy-btn" onClick={() => handleBuy(item, 'artwork')}>NZD {Number(item.price).toFixed(2)}</button>
+                          : <span style={{ opacity: 0.4, fontSize: '0.52rem' }}>NFS</span>}
+                      </div>
+                    ))}
+                </div>
+                <div className="auck-section">
+                  <h4>Mixtapes</h4>
+                  {selected.mixtapes.length === 0
+                    ? <p className="auck-empty">No mixtapes uploaded yet.</p>
+                    : selected.mixtapes.map((item) => (
+                      <div key={item.id} className="auck-item" style={{ flexWrap: 'wrap' }}>
+                        <div className="auck-item-info" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <strong style={{ flex: 1 }}>{item.title || 'Untitled Mixtape'}</strong>
+                          {item.price != null && <button className="auck-buy-btn" onClick={() => handleBuy(item, 'mixtape')}>NZD {Number(item.price).toFixed(2)}</button>}
+                        </div>
+                        <audio className="auck-audio" controls src={item.file_url} />
+                      </div>
+                    ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Retro game status bar ── */}
+      <div className="retro-status-bar">
+        <span>🗺 EXPLORING NZ</span>
+        <span className="retro-player-count">{users.length > 0 ? `${users.length} PLAYER${users.length !== 1 ? 'S' : ''} ONLINE` : 'SEARCHING…'}</span>
+        <span className="retro-blink">▼ TAP A PEG</span>
+      </div>
     </div>
   );
 };
