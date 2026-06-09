@@ -304,17 +304,54 @@ const makeCityIcon = (name, size, seed = 0) => {
   });
 };
 
-const youAreHereIcon = L.divIcon({
-  className: '',
-  html: `<div class="auck-you">
-    <div class="auck-you-dot"></div>
-    <div class="auck-you-ring"></div>
-    <div class="auck-you-ring auck-you-ring--2"></div>
-    <div class="auck-you-ring auck-you-ring--3"></div>
-  </div>`,
-  iconSize: [40, 40],
-  iconAnchor: [20, 20],
-});
+const makeYouAreHereIcon = (name = '') => {
+  const gender = predictGender(name);
+  // Retro-RPG palettes — male matches the purple-cap / yellow-jacket image style
+  const PAL = {
+    male:    { capHi:'#9966ee', capMid:'#8855dd', capBrim:'#7744cc', jacket:'#e8a800', jacketDk:'#d49800', collar:'#fffde8', pants:'#333333', shoe:'#111111' },
+    female:  { capHi:'#ff99cc', capMid:'#ee77bb', capBrim:'#dd55aa', jacket:'#22bbaa', jacketDk:'#189a8a', collar:'#ffe8f8', pants:'#667744', shoe:'#443322' },
+    neutral: { capHi:'#66cc55', capMid:'#55aa44', capBrim:'#448833', jacket:'#3366cc', jacketDk:'#2255aa', collar:'#e8f0ff', pants:'#2a2a2a', shoe:'#111111' },
+  };
+  const p = PAL[gender];
+  const skin = '#f5c89a';
+  // Female gets side puff buns instead of a cap
+  const headExtra = gender === 'female'
+    ? `<rect x="2" y="5" width="4" height="7" fill="${p.capBrim}" rx="2"/><rect x="18" y="5" width="4" height="7" fill="${p.capBrim}" rx="2"/>` : '';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="40" viewBox="0 0 24 40" style="display:block;image-rendering:pixelated;overflow:visible">
+    <rect x="4" y="0" width="16" height="2" fill="${p.capHi}"/>
+    <rect x="2" y="2" width="20" height="3" fill="${p.capMid}"/>
+    <rect x="0" y="4" width="24" height="2" fill="${p.capBrim}"/>
+    ${headExtra}
+    <rect x="6" y="6" width="12" height="10" fill="${skin}" rx="1"/>
+    <rect x="8" y="10" width="2" height="2" fill="#1a0800"/>
+    <rect x="14" y="10" width="2" height="2" fill="#1a0800"/>
+    <rect x="11" y="14" width="4" height="1" fill="#c07060"/>
+    <rect x="9" y="16" width="6" height="2" fill="${skin}"/>
+    <rect x="4" y="18" width="16" height="6" fill="${p.jacket}"/>
+    <rect x="4" y="24" width="16" height="4" fill="${p.jacketDk}"/>
+    <rect x="8" y="18" width="8" height="5" fill="${p.collar}"/>
+    <rect x="0" y="18" width="5" height="8" fill="${p.jacket}"/>
+    <rect x="0" y="24" width="5" height="4" fill="${p.jacketDk}"/>
+    <rect x="19" y="18" width="5" height="8" fill="${p.jacket}"/>
+    <rect x="19" y="24" width="5" height="4" fill="${p.jacketDk}"/>
+    <rect x="4" y="28" width="16" height="2" fill="#1a0800"/>
+    <rect x="5" y="30" width="6" height="7" fill="${p.pants}"/>
+    <rect x="13" y="30" width="6" height="7" fill="${p.pants}"/>
+    <rect x="4" y="37" width="8" height="3" fill="${p.shoe}"/>
+    <rect x="12" y="37" width="8" height="3" fill="${p.shoe}"/>
+  </svg>`;
+  return L.divIcon({
+    className: '',
+    html: `<div class="auck-you-sprite">
+      <div class="auck-you-beacon"></div>
+      <div class="auck-you-beacon auck-you-beacon--2"></div>
+      ${svg}
+      <div class="you-here-label">YOU</div>
+    </div>`,
+    iconSize: [40, 60],
+    iconAnchor: [20, 40],
+  });
+};
 
 const cassettteHubIcon = L.divIcon({
   className: '',
@@ -356,11 +393,10 @@ const ANIM_CSS = `
   .at-trunk      { position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:6px;height:14px;background:#6b3d1e;border-radius:2px; }
   .at-shadow     { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:14px;height:4px;border-radius:50%;background:rgba(0,0,0,0.18); }
 
-  .auck-you       { position:relative;width:40px;height:40px; }
-  .auck-you-dot   { position:absolute;inset:14px;border-radius:50%;background:#e63946;border:2px solid #fff;box-shadow:0 0 0 2px rgba(230,57,70,0.5); }
-  .auck-you-ring  { position:absolute;inset:0;border-radius:50%;border:2px solid rgba(230,57,70,0.6);animation:you-pulse 1.6s ease-out infinite; }
-  .auck-you-ring--2 { animation-delay:0.55s; }
-  .auck-you-ring--3 { animation-delay:1.1s; }
+  .auck-you-sprite { position:relative;display:inline-block;animation:ap-bob 1.8s ease-in-out infinite;cursor:pointer; }
+  .auck-you-beacon { position:absolute;bottom:-3px;left:50%;width:20px;height:10px;border:2px solid rgba(255,224,102,0.85);border-radius:50%;transform:translateX(-50%);animation:you-pulse 1.8s ease-out infinite;pointer-events:none; }
+  .auck-you-beacon--2 { animation-delay:0.9s; }
+  .you-here-label { position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:5px;font-family:"Press Start 2P",monospace;color:#ffe066;text-shadow:0 0 5px rgba(255,224,102,0.8);pointer-events:none;letter-spacing:0.12em; }
 
   .auck-cassette { position:relative;width:38px;height:32px;cursor:pointer; }
   .ac-body { width:38px;height:22px;background:#1a003a;border-radius:4px;border:1.5px solid rgba(180,0,255,0.75);box-shadow:0 0 10px rgba(180,0,255,0.5),inset 0 0 6px rgba(180,0,255,0.2); }
@@ -506,13 +542,24 @@ const MapPhaser = () => {
     // Geolocation: zoom to visitor's position
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
           const { latitude, longitude } = pos.coords;
           map.setView([latitude, longitude], 14, { animate: true });
+          // Fetch current user's name for gender-predicted sprite
+          let myName = '';
+          try {
+            if (isSupabaseConfigured && supabase) {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                const { data: prof } = await supabase.from('profiles').select('display_name,username').eq('id', user.id).single();
+                myName = prof?.display_name || prof?.username || '';
+              }
+            }
+          } catch (_) { /* ignore — fall back to neutral sprite */ }
           if (youMarkerRef.current) youMarkerRef.current.remove();
-          youMarkerRef.current = L.marker([latitude, longitude], { icon: youAreHereIcon, zIndexOffset: 500 })
+          youMarkerRef.current = L.marker([latitude, longitude], { icon: makeYouAreHereIcon(myName), zIndexOffset: 500 })
             .addTo(map)
-            .bindTooltip('You are here', { direction: 'top', offset: [0, -12] });
+            .bindTooltip(myName ? `${myName} — You are here` : 'You are here', { direction: 'top', offset: [0, -44] });
         },
         () => { /* permission denied — stay on Auckland */ },
         { timeout: 6000 }
