@@ -407,6 +407,20 @@ const ANIM_CSS = `
   .ac-pulse--2 { animation-delay:1s; }
   .ac-label { position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;letter-spacing:0.12em;color:rgba(210,100,255,0.9);text-shadow:0 0 6px rgba(180,0,255,0.8);white-space:nowrap; }
 
+  /* ── Pixel clouds ── */
+  @keyframes cloud-drift { from{transform:translateX(-160px)} to{transform:translateX(calc(100vw + 160px))} }
+  .map-cloud { position:absolute;pointer-events:none;z-index:905;image-rendering:pixelated; }
+  .map-cloud svg rect { shape-rendering:crispEdges; }
+  /* individual cloud tracks */
+  .map-cloud--1  { top:6%;  animation:cloud-drift 28s linear infinite;               opacity:0.72; }
+  .map-cloud--2  { top:14%; animation:cloud-drift 38s linear infinite 6s;            opacity:0.55; }
+  .map-cloud--3  { top:22%; animation:cloud-drift 22s linear infinite 2s;            opacity:0.65; }
+  .map-cloud--4  { top:32%; animation:cloud-drift 44s linear infinite 14s;           opacity:0.45; }
+  .map-cloud--5  { top:44%; animation:cloud-drift 31s linear infinite 9s;            opacity:0.58; }
+  .map-cloud--6  { top:58%; animation:cloud-drift 19s linear infinite 4s;            opacity:0.50; }
+  .map-cloud--7  { top:70%; animation:cloud-drift 52s linear infinite 20s;           opacity:0.38; }
+  .map-cloud--8  { top:82%; animation:cloud-drift 25s linear infinite 11s;           opacity:0.44; }
+
   .map-float-note { position:absolute;font-size:17px;pointer-events:none;animation:map-note-drift linear infinite; }
   .map-float-note--1 { left:7%;  bottom:0;animation-duration:7.2s;animation-delay:0s;   color:rgba(180,0,255,0.55); }
   .map-float-note--2 { left:21%; bottom:0;animation-duration:5.8s;animation-delay:1.4s; color:rgba(100,149,237,0.55); }
@@ -459,8 +473,24 @@ const ANIM_CSS = `
   .retro-player-count { color:#88ff88;font-size:6px; }
 
   /* ── Leaflet retro overrides ── */
-  .leaflet-tile { filter:sepia(0.22) saturate(0.72) brightness(0.80) contrast(1.12); }
+  .leaflet-tile { filter:saturate(2.0) contrast(1.35) brightness(0.84) hue-rotate(8deg); }
   .leaflet-container { background:#0d1020 !important; }
+
+  /* ── Vivid colour overlay (screen blend adds neon glow without hiding markers) ── */
+  @keyframes map-aurora { 0%,100%{opacity:0.18} 50%{opacity:0.28} }
+  .retro-color-overlay {
+    position:absolute;inset:0;pointer-events:none;z-index:908;
+    background: conic-gradient(
+      from 210deg at 30% 60%,
+      rgba(0,220,180,0.55) 0deg,
+      rgba(80,0,220,0.55) 80deg,
+      rgba(200,0,255,0.45) 160deg,
+      rgba(0,160,255,0.50) 230deg,
+      rgba(0,220,180,0.55) 360deg
+    );
+    mix-blend-mode:screen;
+    animation:map-aurora 7s ease-in-out infinite;
+  }
   .leaflet-tooltip { font-family:"Press Start 2P",monospace !important;font-size:6px !important;background:#08080e !important;border:1px solid #ffe066 !important;color:#ffe066 !important;border-radius:2px !important;padding:3px 6px !important;box-shadow:0 0 6px rgba(255,224,102,0.4) !important; }
   .leaflet-tooltip-top::before { border-top-color:#ffe066 !important; }
 `;
@@ -653,6 +683,9 @@ const MapPhaser = () => {
       <div className="retro-map-wrap">
         <div ref={containerRef} style={{ width: '100%', height: '480px' }} />
 
+        {/* Vivid neon colour wash */}
+        <div className="retro-color-overlay" />
+
         {/* CRT scanlines */}
         <div className="retro-scanlines" />
         {/* Edge vignette */}
@@ -662,6 +695,92 @@ const MapPhaser = () => {
         <div className="retro-corner retro-corner--tr" />
         <div className="retro-corner retro-corner--bl" />
         <div className="retro-corner retro-corner--br" />
+
+        {/* Pixel clouds */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 905 }}>
+          {/* large fluffy cloud */}
+          <div className="map-cloud map-cloud--1">
+            <svg width="120" height="44" viewBox="0 0 120 44" xmlns="http://www.w3.org/2000/svg">
+              <rect x="32" y="28" width="56" height="12" fill="#c8d8f0"/>
+              <rect x="24" y="24" width="72" height="16" fill="#d8e8ff"/>
+              <rect x="16" y="20" width="88" height="16" fill="#e0eeff"/>
+              <rect x="24" y="12" width="32" height="16" fill="#e8f4ff"/>
+              <rect x="48" y="8"  width="28" height="12" fill="#f0f8ff"/>
+              <rect x="64" y="16" width="32" height="16" fill="#e8f4ff"/>
+              <rect x="8"  y="28" width="16" height="8"  fill="#b8ccee"/>
+              <rect x="96" y="28" width="16" height="8"  fill="#b8ccee"/>
+            </svg>
+          </div>
+          {/* small cloud */}
+          <div className="map-cloud map-cloud--2">
+            <svg width="72" height="28" viewBox="0 0 72 28" xmlns="http://www.w3.org/2000/svg">
+              <rect x="16" y="16" width="40" height="10" fill="#c4d4ee"/>
+              <rect x="8"  y="12" width="56" height="14" fill="#d4e4ff"/>
+              <rect x="16" y="4"  width="24" height="14" fill="#ddeeff"/>
+              <rect x="36" y="8"  width="20" height="12" fill="#ddeeff"/>
+            </svg>
+          </div>
+          {/* medium cloud */}
+          <div className="map-cloud map-cloud--3">
+            <svg width="96" height="36" viewBox="0 0 96 36" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="22" width="56" height="12" fill="#bccce8"/>
+              <rect x="12" y="18" width="72" height="14" fill="#ccdcf8"/>
+              <rect x="20" y="8"  width="28" height="16" fill="#d8ecff"/>
+              <rect x="44" y="12" width="28" height="14" fill="#d8ecff"/>
+              <rect x="4"  y="22" width="12" height="8"  fill="#aabcde"/>
+              <rect x="80" y="22" width="12" height="8"  fill="#aabcde"/>
+            </svg>
+          </div>
+          {/* tiny wisp */}
+          <div className="map-cloud map-cloud--4">
+            <svg width="52" height="20" viewBox="0 0 52 20" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8"  y="10" width="36" height="8"  fill="#c0d0ea"/>
+              <rect x="4"  y="8"  width="44" height="10" fill="#d0e0f8"/>
+              <rect x="12" y="2"  width="16" height="10" fill="#daeaff"/>
+              <rect x="28" y="4"  width="14" height="10" fill="#daeaff"/>
+            </svg>
+          </div>
+          {/* large cloud scrolling slow */}
+          <div className="map-cloud map-cloud--5">
+            <svg width="140" height="48" viewBox="0 0 140 48" xmlns="http://www.w3.org/2000/svg">
+              <rect x="36" y="32" width="68" height="14" fill="#b8cce8"/>
+              <rect x="24" y="26" width="92" height="18" fill="#ccdcf8"/>
+              <rect x="16" y="20" width="108" height="20" fill="#d8eaff"/>
+              <rect x="28" y="10" width="36" height="18" fill="#e2f2ff"/>
+              <rect x="60" y="6"  width="32" height="16" fill="#eaf6ff"/>
+              <rect x="80" y="14" width="36" height="18" fill="#e2f2ff"/>
+              <rect x="8"  y="30" width="18" height="10" fill="#aabcde"/>
+              <rect x="114" y="30" width="18" height="10" fill="#aabcde"/>
+            </svg>
+          </div>
+          {/* mid cloud */}
+          <div className="map-cloud map-cloud--6">
+            <svg width="80" height="32" viewBox="0 0 80 32" xmlns="http://www.w3.org/2000/svg">
+              <rect x="16" y="20" width="48" height="10" fill="#b4c8e4"/>
+              <rect x="8"  y="14" width="64" height="14" fill="#c8daf4"/>
+              <rect x="16" y="6"  width="24" height="14" fill="#d4e8ff"/>
+              <rect x="40" y="8"  width="24" height="14" fill="#d4e8ff"/>
+            </svg>
+          </div>
+          {/* distant small cloud */}
+          <div className="map-cloud map-cloud--7">
+            <svg width="60" height="22" viewBox="0 0 60 22" xmlns="http://www.w3.org/2000/svg">
+              <rect x="12" y="12" width="36" height="8"  fill="#a8bcd8"/>
+              <rect x="6"  y="8"  width="48" height="12" fill="#b8ccec"/>
+              <rect x="14" y="2"  width="18" height="12" fill="#c8dcff"/>
+              <rect x="32" y="4"  width="16" height="10" fill="#c8dcff"/>
+            </svg>
+          </div>
+          {/* small puff near bottom */}
+          <div className="map-cloud map-cloud--8">
+            <svg width="68" height="26" viewBox="0 0 68 26" xmlns="http://www.w3.org/2000/svg">
+              <rect x="14" y="14" width="40" height="10" fill="#b0c4e0"/>
+              <rect x="6"  y="10" width="56" height="14" fill="#c4d8f4"/>
+              <rect x="14" y="2"  width="22" height="14" fill="#d0e4ff"/>
+              <rect x="36" y="6"  width="18" height="12" fill="#d0e4ff"/>
+            </svg>
+          </div>
+        </div>
 
         {/* Drifting music notes + scan line overlay */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 900 }}>
