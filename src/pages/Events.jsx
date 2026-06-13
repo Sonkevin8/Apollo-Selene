@@ -187,7 +187,7 @@ const inferEventPhase = (timeRange = '') => {
   return startsAfterDaylight ? EVENT_PHASES.selene : EVENT_PHASES.apollo;
 };
 
-// Resolve an ordered array of up to 4 non-empty poster URLs from an event object.
+// Resolve an ordered array of up to 8 non-empty poster URLs from an event object.
 // Supports both the new `posters` text[] column and the legacy `poster` string.
 const resolvePosters = (event) => {
   const arr = Array.isArray(event?.posters) && event.posters.length
@@ -195,7 +195,7 @@ const resolvePosters = (event) => {
     : event?.poster
       ? [event.poster]
       : [];
-  return arr.filter(Boolean).slice(0, 4);
+  return arr.filter(Boolean).slice(0, 8);
 };
 
 const normalizeEvent = (event) => ({
@@ -261,8 +261,8 @@ const createEventDraft = (theme) => ({
   location: '',
   description: '',
   poster: '',
-  posters: ['', '', '', ''],
-  posterGalleryMap: [null, null, null, null],
+  posters: ['', '', '', '', '', '', '', ''],
+  posterGalleryMap: [null, null, null, null, null, null, null, null],
   maxAttendees: 50
 });
 
@@ -290,8 +290,8 @@ const Events = ({ theme }) => {
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
   const [galleryItems, setGalleryItems] = useState([]);
-  const [posterUploading, setPosterUploading] = useState([false, false, false, false]);
-  const [posterUploadError, setPosterUploadError] = useState([null, null, null, null]);
+  const [posterUploading, setPosterUploading] = useState([false, false, false, false, false, false, false, false]);
+  const [posterUploadError, setPosterUploadError] = useState([null, null, null, null, null, null, null, null]);
   const [showLogin, setShowLogin] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [showAddEvent, setShowAddEvent] = useState(false);
@@ -306,8 +306,8 @@ const Events = ({ theme }) => {
     location: '',
     description: '',
     poster: '',
-    posters: ['', '', '', ''],
-    posterGalleryMap: [null, null, null, null],
+    posters: ['', '', '', '', '', '', '', ''],
+    posterGalleryMap: [null, null, null, null, null, null, null, null],
     maxAttendees: 50
   });
   const [currentUserId] = useState(() => getCurrentUserId());
@@ -659,8 +659,8 @@ const Events = ({ theme }) => {
       location: event.location,
       description: event.description,
       poster: event.poster,
-      posters: Array.isArray(event.posters) && event.posters.length ? [...event.posters, '', '', '', ''].slice(0, 4) : [event.poster || '', '', '', ''],
-      posterGalleryMap: [null, null, null, null],
+      posters: Array.isArray(event.posters) && event.posters.length ? [...event.posters, '', '', '', '', '', '', '', ''].slice(0, 8) : [event.poster || '', '', '', '', '', '', '', ''],
+      posterGalleryMap: [null, null, null, null, null, null, null, null],
       maxAttendees: event.maxAttendees
     });
     if (isAdmin && supabase && galleryItems.length === 0) {
@@ -682,8 +682,8 @@ const Events = ({ theme }) => {
       location: '',
       description: '',
       poster: '',
-      posters: ['', '', '', ''],
-      posterGalleryMap: [null, null, null, null],
+      posters: ['', '', '', '', '', '', '', ''],
+      posterGalleryMap: [null, null, null, null, null, null, null, null],
       maxAttendees: 50
     });
   };
@@ -700,7 +700,7 @@ const Events = ({ theme }) => {
       ? parsedMaxAttendees
       : 1;
 
-    const posterGalleryMap = editEventData.posterGalleryMap || [null, null, null, null];
+    const posterGalleryMap = editEventData.posterGalleryMap || [null, null, null, null, null, null, null, null];
     const update = {
       ...editEventData,
       phase: editEventData.phase || inferEventPhase(editEventData.time),
@@ -1214,9 +1214,9 @@ const Events = ({ theme }) => {
                 required
               />
               <div>
-                <p style={{ margin: '0 0 6px', fontSize: '0.82rem', color: 'var(--muted-color)' }}>Poster Images (up to 4)</p>
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} style={{ marginBottom: i < 3 ? '10px' : 0 }}>
+                <p style={{ margin: '0 0 6px', fontSize: '0.82rem', color: 'var(--muted-color)' }}>Poster Images (up to 8)</p>
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                  <div key={i} style={{ marginBottom: i < 7 ? '10px' : 0 }}>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
                       <input
                         type="url"
@@ -1262,7 +1262,7 @@ const Events = ({ theme }) => {
                       <select
                         value={newEvent.posterGalleryMap?.[i] || ''}
                         onChange={(e) => {
-                          const updated = [...(newEvent.posterGalleryMap || [null, null, null, null])];
+                          const updated = [...(newEvent.posterGalleryMap || [null, null, null, null, null, null, null, null])];
                           updated[i] = e.target.value || null;
                           setNewEvent({ ...newEvent, posterGalleryMap: updated });
                         }}
@@ -1353,16 +1353,16 @@ const Events = ({ theme }) => {
                 required
               />
               <div>
-                <p style={{ margin: '0 0 6px', fontSize: '0.82rem', color: 'var(--muted-color)' }}>Poster Images (up to 4)</p>
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} style={{ marginBottom: i < 3 ? '10px' : 0 }}>
+                <p style={{ margin: '0 0 6px', fontSize: '0.82rem', color: 'var(--muted-color)' }}>Poster Images (up to 8)</p>
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                  <div key={i} style={{ marginBottom: i < 7 ? '10px' : 0 }}>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
                       <input
                         type="url"
                         placeholder={`Poster ${i + 1} URL${i === 0 ? ' (required for slideshow)' : ' (optional)'}`}
-                        value={(editEventData.posters || ['', '', '', ''])[i] || ''}
+                        value={(editEventData.posters || ['', '', '', '', '', '', '', ''])[i] || ''}
                         onChange={(e) => {
-                          const updated = [...(editEventData.posters || ['', '', '', ''])];
+                          const updated = [...(editEventData.posters || ['', '', '', '', '', '', '', ''])];
                           updated[i] = e.target.value;
                           setEditEventData({ ...editEventData, posters: updated });
                         }}
@@ -1383,7 +1383,7 @@ const Events = ({ theme }) => {
                             const busy = [...posterUploading]; busy[i] = true; setPosterUploading(busy);
                             try {
                               const url = await uploadPosterImage(file, i);
-                              const updated = [...(editEventData.posters || ['', '', '', ''])]; updated[i] = url;
+                              const updated = [...(editEventData.posters || ['', '', '', '', '', '', '', ''])]; updated[i] = url;
                               setEditEventData(prev => ({ ...prev, posters: updated }));
                             } catch (err) {
                               const e2 = [...posterUploadError]; e2[i] = err.message; setPosterUploadError(e2);
@@ -1399,9 +1399,9 @@ const Events = ({ theme }) => {
                     )}
                     {((editEventData.posters || [])[i] || '').trim() && (
                       <select
-                        value={(editEventData.posterGalleryMap || [null, null, null, null])[i] || ''}
+                        value={(editEventData.posterGalleryMap || [null, null, null, null, null, null, null, null])[i] || ''}
                         onChange={(e) => {
-                          const updated = [...(editEventData.posterGalleryMap || [null, null, null, null])];
+                          const updated = [...(editEventData.posterGalleryMap || [null, null, null, null, null, null, null, null])];
                           updated[i] = e.target.value || null;
                           setEditEventData({ ...editEventData, posterGalleryMap: updated });
                         }}
