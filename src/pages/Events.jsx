@@ -477,20 +477,6 @@ const Events = ({ theme }) => {
     fetchAll();
   }, [currentUserId]);
 
-  // Helper to check ticket purchase status from Supabase
-  const checkTicketPurchase = async (sessionId, { retries = 10, delayMs = 1500 } = {}) => {
-    for (let i = 0; i < retries; i++) {
-      const { data, error } = await supabase
-        .from('event_ticket_purchases')
-        .select('*')
-        .eq('stripe_checkout_session_id', sessionId)
-        .maybeSingle();
-      if (!error && data && data.payment_status === 'paid') return data;
-      if (i < retries - 1) await new Promise((r) => setTimeout(r, delayMs));
-    }
-    return null;
-  };
-
   // Load gallery items whenever admin is active (covers page refresh while already logged in)
   useEffect(() => {
     if (isAdmin && supabase && galleryItems.length === 0) {
@@ -499,81 +485,6 @@ const Events = ({ theme }) => {
       });
     }
   }, [isAdmin]);
-
-  // On mount, check for Stripe redirect and confirm attendance if paid
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const ticketStatus = url.searchParams.get('ticket');
-    const sessionId = url.searchParams.get('session_id');
-    if (ticketStatus === 'success' && sessionId) {
-      (async () => {
-        const purchase = await checkTicketPurchase(sessionId);
-        if (purchase && purchase.event_id) {
-          const { data: existing } = await supabase
-            .from(EVENT_ATTENDANCE_TABLE)
-            .select('*')
-            .eq('event_id', purchase.event_id)
-            .eq('user_id', currentUserId);
-          if (!existing || existing.length === 0) {
-            let guestId;
-            const { data: guests } = await supabase
-              .from(EVENT_GUESTS_TABLE)
-              .select('*')
-              .eq('event_id', purchase.event_id)
-              .eq('name', purchase.purchaser_email)
-              .eq('added_by', currentUserId);
-            if (guests && guests.length > 0) {
-              guestId = guests[0].id;
-            } else {
-              const { data: newGuest } = await supabase
-                .from(EVENT_GUESTS_TABLE)
-                .insert([{ event_id: purchase.event_id, name: purchase.purchaser_email, contact: purchase.purchaser_email, added_by: currentUserId }])
-                .select();
-              guestId = newGuest && newGuest[0]?.id;
-            }
-            await supabase
-              .from(EVENT_ATTENDANCE_TABLE)
-              .upsert({ event_id: purchase.event_id, user_id: currentUserId, guest_id: guestId, name: purchase.purchaser_email, contact: purchase.purchaser_email });
-            const { data: evData } = await supabase
-              .from(EVENTS_TABLE)
-              .select('*')
-              .eq('id', purchase.event_id)
-              .maybeSingle();
-            if (evData) {
-              await supabase
-                .from(EVENTS_TABLE)
-                .update({ attendees: (evData.attendees || 0) + 1 })
-                .eq('id', purchase.event_id);
-            }
-            const { data: evList } = await supabase.from(EVENTS_TABLE).select('*').order('date', { ascending: true });
-            if (evList) setEvents(normalizeEvents(evList));
-            const { data: guestData } = await supabase.from(EVENT_GUESTS_TABLE).select('*');
-            const guestLists = {};
-            (guestData || []).forEach(g => {
-              if (!guestLists[g.event_id]) guestLists[g.event_id] = [];
-              guestLists[g.event_id].push(g);
-            });
-            setEventGuestLists(guestLists);
-            const { data: attendanceData } = await supabase.from(EVENT_ATTENDANCE_TABLE).select('*');
-            const attendanceMap = {};
-            const userSet = new Set();
-            (attendanceData || []).forEach(a => {
-              attendanceMap[a.event_id] = a;
-              if (a.user_id === currentUserId) userSet.add(a.event_id);
-            });
-            setAttendanceDetails(attendanceMap);
-            setUserAttendance(userSet);
-            alert('Ticket purchase confirmed! You have been added to the guest list.');
-          }
-        } else {
-          alert('Could not confirm ticket purchase. Please contact support.');
-        }
-        url.searchParams.delete('ticket');
-        url.searchParams.delete('session_id');
-        window.history.replaceState({}, document.title, url.pathname);
-      })();
-    }
-  }, [currentUserId]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

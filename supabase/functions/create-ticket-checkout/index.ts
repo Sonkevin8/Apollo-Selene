@@ -93,7 +93,7 @@ Deno.serve(async (request) => {
       ],
       client_reference_id: user?.id ? `${user.id}:${eventId}` : `guest:${eventId}:${Date.now()}`,
       customer_email: user?.email || undefined,
-      success_url: `${baseUrl}/events?ticket=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${baseUrl}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/events?ticket=cancelled`,
       metadata: {
         user_id: user?.id || '',
