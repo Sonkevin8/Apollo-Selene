@@ -4,31 +4,83 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Apollo Selene | Events, Artwork, and Community</title>
+    <title>Apollo Selene | Events, Artwork &amp; Community — Auckland City</title>
+
+    <!-- Primary SEO -->
     <meta
       name="description"
-      content="Apollo Selene is a welcoming community space for events, reflection, artwork, and shared experiences."
+      content="Apollo Selene is Auckland City's community space for events, artwork, mixtapes, and shared experiences. Discover upcoming events, local art, and connect with the community."
     />
     <meta
       name="keywords"
-      content="Apollo Selene, community, events, artwork, experiences, reflection"
+      content="Apollo Selene, Auckland events, Auckland City community, Auckland artwork, Auckland nightlife, New Zealand events, Auckland gatherings, local art Auckland, community events Auckland NZ"
     />
     <meta name="robots" content="index, follow" />
+    <meta name="author" content="Apollo Selene" />
     <meta name="google-site-verification" content="ri3qic6tr8ezJQ97fW0b2Z2UVEOtaLp8SFLifHbTSNo" />
     <meta name="theme-color" content="#f7f1e1" />
+
+    <!-- Canonical URL — update to your production domain -->
+    <link rel="canonical" href="https://apollo-selene.com/" />
+
+    <!-- Geographic targeting (Auckland City) -->
+    <meta name="geo.region" content="NZ-AUK" />
+    <meta name="geo.placename" content="Auckland City, New Zealand" />
+    <meta name="geo.position" content="-36.8485;174.7633" />
+    <meta name="ICBM" content="-36.8485, 174.7633" />
+
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Apollo Selene | Events, Artwork, and Community" />
+    <meta property="og:site_name" content="Apollo Selene" />
+    <meta property="og:title" content="Apollo Selene | Events, Artwork &amp; Community — Auckland City" />
     <meta
       property="og:description"
-      content="Explore Apollo Selene for event updates, artwork, and a calm community-centered space."
+      content="Auckland City's community space for events, artwork, mixtapes, and shared experiences. Discover what's on and connect with the local community."
     />
-    <meta property="og:site_name" content="Apollo Selene" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Apollo Selene | Events, Artwork, and Community" />
+    <meta property="og:url" content="https://apollo-selene.com/" />
+    <meta property="og:image" content="https://apollo-selene.com/api/og" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Apollo Selene — Events, Artwork &amp; Community in Auckland City, New Zealand" />
+    <meta property="og:locale" content="en_NZ" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Apollo Selene | Events, Artwork &amp; Community — Auckland City" />
     <meta
       name="twitter:description"
-      content="Explore Apollo Selene for event updates, artwork, and a calm community-centered space."
+      content="Auckland City's community space for events, artwork, mixtapes, and shared experiences."
     />
+    <meta name="twitter:image" content="https://apollo-selene.com/api/og" />
+    <meta name="twitter:image:alt" content="Apollo Selene — Auckland City" />
+
+    <!-- Schema.org JSON-LD: Organization + local Auckland presence -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Apollo Selene",
+      "url": "https://apollo-selene.com/",
+      "logo": "https://apollo-selene.com/api/og",
+      "description": "Auckland City's community space for events, artwork, mixtapes, and shared experiences.",
+      "location": {
+        "@type": "Place",
+        "name": "Auckland City",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Auckland",
+          "addressRegion": "Auckland",
+          "addressCountry": "NZ"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": -36.8485,
+          "longitude": 174.7633
+        }
+      },
+      "sameAs": []
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

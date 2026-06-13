@@ -46,7 +46,7 @@ Deno.serve(async (request) => {
 
     const resend = new Resend(resendApiKey);
     const fromAddress = Deno.env.get('INVITES_FROM_EMAIL') || 'Apollo Selene <onboarding@resend.dev>';
-    const appUrl = Deno.env.get('APP_URL') || 'https://apollo-selene.vercel.app';
+    const appUrl = Deno.env.get('APP_URL') || 'https://apollo-selene.com';
 
     const eventDateLine = eventDate ? ` on ${eventDate}` : '';
     const eventLocationLine = eventLocation ? ` at ${eventLocation}` : '';

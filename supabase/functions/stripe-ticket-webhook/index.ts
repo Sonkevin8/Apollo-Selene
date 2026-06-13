@@ -156,7 +156,7 @@ Deno.serve(async (request) => {
         if (resendApiKey) {
           const resend = new Resend(resendApiKey);
           const fromAddress = Deno.env.get('INVITES_FROM_EMAIL') || 'Apollo Selene <onboarding@resend.dev>';
-          const appUrl = Deno.env.get('APP_URL') || 'https://apollo-selene.vercel.app';
+          const appUrl = Deno.env.get('APP_URL') || 'https://apollo-selene.com';
           const eventTitle = row.event_title || 'the event';
           const eventDate = row.event_date ? ` on ${row.event_date}` : '';
           const eventLocation = row.event_location ? ` at ${row.event_location}` : '';

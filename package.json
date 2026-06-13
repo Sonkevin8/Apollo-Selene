@@ -11,6 +11,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "@vercel/og": "^0.6.0",
     "@supabase/supabase-js": "^2.105.4",
     "globe.gl": "^2.46.1",
     "leaflet": "^1.9.4",
