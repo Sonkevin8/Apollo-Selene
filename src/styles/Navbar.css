@@ -231,11 +231,10 @@
   /* Show mobile header bar */
   .navbar-mobile-header {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 0.4rem 0.5rem;
+    justify-content: flex-end;
+    gap: 0.5rem;
     padding: 0.6rem 0.75rem;
-    /* Push content below iOS notch/Dynamic Island */
     padding-top: max(0.6rem, env(safe-area-inset-top));
     padding-left: max(0.75rem, env(safe-area-inset-left));
     padding-right: max(0.75rem, env(safe-area-inset-right));
@@ -244,33 +243,16 @@
     border: 1px solid var(--border-color);
     -webkit-backdrop-filter: blur(18px);
     backdrop-filter: blur(18px);
-    min-width: 0;
   }
 
-  .navbar-mobile-brand {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.2rem;
-    color: var(--heading-color);
-    font-weight: 600;
-  }
-
-  .navbar-mobile-mode-switcher {
-    display: flex;
+  /* Mode switcher + login shown at top of open menu */
+  .navbar-menu-topbar {
+    display: none;
     gap: 0.4rem;
-    flex: 1 1 100%; /* takes its own full row */
-    min-width: 0;
-    order: 2; /* goes below actions row */
   }
 
-  .navbar-mobile-actions {
+  .navbar-open .navbar-menu-topbar {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-shrink: 0;
-    flex-grow: 0;
-    width: 100%;
-    justify-content: space-between;
-    order: 1; /* stays on the first row */
   }
 
   .navbar-mobile-login {
@@ -560,15 +542,9 @@
     color: #c8d7f4;
   }
 
-  /* Mode switcher — now lives in mobile header, hide the menu-bottom one */
+  /* Mode switcher — desktop sidebar version, hidden on mobile */
   .navbar-mode-switcher {
     display: none !important;
-  }
-
-  /* Wrapper for the header mode buttons */
-  .navbar-mobile-mode-switcher {
-    display: flex;
-    gap: 0.4rem;
   }
 
   .navbar-mode-btn {
@@ -626,16 +602,9 @@
     min-width: 100%;
   }
 
-  /* Slightly smaller mode buttons on tiny screens */
   .navbar-mode-btn {
     font-size: 0.72rem;
     padding: 0.35rem 0.4rem;
-  }
-
-  /* Shrink login button too */
-  .navbar-login-btn {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.45rem;
   }
 }
 

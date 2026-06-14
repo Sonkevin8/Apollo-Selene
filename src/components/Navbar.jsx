@@ -24,7 +24,7 @@ const getInitial = (session, isAdmin) => {
 const Navbar = ({ theme, onToggleTheme, session }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [loginMenuOpen, setLoginMenuOpen] = useState(false);
+
   const navigate = useNavigate();
   const isAdmin = window.localStorage.getItem('apollo-admin') === 'true';
   const initial = getInitial(session, isAdmin);
@@ -43,58 +43,49 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
 
   return (
     <nav className={`navbar${menuOpen ? ' navbar-open' : ''}`}>
-      {/* Mobile-only top bar */}
+      {/* Mobile header — hamburger only (avatar shown if logged in) */}
       <div className="navbar-mobile-header">
-        <div className="navbar-mobile-mode-switcher">
+        {initial && (
           <button
             type="button"
-            className={`navbar-mode-btn${theme === 'apollo' ? ' navbar-mode-btn--active' : ''}`}
-            onClick={() => theme !== 'apollo' && onToggleTheme()}
+            className={`navbar-avatar navbar-avatar-btn${isAdmin ? ' navbar-avatar--admin' : ''}`}
+            onClick={() => setUserMenuOpen((v) => !v)}
+            aria-label="User menu"
           >
-            ☀ <span className="mode-btn-label">Apollo Mode</span>
+            {initial}
           </button>
-          <button
-            type="button"
-            className={`navbar-mode-btn navbar-mode-btn--selene${theme === 'selene' ? ' navbar-mode-btn--active' : ''}`}
-            onClick={() => theme !== 'selene' && onToggleTheme()}
-          >
-            ☽ <span className="mode-btn-label">Selene Mode</span>
-          </button>
-        </div>
-        <div className="navbar-mobile-actions">
-          {initial ? (
-            <button
-              type="button"
-              className={`navbar-avatar navbar-avatar-btn${isAdmin ? ' navbar-avatar--admin' : ''}`}
-              onClick={() => setUserMenuOpen((v) => !v)}
-              aria-label="User menu"
-            >
-              {initial}
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="navbar-login-btn"
-              onClick={() => setLoginMenuOpen((v) => !v)}
-              aria-label="Login or sign up"
-            >
-              Login
-            </button>
-          )}
-          <button
-            type="button"
-            className="hamburger-btn"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            <span className="hamburger-line" />
-            <span className="hamburger-line" />
-            <span className="hamburger-line" />
-          </button>
-        </div>
+        )}
+        <button
+          type="button"
+          className="hamburger-btn"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          <span className="hamburger-line" />
+          <span className="hamburger-line" />
+          <span className="hamburger-line" />
+        </button>
       </div>
 
-      {/* Dropdowns outside backdrop-filter header so position:fixed overlays everything */}
+      {/* Mode switcher + login — visible at top of open menu */}
+      <div className="navbar-menu-topbar">
+        <button
+          type="button"
+          className={`navbar-mode-btn${theme === 'apollo' ? ' navbar-mode-btn--active' : ''}`}
+          onClick={() => theme !== 'apollo' && onToggleTheme()}
+        >
+          ☀ Apollo Mode
+        </button>
+        <button
+          type="button"
+          className={`navbar-mode-btn navbar-mode-btn--selene${theme === 'selene' ? ' navbar-mode-btn--active' : ''}`}
+          onClick={() => theme !== 'selene' && onToggleTheme()}
+        >
+          ☽ Selene Mode
+        </button>
+      </div>
+
+      {/* Avatar dropdown for logged-in users */}
       {userMenuOpen && (
         <>
           <div className="navbar-dropdown-backdrop" onClick={() => setUserMenuOpen(false)} />
@@ -113,27 +104,6 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
             >
               Logout
             </button>
-          </div>
-        </>
-      )}
-      {loginMenuOpen && (
-        <>
-          <div className="navbar-dropdown-backdrop" onClick={() => setLoginMenuOpen(false)} />
-          <div className="navbar-user-dropdown">
-            <NavLink
-              to="/account"
-              className="navbar-user-dropdown-item"
-              onClick={() => { setLoginMenuOpen(false); setMenuOpen(false); }}
-            >
-              Sign In
-            </NavLink>
-            <NavLink
-              to="/account"
-              className="navbar-user-dropdown-item"
-              onClick={() => { setLoginMenuOpen(false); setMenuOpen(false); }}
-            >
-              Sign Up
-            </NavLink>
           </div>
         </>
       )}
