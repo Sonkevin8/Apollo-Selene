@@ -259,6 +259,7 @@
     gap: 0.4rem;
     flex: 1;
     min-width: 0;
+    max-width: calc(100% - 6rem); /* always leave room for actions */
     overflow: hidden;
   }
 
@@ -267,6 +268,7 @@
     align-items: center;
     gap: 0.5rem;
     flex-shrink: 0;
+    margin-left: auto;
   }
 
   .navbar-mobile-login {
@@ -613,6 +615,19 @@
 
   .navbar-menu li {
     min-width: 100%;
+  }
+
+  /* On very small screens hide the Login text, keep only the hamburger */
+  .navbar-login-btn {
+    font-size: 0;
+    padding: 0.35rem 0.5rem;
+    min-width: 0;
+  }
+
+  /* Mode buttons shrink to just icons */
+  .navbar-mode-btn {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.35rem;
   }
 }
 
