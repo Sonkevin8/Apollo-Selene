@@ -1,5 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
 
+/* ── iOS Safari global resets ─────────────────────────────── */
+* {
+  /* Remove the grey tap flash on iOS */
+  -webkit-tap-highlight-color: transparent;
+}
+
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -10,18 +16,26 @@
 html {
   min-width: 320px;
   overflow-x: hidden;
+  /* Use dynamic viewport height so Safari's URL bar doesn't clip content */
+  height: -webkit-fill-available;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  /* dvh fallback for Safari < 15.4 */
+  min-height: -webkit-fill-available;
   font-family: 'Manrope', 'Segoe UI', sans-serif;
   overflow-x: hidden;
+  /* Smooth momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
 }
 
 #root {
   min-height: 100vh;
+  min-height: -webkit-fill-available;
 }
 
 a {
@@ -34,4 +48,13 @@ input,
 textarea,
 select {
   font: inherit;
+  /* Remove iOS default styling */
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+
+button {
+  /* Eliminate 300ms tap delay on iOS */
+  touch-action: manipulation;
+  cursor: pointer;
 }

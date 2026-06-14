@@ -870,6 +870,8 @@ button {
   background: var(--button-bg);
   color: var(--button-text);
   cursor: pointer;
+  /* Eliminate 300ms tap delay on iOS */
+  touch-action: manipulation;
   transition: all 0.25s ease;
   width: 100%;
   max-width: 200px;
@@ -907,6 +909,7 @@ select:focus {
   border-radius: 28px;
   padding: clamp(1rem, 3vw, 2rem);
   margin-bottom: 1.5rem;
+  -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-soft);
@@ -1156,6 +1159,10 @@ select:focus {
     width: 100% !important;
     min-width: 0 !important;
     padding: 1rem !important;
+    /* iOS safe area — keeps content clear of home indicator */
+    padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    padding-left: max(1rem, env(safe-area-inset-left)) !important;
+    padding-right: max(1rem, env(safe-area-inset-right)) !important;
   }
   
   .card {
@@ -1182,6 +1189,13 @@ select:focus {
   
   button {
     max-width: 100%;
+  }
+
+  /* Prevent iOS Safari from zooming in when tapping any input/select/textarea */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
   }
 }
 
@@ -1352,6 +1366,7 @@ select:focus {
       var(--surface-color) 60%);
   border-radius: 24px;
   overflow: hidden;
+  -webkit-backdrop-filter: blur(15px);
   backdrop-filter: blur(15px);
   border: 1px solid color-mix(in srgb, var(--accent-color) 28%, var(--border-color));
   transition: all 0.35s ease;
@@ -1726,6 +1741,8 @@ select:focus {
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border-color);
   color: var(--text-color);
@@ -1781,6 +1798,7 @@ select:focus {
   background: var(--surface-color);
   border-radius: 24px;
   padding: clamp(1.5rem, 3vw, 2rem);
+  -webkit-backdrop-filter: blur(15px);
   backdrop-filter: blur(15px);
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
@@ -1944,6 +1962,7 @@ select:focus {
   background: var(--surface-color);
   border-radius: 24px;
   overflow: hidden;
+  -webkit-backdrop-filter: blur(15px);
   backdrop-filter: blur(15px);
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
@@ -2064,6 +2083,7 @@ select:focus {
   background: var(--surface-color);
   border-radius: 24px;
   overflow: hidden;
+  -webkit-backdrop-filter: blur(15px);
   backdrop-filter: blur(15px);
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
