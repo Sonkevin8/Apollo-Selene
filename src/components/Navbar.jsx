@@ -51,14 +51,14 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
             className={`navbar-mode-btn${theme === 'apollo' ? ' navbar-mode-btn--active' : ''}`}
             onClick={() => theme !== 'apollo' && onToggleTheme()}
           >
-            ☀ Apollo Mode
+            ☀ <span className="mode-btn-label">Apollo Mode</span>
           </button>
           <button
             type="button"
             className={`navbar-mode-btn navbar-mode-btn--selene${theme === 'selene' ? ' navbar-mode-btn--active' : ''}`}
             onClick={() => theme !== 'selene' && onToggleTheme()}
           >
-            ☽ Selene Mode
+            ☽ <span className="mode-btn-label">Selene Mode</span>
           </button>
         </div>
         <div className="navbar-mobile-actions">

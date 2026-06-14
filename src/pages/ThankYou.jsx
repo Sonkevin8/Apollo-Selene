@@ -1,7 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { getCurrentUserId } from '../lib/mixtapeExchange';
+
+const CURRENT_USER_ID_KEY = 'apollo-selene-current-user-id';
+const getCurrentUserId = () => {
+  const existing = window.localStorage.getItem(CURRENT_USER_ID_KEY);
+  if (existing) return existing;
+  const id = `user-${Math.random().toString(36).slice(2, 10)}`;
+  window.localStorage.setItem(CURRENT_USER_ID_KEY, id);
+  return id;
+};
 
 const EVENTS_TABLE = 'events';
 const EVENT_GUESTS_TABLE = 'event_guests';

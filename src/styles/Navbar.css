@@ -231,9 +231,9 @@
   /* Show mobile header bar */
   .navbar-mobile-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
+    gap: 0.4rem 0.5rem;
     padding: 0.6rem 0.75rem;
     /* Push content below iOS notch/Dynamic Island */
     padding-top: max(0.6rem, env(safe-area-inset-top));
@@ -257,9 +257,9 @@
   .navbar-mobile-mode-switcher {
     display: flex;
     gap: 0.4rem;
-    flex: 0 1 auto;
+    flex: 1 1 100%; /* takes its own full row */
     min-width: 0;
-    overflow: hidden;
+    order: 2; /* goes below actions row */
   }
 
   .navbar-mobile-actions {
@@ -267,9 +267,9 @@
     align-items: center;
     gap: 0.5rem;
     flex-shrink: 0;
-    flex-grow: 0;
-    margin-left: auto;
-    padding-left: 0.25rem;
+    flex-grow: 1;
+    justify-content: flex-end;
+    order: 1; /* stays on the first row */
   }
 
   .navbar-mobile-login {
@@ -564,15 +564,12 @@
   }
 
   .navbar-mode-btn {
-    flex: 0 1 auto;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.3rem;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 120px;
     background: var(--button-secondary-bg);
     color: var(--muted-color);
     border: 1px solid var(--border-color-strong);
@@ -621,17 +618,10 @@
     min-width: 100%;
   }
 
-  /* Collapse mode buttons to icon-only */
+  /* Slightly smaller mode buttons on tiny screens */
   .navbar-mode-btn {
-    font-size: 0;
-    padding: 0.4rem 0.5rem;
-    max-width: 2rem;
-    gap: 0;
-  }
-
-  /* Keep the icon (first character) visible via the emoji which is not text */
-  .navbar-mode-btn > * {
-    font-size: 0.9rem;
+    font-size: 0.72rem;
+    padding: 0.35rem 0.4rem;
   }
 
   /* Shrink login button too */
