@@ -257,9 +257,8 @@
   .navbar-mobile-mode-switcher {
     display: flex;
     gap: 0.4rem;
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
-    max-width: calc(100% - 6rem); /* always leave room for actions */
     overflow: hidden;
   }
 
@@ -268,7 +267,9 @@
     align-items: center;
     gap: 0.5rem;
     flex-shrink: 0;
+    flex-grow: 0;
     margin-left: auto;
+    padding-left: 0.25rem;
   }
 
   .navbar-mobile-login {
@@ -563,12 +564,15 @@
   }
 
   .navbar-mode-btn {
-    flex: 1;
+    flex: 0 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.3rem;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
     background: var(--button-secondary-bg);
     color: var(--muted-color);
     border: 1px solid var(--border-color-strong);
@@ -617,17 +621,23 @@
     min-width: 100%;
   }
 
-  /* On very small screens hide the Login text, keep only the hamburger */
-  .navbar-login-btn {
+  /* Collapse mode buttons to icon-only */
+  .navbar-mode-btn {
     font-size: 0;
-    padding: 0.35rem 0.5rem;
-    min-width: 0;
+    padding: 0.4rem 0.5rem;
+    max-width: 2rem;
+    gap: 0;
   }
 
-  /* Mode buttons shrink to just icons */
-  .navbar-mode-btn {
-    font-size: 0.65rem;
-    padding: 0.25rem 0.35rem;
+  /* Keep the icon (first character) visible via the emoji which is not text */
+  .navbar-mode-btn > * {
+    font-size: 0.9rem;
+  }
+
+  /* Shrink login button too */
+  .navbar-login-btn {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.45rem;
   }
 }
 
