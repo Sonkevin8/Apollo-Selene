@@ -960,11 +960,8 @@ const Events = ({ theme }) => {
       };
       await fetchAll();
     } else {
-      // User wants to attend: start Stripe checkout
-      const event = events.find(e => e.id === eventId);
-      if (event && event.attendees < event.maxAttendees) {
-        await createTicketCheckout({ event });
-      }
+      // User wants to attend a free event — open confirmation form
+      openAttendConfirm(eventId);
     }
     } finally {
       setAttendActionLoading(prev => ({ ...prev, [eventId]: false }));
