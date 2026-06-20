@@ -64,17 +64,11 @@ function PoseC({ fill }) {
 const POSES = [PoseA, PoseB, PoseC, PoseB, PoseA];
 
 export default function RaverSprites({ theme }) {
-  // Skip entirely on touch-only devices (Android/iOS) — the RAF loop
-  // tracking touchmove every frame directly competes with scroll and causes lag.
-  const isTouchDevice = typeof window !== 'undefined' &&
-    window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-
   const spriteRefs = useRef([]);
   const posRef     = useRef(SPRITES.map(() => ({ x: -300, y: -300 })));
   const targetRef  = useRef({ x: -300, y: -300 });
 
   useEffect(() => {
-    if (isTouchDevice) return; // no RAF loop on mobile
     const onMouseMove = (e) => {
       targetRef.current = { x: e.clientX, y: e.clientY };
     };
@@ -127,8 +121,6 @@ export default function RaverSprites({ theme }) {
   const fill = theme === 'selene'
     ? 'rgba(235, 205, 140, 0.92)'   // warm parchment for dark mode
     : 'rgba(38, 16, 0, 0.90)';      // rich black-figure terracotta for light mode
-
-  if (isTouchDevice) return null;
 
   return (
     <div className="raver-sprites-layer" aria-hidden="true">
