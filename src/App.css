@@ -1463,9 +1463,9 @@ select:focus {
 .admin-btn,
 .add-event-btn,
 .logout-btn {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  max-width: 150px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.72rem;
+  max-width: 110px;
   margin: 0;
 }
 

@@ -1074,7 +1074,7 @@ const Events = ({ theme }) => {
             boxShadow: '0 0 8px 2px color-mix(in srgb, var(--accent-color) 65%, transparent)',
             flexShrink: 0,
           }} />
-          Apollo Selene Events <span className="name-secret">confidential</span>
+          Apollo Selene Events <span className="name-secret">secrets</span>
         </h1>
         <div className="flex gap-2">
           {!isAdmin && (
