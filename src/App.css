@@ -904,6 +904,25 @@ select:focus {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
+  background: none;
+  -webkit-appearance: auto;
+  appearance: auto;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:focus,
+input[type="radio"]:focus {
+  box-shadow: none;
+  outline: revert;
+}
+
 .card {
   background: var(--surface-color);
   border-radius: 28px;
