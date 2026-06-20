@@ -743,6 +743,9 @@ const Events = ({ theme }) => {
       phase: editEventData.phase || inferEventPhase(editEventData.time),
       posters: (editEventData.posters || []).filter(Boolean),
       max_attendees: safeMaxAttendees,
+      ticket_price: editEventData.ticketed && editEventData.ticket_price !== ''
+        ? (parseFloat(editEventData.ticket_price) || null)
+        : null,
       updated_at: new Date().toISOString()
     };
     // Remove non-DB fields
@@ -1874,7 +1877,7 @@ const Events = ({ theme }) => {
                           ? 'Sealed Full'
                           : event.ticketed === false
                             ? 'Attend Free'
-                            : event.ticket_price != null
+                            : event.ticket_price != null && parseFloat(event.ticket_price) > 0
                               ? `Buy Ticket · £${parseFloat(event.ticket_price).toFixed(2)}`
                               : 'Buy Ticket'}
                 </button>
