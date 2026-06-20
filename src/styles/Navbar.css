@@ -106,33 +106,23 @@
   font-size: clamp(1.05rem, 1.6vw, 1.45rem);
   letter-spacing: 0.06em;
   line-height: 1.25;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-size: 220% 100%;
-  animation: greek-shimmer 5s ease-in-out infinite;
+  animation: greek-shimmer 4s ease-in-out infinite;
 }
 
 .navbar-greek-title--apollo .navbar-greek-text {
-  background-image: linear-gradient(
-    90deg,
-    #a06818 0%,
-    #f0d060 28%,
-    #ffe88a 50%,
-    #f0d060 72%,
-    #a06818 100%
-  );
+  color: #e8b840;
+  text-shadow:
+    0 0  6px rgba(255, 220,  80, 0.70),
+    0 0 18px rgba(210, 150,  20, 0.45),
+    0 0 36px rgba(180, 110,   0, 0.20);
 }
 
 .navbar-greek-title--selene .navbar-greek-text {
-  background-image: linear-gradient(
-    90deg,
-    #5e7a9e 0%,
-    #b8d0ee 28%,
-    #e0eeff 50%,
-    #b8d0ee 72%,
-    #5e7a9e 100%
-  );
+  color: #b8d0ee;
+  text-shadow:
+    0 0  6px rgba(190, 220, 255, 0.70),
+    0 0 18px rgba(120, 165, 225, 0.45),
+    0 0 36px rgba( 80, 130, 200, 0.20);
 }
 
 .navbar-greek-ornament {
@@ -167,9 +157,8 @@
 .navbar-greek-title--selene .navbar-greek-diamond { color: #7a9ec0; }
 
 @keyframes greek-shimmer {
-  0%   { background-position: 120%  0; }
-  50%  { background-position:  -20% 0; }
-  100% { background-position: 120%  0; }
+  0%, 100% { opacity: 1;    filter: brightness(1.00); }
+  50%       { opacity: 0.82; filter: brightness(1.35); }
 }
 
 /* ── Mobile top bar ────────────────────────────────────────── */
