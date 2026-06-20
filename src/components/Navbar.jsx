@@ -108,10 +108,20 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
         </>
       )}
       <div className="navbar-brand-block">
-        <p className="navbar-kicker">
-          Apollo Selene <span className="name-secret">secrets</span>
-        </p>
-        <h2 className="navbar-brand">Sun by day. Moon by night.</h2>
+        <div className={`navbar-greek-title navbar-greek-title--${theme}`}>
+          <div className="navbar-greek-ornament" aria-hidden="true">
+            <span className="navbar-greek-rule" />
+            <span className="navbar-greek-diamond">✦</span>
+            <span className="navbar-greek-rule" />
+          </div>
+          <h2 className="navbar-greek-text">Apollo Selene</h2>
+          <div className="navbar-greek-ornament" aria-hidden="true">
+            <span className="navbar-greek-rule" />
+            <span className="navbar-greek-diamond">✦</span>
+            <span className="navbar-greek-rule" />
+          </div>
+        </div>
+        <p className="navbar-brand">Sun by day. Moon by night.</p>
         <p className="navbar-copy">
           A welcoming place to pause, check the next event, and ease into community.
         </p>

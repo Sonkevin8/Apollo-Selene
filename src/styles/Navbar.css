@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
+
 .navbar {
   display: flex;
   flex-direction: column;
@@ -90,12 +92,92 @@
   border-color: #ff6060;
 }
 
+/* ── Greek title ─────────────────────────────────────────── */
+.navbar-greek-title {
+  text-align: center;
+  margin-bottom: 0.85rem;
+  padding: 0 0.1rem;
+}
+
+.navbar-greek-text {
+  margin: 0;
+  font-family: 'Cinzel Decorative', 'Palatino Linotype', 'Book Antiqua', serif;
+  font-weight: 700;
+  font-size: clamp(1.05rem, 1.6vw, 1.45rem);
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 220% 100%;
+  animation: greek-shimmer 5s ease-in-out infinite;
+}
+
+.navbar-greek-title--apollo .navbar-greek-text {
+  background-image: linear-gradient(
+    90deg,
+    #a06818 0%,
+    #f0d060 28%,
+    #ffe88a 50%,
+    #f0d060 72%,
+    #a06818 100%
+  );
+}
+
+.navbar-greek-title--selene .navbar-greek-text {
+  background-image: linear-gradient(
+    90deg,
+    #5e7a9e 0%,
+    #b8d0ee 28%,
+    #e0eeff 50%,
+    #b8d0ee 72%,
+    #5e7a9e 100%
+  );
+}
+
+.navbar-greek-ornament {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.3rem 0;
+}
+
+.navbar-greek-rule {
+  flex: 1;
+  height: 1px;
+  border-radius: 1px;
+}
+
+.navbar-greek-title--apollo .navbar-greek-rule {
+  background: linear-gradient(90deg, transparent, rgba(200, 152, 50, 0.55), transparent);
+}
+
+.navbar-greek-title--selene .navbar-greek-rule {
+  background: linear-gradient(90deg, transparent, rgba(100, 140, 200, 0.5), transparent);
+}
+
+.navbar-greek-diamond {
+  font-size: 0.52rem;
+  line-height: 1;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.navbar-greek-title--apollo .navbar-greek-diamond { color: #c99030; }
+.navbar-greek-title--selene .navbar-greek-diamond { color: #7a9ec0; }
+
+@keyframes greek-shimmer {
+  0%   { background-position: 120%  0; }
+  50%  { background-position:  -20% 0; }
+  100% { background-position: 120%  0; }
+}
+
 /* ── Mobile top bar ────────────────────────────────────────── */
 .navbar-mobile-header {
   display: none;
 }
 
-
+.navbar-kicker {
   margin: 0 0 0.35rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
