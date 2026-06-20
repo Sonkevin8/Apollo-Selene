@@ -118,11 +118,11 @@
 }
 
 .navbar-greek-title--selene .navbar-greek-text {
-  color: #b8d0ee;
+  color: #c840ff;
   text-shadow:
-    0 0  6px rgba(190, 220, 255, 0.70),
-    0 0 18px rgba(120, 165, 225, 0.45),
-    0 0 36px rgba( 80, 130, 200, 0.20);
+    0 0  6px rgba(200,  40, 255, 0.90),
+    0 0 18px rgba(170,   0, 230, 0.60),
+    0 0 36px rgba(130,   0, 200, 0.30);
 }
 
 .navbar-greek-ornament {
@@ -143,7 +143,7 @@
 }
 
 .navbar-greek-title--selene .navbar-greek-rule {
-  background: linear-gradient(90deg, transparent, rgba(100, 140, 200, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(180, 0, 220, 0.55), transparent);
 }
 
 .navbar-greek-diamond {
@@ -154,7 +154,7 @@
 }
 
 .navbar-greek-title--apollo .navbar-greek-diamond { color: #c99030; }
-.navbar-greek-title--selene .navbar-greek-diamond { color: #7a9ec0; }
+.navbar-greek-title--selene .navbar-greek-diamond { color: #a020e0; }
 
 @keyframes greek-shimmer {
   0%, 100% { opacity: 1;    filter: brightness(1.00); }
@@ -343,20 +343,16 @@
   }
 
   .navbar-mobile-greek.navbar-greek-title--selene {
-    color: #b8d0ee;
+    color: #c840ff;
     text-shadow:
-      0 0  5px rgba(190, 220, 255, 0.70),
-      0 0 14px rgba(120, 165, 225, 0.40);
+      0 0  5px rgba(200,  40, 255, 0.90),
+      0 0 14px rgba(170,   0, 230, 0.55);
   }
 
-  /* Mode switcher + login shown at top of open menu */
+  /* Mode switcher + login — always visible on mobile */
   .navbar-menu-topbar {
-    display: none;
-    gap: 0.4rem;
-  }
-
-  .navbar-open .navbar-menu-topbar {
     display: flex;
+    gap: 0.4rem;
   }
 
   .navbar-mobile-login {

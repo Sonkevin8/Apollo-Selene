@@ -1878,7 +1878,7 @@ const Events = ({ theme }) => {
                           : event.ticketed === false
                             ? 'Attend Free'
                             : event.ticket_price != null && parseFloat(event.ticket_price) > 0
-                              ? `Buy Ticket · £${parseFloat(event.ticket_price).toFixed(2)}`
+                              ? `Buy Ticket · $${parseFloat(event.ticket_price).toFixed(2)}`
                               : 'Buy Ticket'}
                 </button>
                 {checkoutError && (
