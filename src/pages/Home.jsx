@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export default function Home() {
+export default function Home({ theme = 'apollo' }) {
   return (
     <div className="content-section home-page">
       <section className="hero-card">
@@ -23,13 +23,16 @@ export default function Home() {
         </div>
 
         <div className="hero-panel">
-          <div className="orbital-badge">
-            <div className="orbital-sun">
-              <span className="orbital-sun-shimmer" />
-            </div>
-            <div className="orbital-moon">
-              <span className="orbital-moon-craters" />
-            </div>
+          <div className="orbital-badge orbital-badge--solo">
+            {theme === 'apollo' ? (
+              <div className="orbital-sun">
+                <span className="orbital-sun-shimmer" />
+              </div>
+            ) : (
+              <div className="orbital-moon">
+                <span className="orbital-moon-craters" />
+              </div>
+            )}
           </div>
           <div className="mission-panel">
             <p className="mission-label">Mission Statement</p>

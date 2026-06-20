@@ -65,7 +65,7 @@ const App = () => {
           <main className="content-container">
             <Suspense fallback={<div className="card">Loading Earth Explorer...</div>}>
               <Routes>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<Home theme={theme} />} />
                 <Route path="/events" element={<Events theme={theme} />} />
                 <Route path="/experiences" element={<Experiences />} />
                 <Route path="/account" element={<Account />} />

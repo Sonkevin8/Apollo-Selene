@@ -1046,6 +1046,19 @@ select:focus {
   overflow: visible;
 }
 
+.orbital-badge--solo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orbital-badge--solo .orbital-sun,
+.orbital-badge--solo .orbital-moon {
+  position: relative;
+  top: auto;
+  left: auto;
+}
+
 /* ── Shared base ───────────────────────────────────────────── */
 .orbital-sun,
 .orbital-moon {
