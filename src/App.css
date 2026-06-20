@@ -1555,6 +1555,16 @@ select:focus {
   pointer-events: none;
 }
 
+.event-card--highlighted {
+  animation: event-card-highlight 3.5s ease-out forwards;
+}
+
+@keyframes event-card-highlight {
+  0%   { box-shadow: 0 0 0 3px var(--accent-color), 0 0 28px 6px color-mix(in srgb, var(--accent-color) 55%, transparent); }
+  60%  { box-shadow: 0 0 0 2px var(--accent-color), 0 0 18px 4px color-mix(in srgb, var(--accent-color) 35%, transparent); }
+  100% { box-shadow: none; }
+}
+
 .event-card:hover {
   transform: translateY(-6px);
   box-shadow:

@@ -337,12 +337,16 @@ const Events = ({ theme }) => {
   const [editEventLoading, setEditEventLoading] = useState(false);
   const [attendActionLoading, setAttendActionLoading] = useState({});  // eventId → bool
   const [addGuestLoading, setAddGuestLoading] = useState(false);
-  const [igModal, setIgModal] = useState(null);   // null or event object
+  const [igModal, setIgModal] = useState(null);
   const [igCaption, setIgCaption] = useState('');
   const [igLoading, setIgLoading] = useState(false);
   const [igError, setIgError] = useState('');
   const [igSuccess, setIgSuccess] = useState('');
   const adminPassRef = React.useRef('');
+  const [qrModal, setQrModal] = useState(null);   // null or event object
+  const [qrCopied, setQrCopied] = useState(false);
+  const [qrDownloading, setQrDownloading] = useState(false);
+  const [highlightedEventId, setHighlightedEventId] = useState(null);
 
   const redeemVoucher = async (event) => {
     const code = (voucherInputs[event.id] || '').trim().toUpperCase();
@@ -491,6 +495,65 @@ const Events = ({ theme }) => {
       });
     }
   }, [isAdmin]);
+
+  // Deep-link: scroll to + highlight event from ?event= URL param
+  useEffect(() => {
+    if (loadingEvents) return;
+    const params = new URLSearchParams(window.location.search);
+    const targetId = params.get('event');
+    if (!targetId) return;
+    const el = document.getElementById(`event-card-${targetId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightedEventId(targetId);
+      setTimeout(() => setHighlightedEventId(null), 3500);
+    }
+  }, [loadingEvents]);
+
+  const getEventUrl = (event) =>
+    `${window.location.origin}/events?event=${event.id}`;
+
+  const openQrModal = (event) => {
+    setQrCopied(false);
+    setQrModal(event);
+  };
+
+  const copyEventLink = async (event) => {
+    const url = getEventUrl(event);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = url;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    setQrCopied(true);
+    setTimeout(() => setQrCopied(false), 2200);
+  };
+
+  const downloadQrCode = async (event) => {
+    setQrDownloading(true);
+    try {
+      const src = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(getEventUrl(event))}&margin=20`;
+      const res = await fetch(src);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_qr.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      alert('Failed to download QR code. Try right-clicking the QR image and saving it.');
+    } finally {
+      setQrDownloading(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -1107,6 +1170,54 @@ const Events = ({ theme }) => {
       </div>
 
       {/* Admin Login Modal */}
+      {qrModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Share Event</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--muted-color)', marginBottom: '0.85rem' }}>
+              <strong>{qrModal.title}</strong>
+              {qrModal.date && <span> &mdash; {new Date(qrModal.date).toLocaleDateString()}</span>}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(getEventUrl(qrModal))}&margin=14&color=000000&bgcolor=ffffff`}
+                alt="QR Code"
+                style={{ width: 240, height: 240, borderRadius: 12, border: '1px solid var(--border-color-strong)', display: 'block' }}
+              />
+            </div>
+            <p style={{ fontSize: '0.72rem', color: 'var(--muted-color)', textAlign: 'center', marginBottom: '0.75rem' }}>
+              Scan to land directly on this event &amp; purchase tickets
+            </p>
+            <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.85rem', alignItems: 'center' }}>
+              <input
+                type="text"
+                readOnly
+                value={getEventUrl(qrModal)}
+                style={{ flex: 1, fontSize: '0.76rem', padding: '0.38rem 0.55rem', borderRadius: 8, border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--muted-color)', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}
+                onFocus={e => e.target.select()}
+              />
+              <button
+                type="button"
+                onClick={() => copyEventLink(qrModal)}
+                style={{ padding: '0.38rem 0.75rem', fontSize: '0.78rem', whiteSpace: 'nowrap', borderRadius: 8, flexShrink: 0 }}
+              >
+                {qrCopied ? '✓ Copied!' : 'Copy Link'}
+              </button>
+            </div>
+            <div className="modal-actions">
+              <button
+                type="button"
+                onClick={() => downloadQrCode(qrModal)}
+                disabled={qrDownloading}
+              >
+                {qrDownloading ? 'Downloading…' : 'Download QR Code'}
+              </button>
+              <button type="button" onClick={() => setQrModal(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {igModal && (
         <div className="modal-overlay">
           <div className="modal">
@@ -1594,7 +1705,11 @@ const Events = ({ theme }) => {
             <p>{emptyStateCopy}</p>
           </div>
         ) : visibleEvents.map(event => (
-          <div key={event.id} className="event-card">
+          <div
+            key={event.id}
+            id={`event-card-${event.id}`}
+            className={`event-card${highlightedEventId === String(event.id) ? ' event-card--highlighted' : ''}`}
+          >
             <div className="event-content">
               <div className="event-card-meta" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ flex: 1 }}>
@@ -1647,6 +1762,13 @@ const Events = ({ theme }) => {
                       onClick={() => openIgModal(event)}
                     >
                       Post to Instagram
+                    </button>
+                    <button
+                      type="button"
+                      className="event-admin-btn"
+                      onClick={() => openQrModal(event)}
+                    >
+                      QR &amp; Link
                     </button>
                   </div>
                 )}
