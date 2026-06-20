@@ -1043,31 +1043,203 @@ select:focus {
   border-radius: 28px;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.03));
   border: 1px solid var(--border-color);
-  overflow: hidden;
+  overflow: visible;
 }
 
+/* ── Shared base ───────────────────────────────────────────── */
 .orbital-sun,
 .orbital-moon {
   position: absolute;
   border-radius: 50%;
 }
 
+/* ══ SUN ═══════════════════════════════════════════════════ */
 .orbital-sun {
   width: 110px;
   height: 110px;
-  background: radial-gradient(circle at 35% 35%, #ffe8b6, #d7842d 68%, transparent 69%);
   top: 32px;
   left: 40px;
-  box-shadow: 0 0 45px rgba(215, 132, 45, 0.32);
+  background: radial-gradient(
+    circle at 38% 36%,
+    #fff9e0 0%,
+    #ffe44a 18%,
+    #ffaa00 50%,
+    #e05800 80%,
+    #963000 100%
+  );
+  box-shadow:
+    0 0 22px  8px rgba(255, 195,  30, 0.70),
+    0 0 55px 22px rgba(255, 130,   0, 0.40),
+    0 0 100px 45px rgba(255,  80,   0, 0.18);
+  animation: sun-pulse 3.6s ease-in-out infinite;
+  z-index: 2;
 }
 
+/* Outer corona */
+.orbital-sun::before {
+  content: '';
+  position: absolute;
+  inset: -32px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 230, 60, 0.44) 26%,
+    rgba(255, 160,  0, 0.24) 52%,
+    transparent 70%
+  );
+  animation: sun-corona 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Rotating solar rays */
+.orbital-sun::after {
+  content: '';
+  position: absolute;
+  inset: -24px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent   0deg, rgba(255,235,80,0.42)  7deg, transparent  18deg,
+    transparent  43deg, rgba(255,235,80,0.36) 50deg, transparent  61deg,
+    transparent  86deg, rgba(255,235,80,0.42) 93deg, transparent 104deg,
+    transparent 129deg, rgba(255,235,80,0.36) 136deg, transparent 147deg,
+    transparent 172deg, rgba(255,235,80,0.42) 179deg, transparent 190deg,
+    transparent 215deg, rgba(255,235,80,0.36) 222deg, transparent 233deg,
+    transparent 258deg, rgba(255,235,80,0.42) 265deg, transparent 276deg,
+    transparent 301deg, rgba(255,235,80,0.36) 308deg, transparent 319deg,
+    transparent 344deg, rgba(255,235,80,0.42) 351deg, transparent 360deg
+  );
+  -webkit-mask-image: radial-gradient(circle, transparent 43%, black 53%, transparent 82%);
+  mask-image:         radial-gradient(circle, transparent 43%, black 53%, transparent 82%);
+  animation: sun-rays 14s linear infinite;
+  pointer-events: none;
+}
+
+/* Specular highlight shimmer */
+.orbital-sun-shimmer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 28% 26%, rgba(255,255,255,0.36) 0%, transparent 54%);
+  animation: sun-shimmer 4.5s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes sun-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 22px  8px rgba(255, 195,  30, 0.70),
+      0 0 55px 22px rgba(255, 130,   0, 0.40),
+      0 0 100px 45px rgba(255,  80,   0, 0.18);
+  }
+  50% {
+    box-shadow:
+      0 0 36px 15px rgba(255, 210,  40, 0.88),
+      0 0 82px 36px rgba(255, 150,   0, 0.56),
+      0 0 155px 68px rgba(255, 100,   0, 0.26);
+  }
+}
+
+@keyframes sun-corona {
+  0%, 100% { opacity: 0.70; transform: scale(1.00); }
+  50%       { opacity: 1.00; transform: scale(1.12); }
+}
+
+@keyframes sun-rays {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes sun-shimmer {
+  from { opacity: 0.50; }
+  to   { opacity: 1.00; }
+}
+
+/* ══ MOON ══════════════════════════════════════════════════ */
 .orbital-moon {
   width: 124px;
   height: 124px;
-  background: radial-gradient(circle at 35% 35%, #ffffff, #aebed9 62%, transparent 63%);
   right: 28px;
   bottom: 26px;
-  box-shadow: 0 0 40px rgba(174, 190, 217, 0.2);
+  background: radial-gradient(
+    circle at 33% 31%,
+    #eef2f8 0%,
+    #c8d3e5 26%,
+    #8d9db5 60%,
+    #566078 100%
+  );
+  box-shadow:
+    0 0 28px  8px rgba(150, 175, 220, 0.32),
+    0 0 65px 22px rgba(100, 130, 190, 0.14);
+  animation: moon-float 7s ease-in-out infinite;
+  z-index: 2;
+}
+
+/* Crescent night-side shadow */
+.orbital-moon::before {
+  content: '';
+  position: absolute;
+  width: 102px;
+  height: 102px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 48% 48%,
+    rgba(8, 12, 26, 0.88) 0%,
+    rgba(8, 12, 26, 0.66) 42%,
+    transparent 68%
+  );
+  top: 4px;
+  right: -8px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Lunar halo */
+.orbital-moon::after {
+  content: '';
+  position: absolute;
+  inset: -26px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(165, 188, 225, 0.26) 36%,
+    transparent 66%
+  );
+  animation: moon-glow 7s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Crater layer — dots via box-shadow */
+.orbital-moon-craters {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(95, 112, 142, 0.72);
+  top: 22px;
+  left: 16px;
+  box-shadow:
+    16px  13px 0 5px rgba(85,  102, 132, 0.56),
+     8px  44px 0 4px rgba(78,   95, 124, 0.50),
+    42px  54px 0 6px rgba(88,  106, 136, 0.44),
+    54px  24px 0 3px rgba(92,  110, 140, 0.38),
+    26px  -4px 0 4px rgba(98,  114, 144, 0.34),
+    62px  58px 0 2px rgba(80,   98, 128, 0.30);
+  z-index: 4;
+  pointer-events: none;
+  animation: moon-float 7s ease-in-out infinite;
+}
+
+@keyframes moon-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes moon-glow {
+  0%, 100% { opacity: 0.55; transform: scale(1.00); }
+  50%       { opacity: 1.00; transform: scale(1.12); }
 }
 
 .mission-panel {

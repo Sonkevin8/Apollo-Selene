@@ -337,6 +337,12 @@ const Events = ({ theme }) => {
   const [editEventLoading, setEditEventLoading] = useState(false);
   const [attendActionLoading, setAttendActionLoading] = useState({});  // eventId → bool
   const [addGuestLoading, setAddGuestLoading] = useState(false);
+  const [igModal, setIgModal] = useState(null);   // null or event object
+  const [igCaption, setIgCaption] = useState('');
+  const [igLoading, setIgLoading] = useState(false);
+  const [igError, setIgError] = useState('');
+  const [igSuccess, setIgSuccess] = useState('');
+  const adminPassRef = React.useRef('');
 
   const redeemVoucher = async (event) => {
     const code = (voucherInputs[event.id] || '').trim().toUpperCase();
@@ -508,11 +514,64 @@ const Events = ({ theme }) => {
       }
       setIsAdmin(true);
       window.localStorage.setItem('apollo-admin', 'true');
+      adminPassRef.current = loginData.password;
       setShowLogin(false);
       setLoginData({ username: '', password: '' });
       // galleryItems will be fetched by the isAdmin useEffect
     } finally {
       setLoginLoading(false);
+    }
+  };
+
+  const openIgModal = (event) => {
+    const posters = resolvePosters(event);
+    const defaultCaption = `${event.title}\n📅 ${event.date}${event.time ? ' · ' + event.time : ''}\n📍 ${event.location || ''}\n\n${event.description || ''}\n\n#ApolloSelene #Event`;
+    setIgCaption(defaultCaption);
+    setIgError('');
+    setIgSuccess('');
+    setIgModal(event);
+    if (!posters.length) {
+      setIgError('This event has no poster image. Add a poster before posting to Instagram.');
+    }
+  };
+
+  const postToInstagram = async () => {
+    if (!igModal) return;
+    setIgError('');
+    setIgSuccess('');
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) {
+      setIgError('Supabase env vars missing.');
+      return;
+    }
+    const imageUrl = resolvePosters(igModal)[0] || '';
+    if (!imageUrl) {
+      setIgError('This event has no poster image to post.');
+      return;
+    }
+    setIgLoading(true);
+    try {
+      const res = await fetch(`${supabaseUrl}/functions/v1/post-instagram-ad`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+          'apikey': anonKey,
+        },
+        body: JSON.stringify({
+          imageUrl,
+          caption: igCaption,
+          adminToken: adminPassRef.current,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `Error ${res.status}`);
+      setIgSuccess(`Posted! Instagram post ID: ${data.postId}`);
+    } catch (err) {
+      setIgError(err.message || 'Failed to post to Instagram.');
+    } finally {
+      setIgLoading(false);
     }
   };
 
@@ -1048,6 +1107,49 @@ const Events = ({ theme }) => {
       </div>
 
       {/* Admin Login Modal */}
+      {igModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Post to Instagram</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--muted-color)', marginBottom: '0.5rem' }}>
+              <strong>{igModal.title}</strong> — first poster image will be used.
+            </p>
+            {resolvePosters(igModal)[0] && (
+              <img
+                src={resolvePosters(igModal)[0]}
+                alt="Preview"
+                style={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 8, marginBottom: '0.75rem' }}
+              />
+            )}
+            <textarea
+              rows={6}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: 8, border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--text-color)', fontSize: '0.88rem', resize: 'vertical', boxSizing: 'border-box' }}
+              value={igCaption}
+              onChange={(e) => setIgCaption(e.target.value)}
+              placeholder="Caption…"
+              disabled={igLoading}
+            />
+            {igError && <p style={{ color: '#e55', fontSize: '0.82rem', marginTop: '0.4rem' }}>{igError}</p>}
+            {igSuccess && <p style={{ color: '#4caf50', fontSize: '0.82rem', marginTop: '0.4rem' }}>{igSuccess}</p>}
+            <div className="modal-actions" style={{ marginTop: '0.75rem' }}>
+              {!igSuccess && (
+                <button
+                  type="button"
+                  onClick={postToInstagram}
+                  disabled={igLoading || !resolvePosters(igModal)[0] || !igCaption.trim()}
+                  style={{ background: 'linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)', color: '#fff', border: 'none' }}
+                >
+                  {igLoading ? 'Posting…' : 'Post Now'}
+                </button>
+              )}
+              <button type="button" onClick={() => { setIgModal(null); setIgError(''); setIgSuccess(''); }} disabled={igLoading}>
+                {igSuccess ? 'Close' : 'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal">
@@ -1537,6 +1639,14 @@ const Events = ({ theme }) => {
                       onClick={() => handleDeleteEvent(event.id)}
                     >
                       Remove Event
+                    </button>
+                    <button
+                      type="button"
+                      className="event-admin-btn"
+                      style={{ background: 'linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)', color: '#fff', border: 'none' }}
+                      onClick={() => openIgModal(event)}
+                    >
+                      Post to Instagram
                     </button>
                   </div>
                 )}

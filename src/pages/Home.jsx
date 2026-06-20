@@ -24,8 +24,12 @@ export default function Home() {
 
         <div className="hero-panel">
           <div className="orbital-badge">
-            <span className="orbital-sun"></span>
-            <span className="orbital-moon"></span>
+            <div className="orbital-sun">
+              <span className="orbital-sun-shimmer" />
+            </div>
+            <div className="orbital-moon">
+              <span className="orbital-moon-craters" />
+            </div>
           </div>
           <div className="mission-panel">
             <p className="mission-label">Mission Statement</p>
