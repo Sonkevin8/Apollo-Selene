@@ -263,7 +263,8 @@ const createEventDraft = (theme) => ({
   poster: '',
   posters: ['', '', '', '', '', '', '', ''],
   posterGalleryMap: [null, null, null, null, null, null, null, null],
-  maxAttendees: 50
+  maxAttendees: 50,
+  ticket_price: ''
 });
 
 const POSTER_BUCKET = 'event-posters';
@@ -308,7 +309,8 @@ const Events = ({ theme }) => {
     poster: '',
     posters: ['', '', '', '', '', '', '', ''],
     posterGalleryMap: [null, null, null, null, null, null, null, null],
-    maxAttendees: 50
+    maxAttendees: 50,
+    ticket_price: ''
   });
   const [currentUserId] = useState(() => getCurrentUserId());
   // Guest/attendance state
@@ -657,6 +659,7 @@ const Events = ({ theme }) => {
       max_attendees: newEvent.maxAttendees,
       attendees: 0,
       ticketed: newEvent.ticketed === true ? true : false,
+      ticket_price: newEvent.ticketed && newEvent.ticket_price !== '' ? (parseFloat(newEvent.ticket_price) || null) : null,
       updated_at: new Date().toISOString()
     };
     const { error } = await supabase.from(EVENTS_TABLE).insert([event]);
@@ -694,7 +697,8 @@ const Events = ({ theme }) => {
       poster: event.poster,
       posters: Array.isArray(event.posters) && event.posters.length ? [...event.posters, '', '', '', '', '', '', '', ''].slice(0, 8) : [event.poster || '', '', '', '', '', '', '', ''],
       posterGalleryMap: [null, null, null, null, null, null, null, null],
-      maxAttendees: event.maxAttendees
+      maxAttendees: event.maxAttendees,
+      ticket_price: event.ticket_price != null ? String(event.ticket_price) : ''
     });
     if (isAdmin && supabase && galleryItems.length === 0) {
       supabase.from('gallery_items').select('id, title, artist').order('title').then(({ data }) => {
@@ -1414,11 +1418,22 @@ const Events = ({ theme }) => {
                   <input
                     type="checkbox"
                     checked={!!newEvent.ticketed}
-                    onChange={e => setNewEvent({ ...newEvent, ticketed: e.target.checked })}
+                    onChange={e => setNewEvent({ ...newEvent, ticketed: e.target.checked, ticket_price: e.target.checked ? newEvent.ticket_price : '' })}
                   />
                   {' '}Require ticket purchase (Stripe)
                 </label>
               </div>
+              {newEvent.ticketed && (
+                <input
+                  type="number"
+                  placeholder="Ticket price (e.g. 10.00)"
+                  value={newEvent.ticket_price}
+                  onChange={e => setNewEvent({ ...newEvent, ticket_price: e.target.value })}
+                  min="0"
+                  step="0.01"
+                  style={{ marginTop: '0.25rem' }}
+                />
+              )}
               <div className="modal-actions">
                 <button type="submit" disabled={addEventLoading}>{addEventLoading ? 'Saving…' : 'Add Event'}</button>
                 <button type="button" onClick={() => setShowAddEvent(false)} disabled={addEventLoading}>Cancel</button>
@@ -1553,11 +1568,22 @@ const Events = ({ theme }) => {
                   <input
                     type="checkbox"
                     checked={!!editEventData.ticketed}
-                    onChange={e => setEditEventData({ ...editEventData, ticketed: e.target.checked })}
+                    onChange={e => setEditEventData({ ...editEventData, ticketed: e.target.checked, ticket_price: e.target.checked ? editEventData.ticket_price : '' })}
                   />
                   {' '}Require ticket purchase (Stripe)
                 </label>
               </div>
+              {editEventData.ticketed && (
+                <input
+                  type="number"
+                  placeholder="Ticket price (e.g. 10.00)"
+                  value={editEventData.ticket_price}
+                  onChange={e => setEditEventData({ ...editEventData, ticket_price: e.target.value })}
+                  min="0"
+                  step="0.01"
+                  style={{ marginTop: '0.25rem' }}
+                />
+              )}
               <div className="modal-actions">
                 <button type="submit" disabled={editEventLoading}>{editEventLoading ? 'Saving…' : 'Save Changes'}</button>
                 <button type="button" onClick={closeEditEventModal} disabled={editEventLoading}>Cancel</button>
@@ -1848,7 +1874,9 @@ const Events = ({ theme }) => {
                           ? 'Sealed Full'
                           : event.ticketed === false
                             ? 'Attend Free'
-                            : 'Buy Ticket'}
+                            : event.ticket_price != null
+                              ? `Buy Ticket · £${parseFloat(event.ticket_price).toFixed(2)}`
+                              : 'Buy Ticket'}
                 </button>
                 {checkoutError && (
                   <p style={{ color: '#e55', fontSize: '0.8rem', marginTop: '0.35rem' }}>{checkoutError}</p>
