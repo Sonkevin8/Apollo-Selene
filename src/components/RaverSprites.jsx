@@ -14,11 +14,12 @@ const SPRITES = [
 // Angular limbs, no curves, profile-style proportions
 
 // Tiny beer bottle — neck + body hanging from hand tip (cx, cy)
-function Bottle({ cx, cy, fill }) {
+const BOTTLE_GREEN = '#2e8b22';
+function Bottle({ cx, cy }) {
   return (
     <>
-      <rect x={cx - 0.6} y={cy}       width={1.2} height={1.6} fill={fill} />
-      <rect x={cx - 1.1} y={cy + 1.6} width={2.2} height={2.6} fill={fill} />
+      <rect x={cx - 0.6} y={cy}       width={1.2} height={1.6} fill={BOTTLE_GREEN} />
+      <rect x={cx - 1.1} y={cy + 1.6} width={2.2} height={2.6} fill={BOTTLE_GREEN} />
     </>
   );
 }
@@ -33,8 +34,8 @@ function PoseA({ fill }) {
       <polyline points="10,10 16,5 18,2" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
       <polyline points="10,18 6,24 4,31"  stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
       <polyline points="10,18 14,24 16,31" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
-      <Bottle cx={2}  cy={2} fill={fill} />
-      <Bottle cx={18} cy={2} fill={fill} />
+      <Bottle cx={2}  cy={2} />
+      <Bottle cx={18} cy={2} />
     </svg>
   );
 }
@@ -53,8 +54,8 @@ function PoseB({ fill }) {
       <polyline points="10,10 4,15 2,18" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
       <polyline points="9,18 4,24 3,31"   stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
       <polyline points="9,18 14,24 15,31" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
-      <Bottle cx={18} cy={2}  fill={fill} />
-      <Bottle cx={2}  cy={18} fill={fill} />
+      <Bottle cx={18} cy={2}  />
+      <Bottle cx={2}  cy={18} />
     </svg>
   );
 }
@@ -71,8 +72,8 @@ function PoseC({ fill }) {
       {/* legs spread */}
       <polyline points="10,18 7,23 4,31"  stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
       <polyline points="10,18 13,23 16,31" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
-      <Bottle cx={1}  cy={11} fill={fill} />
-      <Bottle cx={19} cy={11} fill={fill} />
+      <Bottle cx={1}  cy={11} />
+      <Bottle cx={19} cy={11} />
     </svg>
   );
 }
@@ -90,10 +91,10 @@ function PoseGirlA({ fill }) {
       {/* both arms raised */}
       <polyline points="10,10 4,5 2,2"   stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
       <polyline points="10,10 16,5 18,2" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
-      {/* long robe — filled trapezoid */}
-      <polygon points="5,18 15,18 18,31 2,31" fill={fill} />
-      <Bottle cx={2}  cy={2} fill={fill} />
-      <Bottle cx={18} cy={2} fill={fill} />
+      {/* long robe with feet peeking from hem */}
+      <polygon points="5,18 15,18 17.5,29 14,29 14,32 10,32 10,29 8,29 8,32 4,32 4,29 2.5,29" fill={fill} />
+      <Bottle cx={2}  cy={2} />
+      <Bottle cx={18} cy={2} />
     </svg>
   );
 }
@@ -114,10 +115,10 @@ function PoseGirlB({ fill }) {
       <polyline points="10,10 16,5 18,2" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
       {/* arm low */}
       <polyline points="10,10 4,15 2,18" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
-      {/* long robe */}
-      <polygon points="4,18 14,18 16,31 2,31" fill={fill} />
-      <Bottle cx={18} cy={2}  fill={fill} />
-      <Bottle cx={2}  cy={18} fill={fill} />
+      {/* long robe with feet peeking from hem */}
+      <polygon points="4,18 14,18 15.5,29 13,29 13,32 10,32 10,29 8,29 8,32 5,32 5,29 2.5,29" fill={fill} />
+      <Bottle cx={18} cy={2} />
+      <Bottle cx={2}  cy={18} />
     </svg>
   );
 }
