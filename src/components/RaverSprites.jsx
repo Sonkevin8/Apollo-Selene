@@ -61,7 +61,48 @@ function PoseC({ fill }) {
   );
 }
 
-const POSES = [PoseA, PoseB, PoseC, PoseB, PoseA];
+function PoseGirlA({ fill }) {
+  // Both arms raised, long robe/skirt — Greek kore style
+  return (
+    <svg viewBox="0 0 20 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* hair bun */}
+      <circle cx="10" cy="1.2" r="1.4" fill={fill} />
+      {/* head */}
+      <circle cx="10" cy="4.2" r="3" fill={fill} />
+      {/* body */}
+      <line x1="10" y1="7.2" x2="10" y2="18" stroke={fill} strokeWidth="2.2" strokeLinecap="square" />
+      {/* both arms raised */}
+      <polyline points="10,10 4,5 2,2"   stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
+      <polyline points="10,10 16,5 18,2" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
+      {/* long robe — filled trapezoid */}
+      <polygon points="5,18 15,18 18,31 2,31" fill={fill} />
+    </svg>
+  );
+}
+
+function PoseGirlB({ fill }) {
+  // Profile, one arm high, one low, long robe — Greek profile dancer
+  return (
+    <svg viewBox="0 0 20 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* hair knot at back */}
+      <circle cx="8" cy="1.4" r="1.3" fill={fill} />
+      {/* head (profile, slightly right) */}
+      <circle cx="11" cy="4.2" r="3" fill={fill} />
+      {/* profile nose */}
+      <line x1="13.5" y1="3.8" x2="15.5" y2="3.8" stroke={fill} strokeWidth="1.2" strokeLinecap="square" />
+      {/* body, slight forward lean */}
+      <line x1="10" y1="7.2" x2="9" y2="18" stroke={fill} strokeWidth="2.2" strokeLinecap="square" />
+      {/* arm high */}
+      <polyline points="10,10 16,5 18,2" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
+      {/* arm low */}
+      <polyline points="10,10 4,15 2,18" stroke={fill} strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" />
+      {/* long robe */}
+      <polygon points="4,18 14,18 16,31 2,31" fill={fill} />
+    </svg>
+  );
+}
+
+const POSES = [PoseA, PoseGirlA, PoseC, PoseGirlB, PoseB];
 
 export default function RaverSprites({ theme }) {
   const spriteRefs = useRef([]);
