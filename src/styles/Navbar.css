@@ -303,8 +303,7 @@
   .navbar-mobile-header {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 0.5rem;
+    justify-content: space-between;
     padding: 0.6rem 0.75rem;
     padding-top: max(0.6rem, env(safe-area-inset-top));
     padding-left: max(0.75rem, env(safe-area-inset-left));
@@ -314,6 +313,40 @@
     border: 1px solid var(--border-color);
     -webkit-backdrop-filter: blur(18px);
     backdrop-filter: blur(18px);
+  }
+
+  .navbar-mobile-header-spacer {
+    width: 2rem;
+    flex-shrink: 0;
+  }
+
+  /* Centred title in the mobile bar */
+  .navbar-mobile-greek {
+    flex: 1;
+    text-align: center;
+    font-family: 'Cinzel Decorative', 'Palatino Linotype', 'Book Antiqua', serif;
+    font-weight: 700;
+    font-size: clamp(0.72rem, 3.8vw, 1rem);
+    letter-spacing: 0.05em;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    animation: greek-shimmer 4s ease-in-out infinite;
+  }
+
+  .navbar-mobile-greek.navbar-greek-title--apollo {
+    color: #e8b840;
+    text-shadow:
+      0 0  5px rgba(255, 220,  80, 0.70),
+      0 0 14px rgba(210, 150,  20, 0.40);
+  }
+
+  .navbar-mobile-greek.navbar-greek-title--selene {
+    color: #b8d0ee;
+    text-shadow:
+      0 0  5px rgba(190, 220, 255, 0.70),
+      0 0 14px rgba(120, 165, 225, 0.40);
   }
 
   /* Mode switcher + login shown at top of open menu */

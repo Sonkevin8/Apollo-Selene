@@ -43,9 +43,9 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
 
   return (
     <nav className={`navbar${menuOpen ? ' navbar-open' : ''}`}>
-      {/* Mobile header — hamburger only (avatar shown if logged in) */}
+      {/* Mobile header — title centred, avatar left, hamburger right */}
       <div className="navbar-mobile-header">
-        {initial && (
+        {initial ? (
           <button
             type="button"
             className={`navbar-avatar navbar-avatar-btn${isAdmin ? ' navbar-avatar--admin' : ''}`}
@@ -54,7 +54,12 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
           >
             {initial}
           </button>
+        ) : (
+          <span className="navbar-mobile-header-spacer" aria-hidden="true" />
         )}
+        <span className={`navbar-mobile-greek navbar-greek-title--${theme}`} aria-hidden="true">
+          Apollo Selene
+        </span>
         <button
           type="button"
           className="hamburger-btn"
