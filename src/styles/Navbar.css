@@ -77,7 +77,7 @@
 .navbar-logout-btn {
   background: none;
   border: 1px solid var(--border-color-strong, rgba(255,255,255,0.2));
-  border-radius: 20px;
+  border-radius: 999px;
   color: var(--muted-color, #aaa);
   font-size: 0.72rem;
   padding: 0.25rem 0.65rem;
@@ -661,7 +661,7 @@
     background: var(--button-secondary-bg);
     color: var(--muted-color);
     border: 1px solid var(--border-color-strong);
-    border-radius: 20px;
+    border-radius: 999px;
     padding: 0.45rem 0.5rem;
     font-size: 0.78rem;
     cursor: pointer;
