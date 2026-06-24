@@ -49,6 +49,51 @@ const createTicketCheckout = async ({ event, quantity = 1 }) => {
     throw new Error(data?.error || 'No checkout URL returned.');
   }
 };
+// Helper to call Supabase Edge Function for a voluntary contribution on free events
+const createContributionCheckout = async ({ event, amountCents }) => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const anonKey    = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !anonKey) {
+    throw new Error('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+  }
+
+  const origin = window.location.origin;
+  const { data: { session } } = await supabase.auth.getSession();
+  const accessToken = session?.access_token || anonKey;
+
+  const res = await fetch(
+    `${supabaseUrl}/functions/v1/create-contribution-checkout`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'apikey': anonKey,
+      },
+      body: JSON.stringify({
+        eventId: event.id,
+        eventTitle: event.title,
+        amountCents,
+        origin,
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    let msg = `Edge Function returned ${res.status}`;
+    try { const e = await res.json(); msg = e?.error || msg; } catch {}
+    throw new Error(msg);
+  }
+
+  const data = await res.json();
+  if (data?.url) {
+    window.location.href = data.url;
+  } else {
+    throw new Error(data?.error || 'No checkout URL returned.');
+  }
+};
+
 const ATTENDANCE_DETAILS_STORAGE_KEY = 'apollo-selene-attendance-details';
 const CURRENT_USER_ID_STORAGE_KEY = 'apollo-selene-current-user-id';
 
@@ -349,6 +394,10 @@ const Events = ({ theme }) => {
   const [qrCopied, setQrCopied] = useState(false);
   const [qrDownloading, setQrDownloading] = useState(false);
   const [highlightedEventId, setHighlightedEventId] = useState(null);
+  const [contributionModal, setContributionModal] = useState(null); // event object or null
+  const [contributionAmount, setContributionAmount] = useState('10');
+  const [contributionLoading, setContributionLoading] = useState(false);
+  const [contributionError, setContributionError] = useState('');
 
   const redeemVoucher = async (event) => {
     const code = (voucherInputs[event.id] || '').trim().toUpperCase();
@@ -1593,6 +1642,87 @@ const Events = ({ theme }) => {
         </div>
       )}
 
+      {/* Contribution Modal */}
+      {contributionModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Consider Contributing</h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--muted-color)', marginBottom: '0.85rem' }}>
+              <strong>{contributionModal.title}</strong> is a free event. If you enjoyed it or want to help make future gatherings possible, a voluntary contribution is warmly welcomed.
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.9rem' }}>
+              {['5', '10', '20', '30'].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setContributionAmount(preset)}
+                  style={{
+                    padding: '0.38rem 0.9rem',
+                    borderRadius: 8,
+                    border: contributionAmount === preset
+                      ? '2px solid var(--accent-color)'
+                      : '1px solid var(--border-color-strong)',
+                    background: contributionAmount === preset ? 'color-mix(in srgb, var(--accent-color) 15%, transparent)' : 'var(--nav-link-bg)',
+                    color: contributionAmount === preset ? 'var(--accent-color)' : 'var(--text-color)',
+                    fontWeight: contributionAmount === preset ? 700 : 400,
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  £{preset}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--muted-color)' }}>Custom: £</span>
+              <input
+                type="number"
+                min="1"
+                max="500"
+                step="1"
+                value={contributionAmount}
+                onChange={(e) => setContributionAmount(e.target.value)}
+                style={{ width: '6rem', padding: '0.35rem 0.5rem', borderRadius: 8, border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--text-color)', fontSize: '0.9rem' }}
+              />
+            </div>
+            {contributionError && (
+              <p style={{ color: '#e55', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{contributionError}</p>
+            )}
+            <div className="modal-actions">
+              <button
+                type="button"
+                disabled={contributionLoading || !contributionAmount || parseFloat(contributionAmount) < 1}
+                onClick={async () => {
+                  setContributionError('');
+                  const amountCents = Math.round(parseFloat(contributionAmount) * 100);
+                  if (!Number.isFinite(amountCents) || amountCents < 100 || amountCents > 50000) {
+                    setContributionError('Please enter an amount between £1 and £500.');
+                    return;
+                  }
+                  setContributionLoading(true);
+                  try {
+                    await createContributionCheckout({ event: contributionModal, amountCents });
+                  } catch (err) {
+                    setContributionError(err.message || 'Checkout failed. Please try again.');
+                  } finally {
+                    setContributionLoading(false);
+                  }
+                }}
+              >
+                {contributionLoading ? 'Opening checkout…' : `Contribute £${parseFloat(contributionAmount || 0).toFixed(2)}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setContributionModal(null); setContributionError(''); setContributionAmount('10'); }}
+                disabled={contributionLoading}
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Attend Confirmation Modal */}
       {showAttendConfirm && (
         <div className="modal-overlay">
@@ -1939,6 +2069,29 @@ const Events = ({ theme }) => {
                 <div style={{ marginTop: 4, fontSize: 13, color: '#888' }}>
                   {event.ticketed === false ? 'Free event' : 'Ticketed event'}
                 </div>
+
+                {event.ticketed === false && (
+                  <button
+                    type="button"
+                    onClick={() => { setContributionAmount('10'); setContributionError(''); setContributionModal(event); }}
+                    style={{
+                      marginTop: '0.6rem',
+                      width: '100%',
+                      padding: '0.45rem 1rem',
+                      borderRadius: 10,
+                      border: '1px dashed color-mix(in srgb, var(--accent-color) 55%, transparent)',
+                      background: 'color-mix(in srgb, var(--accent-color) 8%, transparent)',
+                      color: 'var(--accent-color)',
+                      fontSize: '0.85rem',
+                      fontStyle: 'italic',
+                      cursor: 'pointer',
+                      letterSpacing: '0.02em',
+                      transition: 'background 0.2s, border-color 0.2s',
+                    }}
+                  >
+                    ✦ Consider contributing
+                  </button>
+                )}
 
                 <div className="guest-list-controls">
                   <button
