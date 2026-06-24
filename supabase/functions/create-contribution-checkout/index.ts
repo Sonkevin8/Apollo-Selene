@@ -63,7 +63,7 @@ Deno.serve(async (request) => {
     // Amount is in cents; clamp between £1 and £500
     const rawAmount = parseInt(body?.amountCents, 10);
     if (!Number.isFinite(rawAmount) || rawAmount < 100 || rawAmount > 50000) {
-      return jsonResponse(400, { error: 'Contribution amount must be between £1 and £500.' });
+      return jsonResponse(400, { error: 'Contribution amount must be between $1 and $500.' });
     }
     const amountCents = rawAmount;
 
@@ -75,7 +75,7 @@ Deno.serve(async (request) => {
         {
           quantity: 1,
           price_data: {
-            currency: 'gbp',
+            currency: 'usd',
             unit_amount: amountCents,
             product_data: {
               name: `Contribution — ${eventTitle}`,

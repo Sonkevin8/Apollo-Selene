@@ -63,7 +63,7 @@ const createContributionCheckout = async ({ event, amountCents }) => {
   const accessToken = session?.access_token || anonKey;
 
   const res = await fetch(
-    `${supabaseUrl}/functions/v1/create-contribution-checkout`,
+    `${supabaseUrl}/functions/v1/create-ticket-checkout`,
     {
       method: 'POST',
       headers: {
@@ -72,6 +72,7 @@ const createContributionCheckout = async ({ event, amountCents }) => {
         'apikey': anonKey,
       },
       body: JSON.stringify({
+        isContribution: true,
         eventId: event.id,
         eventTitle: event.title,
         amountCents,
@@ -1669,12 +1670,12 @@ const Events = ({ theme }) => {
                     fontSize: '0.9rem',
                   }}
                 >
-                  £{preset}
+                  ${preset}
                 </button>
               ))}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.9rem', color: 'var(--muted-color)' }}>Custom: £</span>
+              <span style={{ fontSize: '0.9rem', color: 'var(--muted-color)' }}>Custom: $</span>
               <input
                 type="number"
                 min="1"
@@ -1696,7 +1697,7 @@ const Events = ({ theme }) => {
                   setContributionError('');
                   const amountCents = Math.round(parseFloat(contributionAmount) * 100);
                   if (!Number.isFinite(amountCents) || amountCents < 100 || amountCents > 50000) {
-                    setContributionError('Please enter an amount between £1 and £500.');
+                    setContributionError('Please enter an amount between NZ$1 and NZ$500.');
                     return;
                   }
                   setContributionLoading(true);
@@ -1709,7 +1710,7 @@ const Events = ({ theme }) => {
                   }
                 }}
               >
-                {contributionLoading ? 'Opening checkout…' : `Contribute £${parseFloat(contributionAmount || 0).toFixed(2)}`}
+                {contributionLoading ? 'Opening checkout…' : `Contribute $${parseFloat(contributionAmount || 0).toFixed(2)}`}
               </button>
               <button
                 type="button"
