@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import './Artwork.css';
 
 const PastEvents = () => {
   const [pastEvents, setPastEvents] = useState([]);
