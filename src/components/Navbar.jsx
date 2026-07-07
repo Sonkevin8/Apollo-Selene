@@ -7,6 +7,7 @@ import '../styles/Navbar.css';
 const navigationItems = [
   { to: '/', label: 'Home' },
   { to: '/events', label: 'Events' },
+  { to: '/past-events', label: 'Past Events' },
   { to: '/experiences', label: 'Reflections' },
   { to: '/account', label: 'Account' },
   { to: '/mixtape-exchange', label: 'Mixtape Exchange' },

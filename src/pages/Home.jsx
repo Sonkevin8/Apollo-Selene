@@ -11,10 +11,10 @@ export default function Home({ theme = 'apollo' }) {
             Welcome to Apollo Selene <span className="name-secret">secrets</span>
           </h1>
           <p className="hero-lead">
-            A place to arrive gently, stay informed, and feel comfortable returning whenever a new event is announced.
+            A quiet place to arrive, find the next gathering, and feel welcome enough to come back again.
           </p>
           <p>
-            Apollo Selene is designed as a warm landing place for community life. The site centers event announcements, but the feeling matters just as much as the information: clear, calm, and inviting from the first moment.
+            Apollo Selene is a warm landing spot for community life. It keeps event details in focus, while still aiming to feel calm, clear, and inviting from the very first visit.
           </p>
           <div className="hero-actions">
             <Link to="/events" className="button-link primary-link">See Upcoming Events</Link>
@@ -37,7 +37,7 @@ export default function Home({ theme = 'apollo' }) {
           <div className="mission-panel">
             <p className="mission-label">Mission Statement</p>
             <p className="mission-text">
-              Apollo Selene exists to announce gatherings with clarity and host them with care, creating a community space where people can relax, reconnect, and feel welcome before they ever walk through the door.
+              Apollo Selene brings people together by sharing gatherings clearly and welcoming everyone with thoughtful care. It aims to create a space where people can relax, reconnect, and feel at ease before they even arrive.
             </p>
           </div>
         </div>

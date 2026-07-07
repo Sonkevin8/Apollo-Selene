@@ -251,6 +251,24 @@ const normalizeEvent = (event) => ({
 
 const normalizeEvents = (items) => (items || []).map(normalizeEvent);
 
+const isEventFinished = (event) => {
+  if (!event?.date) return false;
+  const endDate = new Date(event.date);
+  const timeRange = event.time || '';
+  const parts = timeRange.split('-').map((part) => part.trim()).filter(Boolean);
+  const endTime = parts.length > 1 ? parts[1] : parts[0] || '';
+  const match = endTime.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+  if (match) {
+    const hour = Number(match[1]) % 12;
+    const minute = Number(match[2] || 0);
+    const meridiem = match[3].toUpperCase();
+    endDate.setHours(meridiem === 'PM' ? hour + 12 : hour, minute, 0, 0);
+  } else {
+    endDate.setHours(23, 59, 59, 999);
+  }
+  return endDate.getTime() <= Date.now();
+};
+
 // ── Inline poster slideshow ──────────────────────────────────────────────────
 const PosterSlideshow = ({ images }) => {
   const [idx, setIdx] = React.useState(0);
@@ -337,6 +355,8 @@ const Events = ({ theme }) => {
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
   const [galleryItems, setGalleryItems] = useState([]);
+  const [galleryActionLoading, setGalleryActionLoading] = useState({});
+  const [galleryActionMsg, setGalleryActionMsg] = useState({});
   const [posterUploading, setPosterUploading] = useState([false, false, false, false, false, false, false, false]);
   const [posterUploadError, setPosterUploadError] = useState([null, null, null, null, null, null, null, null]);
   const [showLogin, setShowLogin] = useState(false);
@@ -647,6 +667,53 @@ const Events = ({ theme }) => {
     setIgModal(event);
     if (!posters.length) {
       setIgError('This event has no poster image. Add a poster before posting to Instagram.');
+    }
+  };
+
+  const addEventToGallery = async (event) => {
+    if (!supabase) return;
+    const posters = resolvePosters(event);
+    const imageUrl = posters[0];
+    if (!imageUrl) {
+      setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'No poster image available to add.' }));
+      return;
+    }
+
+    setGalleryActionLoading((prev) => ({ ...prev, [event.id]: true }));
+    setGalleryActionMsg((prev) => ({ ...prev, [event.id]: '' }));
+
+    try {
+      const { data: existing } = await supabase.from('gallery_items').select('id').eq('image_url', imageUrl).maybeSingle();
+      if (existing) {
+        setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'This event poster is already in the gallery.' }));
+        return;
+      }
+
+      const { data: inserted, error } = await supabase
+        .from('gallery_items')
+        .insert([
+          {
+            title: event.title || 'Untitled Event Artwork',
+            artist: 'Apollo Selene',
+            description: event.description || 'Artwork added from a completed Apollo Selene event.',
+            medium: 'Event Poster',
+            year: event.date ? new Date(event.date).getFullYear().toString() : '',
+            story: `Added from the completed event on ${event.date}${event.time ? ` (${event.time})` : ''}.`,
+            image_url: imageUrl,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error || !inserted) {
+        setGalleryActionMsg((prev) => ({ ...prev, [event.id]: `Failed to add to gallery: ${error?.message || 'unknown error'}` }));
+      } else {
+        setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
+      }
+    } catch (error) {
+      setGalleryActionMsg((prev) => ({ ...prev, [event.id]: error?.message || 'Failed to add to gallery.' }));
+    } finally {
+      setGalleryActionLoading((prev) => ({ ...prev, [event.id]: false }));
     }
   };
 
@@ -1927,6 +1994,24 @@ const Events = ({ theme }) => {
                     >
                       QR &amp; Link
                     </button>
+                    {isEventFinished(event) && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+                        <button
+                          type="button"
+                          className="event-admin-btn"
+                          style={{ background: '#2d3748', color: '#fff', border: 'none' }}
+                          onClick={() => addEventToGallery(event)}
+                          disabled={galleryActionLoading[event.id]}
+                        >
+                          {galleryActionLoading[event.id] ? 'Adding…' : 'Add to Gallery and Artwork'}
+                        </button>
+                        {galleryActionMsg[event.id] && (
+                          <span style={{ fontSize: '0.82rem', color: galleryActionMsg[event.id].includes('successfully') ? '#4caf50' : '#e55' }}>
+                            {galleryActionMsg[event.id]}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 

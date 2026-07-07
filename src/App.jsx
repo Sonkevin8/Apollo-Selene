@@ -11,6 +11,7 @@ import EmberRoom from './pages/EmberRoom';
 import MixtapeExchange from './pages/MixtapeExchange';
 import Account from './pages/Account';
 import ThankYou from './pages/ThankYou';
+import PastEvents from './pages/PastEvents';
 import ApolloDayVibe from './components/ApolloDayVibe';
 import SeleneNightVibe from './components/SeleneNightVibe';
 import SunMoonOrbit from './components/SunMoonOrbit';
@@ -67,6 +68,7 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<Home theme={theme} />} />
                 <Route path="/events" element={<Events theme={theme} />} />
+                <Route path="/past-events" element={<PastEvents />} />
                 <Route path="/experiences" element={<Experiences />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/merchandise" element={<Merchandise />} />
