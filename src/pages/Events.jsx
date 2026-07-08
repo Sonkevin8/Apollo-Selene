@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '@clerk/clerk-react';
 import { supabase, EVENTS_TABLE, EVENT_GUESTS_TABLE, EVENT_ATTENDANCE_TABLE } from '../lib/supabaseClient';
 
 
@@ -351,6 +352,7 @@ const uploadPosterImage = async (file, index) => {
 };
 
 const Events = ({ theme }) => {
+  const { getToken } = useAuth();
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
@@ -685,10 +687,6 @@ const Events = ({ theme }) => {
 
   const addEventToGallery = async (event) => {
     if (!supabase) return;
-    if (!isAdmin || !adminPassword) {
-      setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Admin login is required to add events to the gallery.' }));
-      return;
-    }
 
     const posters = resolvePosters(event);
     const imageUrl = posters[0];
@@ -705,6 +703,50 @@ const Events = ({ theme }) => {
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       if (!supabaseUrl || !anonKey) {
         throw new Error('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+      }
+
+      // Prefer Clerk token if available via useAuth hook
+      let clerkToken = null;
+      try {
+        if (typeof getToken === 'function') {
+          clerkToken = await getToken();
+        }
+      } catch (e) {
+        clerkToken = null;
+      }
+
+      // If we have a Clerk token, use the Clerk-backed function
+      if (clerkToken) {
+        const res = await fetch(`${supabaseUrl}/functions/v1/add-gallery-item-clerk`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${clerkToken}`,
+          },
+          body: JSON.stringify({
+            eventId: event.id,
+            eventDate: event.date,
+            eventTime: event.time,
+            eventLocation: event.location,
+            title: event.title || 'Untitled Event Artwork',
+            description: event.description || 'Artwork added from a completed Apollo Selene event.',
+            medium: 'Event Poster',
+            year: event.date ? new Date(event.date).getFullYear().toString() : '',
+            story: `Added from the completed event on ${event.date}${event.time ? ` (${event.time})` : ''}.`,
+            imageUrl,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data?.error || `Edge function returned ${res.status}`);
+        }
+        setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
+        return;
+      }
+
+      // Fall back to password-based auth if no Clerk token
+      if (!isAdmin || !adminPassword) {
+        throw new Error('Admin login is required to add events to the gallery.');
       }
 
       const res = await fetch(`${supabaseUrl}/functions/v1/add-gallery-item`, {
@@ -728,13 +770,12 @@ const Events = ({ theme }) => {
           imageUrl,
         }),
       });
-
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data?.error || `Edge function returned ${res.status}`);
       }
-
       setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
+
     } catch (error) {
       setGalleryActionMsg((prev) => ({ ...prev, [event.id]: error?.message || 'Failed to add to gallery.' }));
     } finally {
