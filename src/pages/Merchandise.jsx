@@ -1,6 +1,7 @@
 import React from 'react';
+import InlineEditor from '../components/InlineEditor';
 
-const Merchandise = ({ siteContent = {} }) => {
+const Merchandise = ({ siteContent = {}, onSiteContentUpdated }) => {
   const {
     merchandise_hero_kicker = 'Merchandise',
     merchandise_hero_title = 'Coming Soon',
@@ -23,20 +24,20 @@ const Merchandise = ({ siteContent = {} }) => {
     <div className="content-section">
       <section className="hero-card">
         <div className="hero-copy">
-          <p className="section-kicker">{merchandise_hero_kicker}</p>
-          <h1>{merchandise_hero_title}</h1>
+          <p className="section-kicker"><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={merchandise_hero_kicker} fieldKey="merchandise_hero_kicker" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <h1><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={merchandise_hero_title} fieldKey="merchandise_hero_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h1>
           <p className="hero-lead">
-            {merchandise_hero_lead}
+            <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={merchandise_hero_lead} fieldKey="merchandise_hero_lead" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
           </p>
           <p>
-            {merchandise_hero_description}
+            <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={merchandise_hero_description} fieldKey="merchandise_hero_description" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
           </p>
         </div>
 
         <div className="mission-panel">
-          <p className="mission-label">{merchandise_mission_label}</p>
+          <p className="mission-label"><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={merchandise_mission_label} fieldKey="merchandise_mission_label" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
           <p className="mission-text">
-            {merchandise_mission_text}
+            <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={merchandise_mission_text} fieldKey="merchandise_mission_text" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
           </p>
         </div>
       </section>

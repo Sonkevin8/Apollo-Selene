@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import InlineEditor from '../components/InlineEditor';
+import { saveSiteContent } from '../lib/siteContent';
 
-export default function Home({ theme = 'apollo', siteContent = {} }) {
+export default function Home({ theme = 'apollo', siteContent = {}, onSiteContentUpdated }) {
   const {
     home_hero_kicker = 'Apollo by light. Selene by night.',
     home_hero_title = 'Welcome to Apollo Selene',
@@ -24,15 +26,15 @@ export default function Home({ theme = 'apollo', siteContent = {} }) {
     <div className="content-section home-page">
       <section className="hero-card">
         <div className="hero-copy">
-          <p className="section-kicker">{home_hero_kicker}</p>
+          <p className="section-kicker"><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_hero_kicker} fieldKey="home_hero_kicker" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
           <h1>
-            {home_hero_title} <span className="name-secret">secrets</span>
+            <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_hero_title} fieldKey="home_hero_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /> <span className="name-secret">secrets</span>
           </h1>
           <p className="hero-lead">
-            {home_hero_lead}
+            <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_hero_lead} fieldKey="home_hero_lead" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
           </p>
           <p>
-            {home_hero_description}
+            <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_hero_description} fieldKey="home_hero_description" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
           </p>
           <div className="hero-actions">
             <Link to="/events" className="button-link primary-link">See Upcoming Events</Link>
@@ -53,9 +55,9 @@ export default function Home({ theme = 'apollo', siteContent = {} }) {
             )}
           </div>
           <div className="mission-panel">
-            <p className="mission-label">{home_mission_label}</p>
+            <p className="mission-label"><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_mission_label} fieldKey="home_mission_label" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
             <p className="mission-text">
-              {home_mission_text}
+              <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_mission_text} fieldKey="home_mission_text" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
             </p>
           </div>
         </div>

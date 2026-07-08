@@ -1005,6 +1005,14 @@ input[type="radio"]:focus {
   z-index: 1;
 }
 
+/* Inline editor styles */
+.inline-editor { display: inline-flex; align-items: center; }
+.inline-editor .button-link { font-size: 0.9rem; padding: 0.18rem 0.5rem; border-radius: 6px; }
+.inline-editor textarea { font-family: inherit; font-size: 0.95rem; padding: 0.45rem; border: 1px solid var(--border-color); border-radius: 6px; }
+.inline-editor input { font-size: 0.95rem; padding: 0.35rem; border: 1px solid var(--border-color); border-radius: 6px; }
+.inline-editor .primary-link { background: var(--accent-strong); color: #fff; border: none; }
+.inline-editor .secondary-link { background: transparent; border: 1px solid rgba(0,0,0,0.06); }
+
 .hero-lead {
   font-size: clamp(1.1rem, 2vw, 1.3rem);
   color: var(--accent-strong);

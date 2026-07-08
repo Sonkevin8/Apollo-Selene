@@ -76,12 +76,12 @@ const App = () => {
           <main className="content-container">
             <Suspense fallback={<div className="card">Loading Earth Explorer...</div>}>
               <Routes>
-                <Route path="/" element={<Home theme={theme} siteContent={siteContent} />} />
+                <Route path="/" element={<Home theme={theme} siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/events" element={<Events theme={theme} />} />
                 <Route path="/past-events" element={<PastEvents />} />
                 <Route path="/experiences" element={<Experiences />} />
                 <Route path="/account" element={<Account siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
-                <Route path="/merchandise" element={<Merchandise siteContent={siteContent} />} />
+                <Route path="/merchandise" element={<Merchandise siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/artwork" element={<Artwork />} />
                 <Route path="/mixtape-exchange" element={<MixtapeExchange globeComponent={<Earth />} />} />
                 <Route path="/ember-room" element={<EmberRoom />} />
