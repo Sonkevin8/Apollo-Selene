@@ -355,6 +355,17 @@ const Events = ({ theme }) => {
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
   const [galleryItems, setGalleryItems] = useState([]);
+  // sync admin state when other pages update it
+  useEffect(() => {
+    const syncAdmin = () => {
+      setIsAdmin(window.localStorage.getItem('apollo-admin') === 'true');
+      setAdminPassword(window.localStorage.getItem('apollo-admin-password') || '');
+    };
+    // initial sync
+    syncAdmin();
+    window.addEventListener('apollo-admin-changed', syncAdmin);
+    return () => window.removeEventListener('apollo-admin-changed', syncAdmin);
+  }, []);
   const [galleryActionLoading, setGalleryActionLoading] = useState({});
   const [galleryActionMsg, setGalleryActionMsg] = useState({});
   const [posterUploading, setPosterUploading] = useState([false, false, false, false, false, false, false, false]);

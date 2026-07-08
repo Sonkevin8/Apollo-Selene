@@ -84,7 +84,7 @@ const App = () => {
                 <Route path="/merchandise" element={<Merchandise siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/artwork" element={<Artwork />} />
                 <Route path="/mixtape-exchange" element={<MixtapeExchange globeComponent={<Earth />} />} />
-                <Route path="/ember-room" element={<EmberRoom />} />
+                <Route path="/ember-room" element={<EmberRoom siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/thank-you" element={<ThankYou />} />
               </Routes>
             </Suspense>

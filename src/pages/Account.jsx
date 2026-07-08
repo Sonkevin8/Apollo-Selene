@@ -214,6 +214,8 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
         if (typeof onAdminStateChanged === 'function') {
           onAdminStateChanged(true);
         }
+        // notify other pages in this window
+        try { window.dispatchEvent(new Event('apollo-admin-changed')); } catch {}
         setMessage('Admin access granted.');
         setAdminForm(defaultAdminForm);
       }
@@ -227,6 +229,7 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
   const handleAdminLogout = () => {
     setIsAdmin(false);
     window.localStorage.removeItem('apollo-admin');
+    try { window.dispatchEvent(new Event('apollo-admin-changed')); } catch {}
     if (typeof onAdminStateChanged === 'function') {
       onAdminStateChanged(false);
     }

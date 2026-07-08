@@ -1,10 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import InlineEditor from '../components/InlineEditor';
 import { Link } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { fetchPublicSubmissions, submitArtworkUpload, validateUpload } from '../lib/emberRoomUploads';
 
-const EmberRoom = () => {
+const EmberRoom = ({ siteContent = {}, onSiteContentUpdated }) => {
+  const {
+    ember_kicker = 'Public Creative Hub',
+    ember_title = 'Ember Room',
+    ember_lead = 'Ember Room is now a public space for the community to share creative work in one place.',
+    ember_description = 'Upload music, drawings, and photographs so visitors can explore what everyone is making. The upload experience is being prepared for full storage support.',
+  } = siteContent;
   const [title, setTitle] = useState('');
   const [type, setType] = useState('drawing');
   const [description, setDescription] = useState('');
@@ -147,13 +154,13 @@ const EmberRoom = () => {
     <div className="content-section ember-room-page">
       <AnimatedBackground className="ember-room-canvas" />
       <div className="ember-room-overlay card">
-        <p className="section-kicker">Public Creative Hub</p>
-        <h1>Ember Room</h1>
+        <p className="section-kicker"><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={ember_kicker} fieldKey="ember_kicker" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+        <h1><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={ember_title} fieldKey="ember_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h1>
         <p className="hero-lead">
-          Ember Room is now a public space for the community to share creative work in one place.
+          <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={ember_lead} fieldKey="ember_lead" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
         <p>
-          Upload music, drawings, and photographs so visitors can explore what everyone is making. The upload experience is being prepared for full storage support.
+          <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={ember_description} fieldKey="ember_description" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
         <ul className="ember-room-highlights">
           <li>Upload artwork in three formats: music, drawings, and photos.</li>
