@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import LocationCapture from '../components/LocationCapture';
 import { supabase, isSupabaseConfigured, SUPABASE_AUTH_STORAGE_KEY } from '../lib/supabaseClient';
+import AdminHeroContent from './AdminHeroContent';
 import {
   fetchMyProfile,
   getCurrentSession,
@@ -63,7 +64,7 @@ const readAuthDebugSnapshot = ({ session, eventLabel }) => {
   return snapshot;
 };
 
-const Account = () => {
+const Account = ({ siteContent, onSiteContentUpdated }) => {
   const [session, setSession] = useState(null);
   const [authMode, setAuthMode] = useState('signin');
   const [authForm, setAuthForm] = useState(defaultAuthForm);
@@ -562,6 +563,8 @@ const Account = () => {
           {message ? <p className="account-message">{message}</p> : null}
         </section>
       )}
+
+      {isAdmin && <AdminHeroContent isAdmin={isAdmin} onContentSaved={onSiteContentUpdated} />}
 
       {/* ── Admin: Voucher Manager ──────────────────────────────────── */}
       {isAdmin && (

@@ -1,7 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export default function Home({ theme = 'apollo' }) {
+export default function Home({ theme = 'apollo', siteContent = {} }) {
+  const {
+    home_hero_kicker = 'Apollo by light. Selene by night.',
+    home_hero_title = 'Welcome to Apollo Selene',
+    home_hero_lead = 'A quiet place to arrive, find the next gathering, and feel welcome enough to come back again.',
+    home_hero_description = 'Apollo Selene is a warm landing spot for community life. It keeps event details in focus, while still aiming to feel calm, clear, and inviting from the very first visit.',
+    home_mission_label = 'Mission Statement',
+    home_mission_text = 'Apollo Selene brings people together by sharing gatherings clearly and welcoming everyone with thoughtful care. It aims to create a space where people can relax, reconnect, and feel at ease before they even arrive.',
+  } = siteContent;
+
   return (
     <div className="content-section home-page">
       <section className="hero-card">

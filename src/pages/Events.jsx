@@ -651,6 +651,7 @@ const Events = ({ theme }) => {
       window.localStorage.setItem('apollo-admin', 'true');
       setAdminPassword(loginData.password);
       window.localStorage.setItem('apollo-admin-password', loginData.password);
+      setGalleryActionMsg({});
       setShowLogin(false);
       setLoginData({ username: '', password: '' });
       // galleryItems will be fetched by the isAdmin useEffect
@@ -1287,6 +1288,7 @@ const Events = ({ theme }) => {
               <button onClick={() => {
                 setIsAdmin(false);
                 setAdminPassword('');
+                setGalleryActionMsg({});
                 window.localStorage.removeItem('apollo-admin');
                 window.localStorage.removeItem('apollo-admin-password');
               }} className="logout-btn">

@@ -12,6 +12,7 @@ import MixtapeExchange from './pages/MixtapeExchange';
 import Account from './pages/Account';
 import ThankYou from './pages/ThankYou';
 import PastEvents from './pages/PastEvents';
+import { getSiteContent } from './lib/siteContent';
 import ApolloDayVibe from './components/ApolloDayVibe';
 import SeleneNightVibe from './components/SeleneNightVibe';
 import SunMoonOrbit from './components/SunMoonOrbit';
@@ -36,11 +37,20 @@ const App = () => {
   });
 
   const [session, setSession] = useState(null);
+  const [siteContent, setSiteContent] = useState({});
 
   useEffect(() => {
     getCurrentSession().then(setSession).catch(() => {});
     const { data: authSub } = onAuthStateChange((_, nextSession) => setSession(nextSession));
     return () => authSub.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      const data = await getSiteContent();
+      if (data) setSiteContent(data);
+    };
+    loadContent();
   }, []);
 
   useEffect(() => {
@@ -66,12 +76,12 @@ const App = () => {
           <main className="content-container">
             <Suspense fallback={<div className="card">Loading Earth Explorer...</div>}>
               <Routes>
-                <Route path="/" element={<Home theme={theme} />} />
+                <Route path="/" element={<Home theme={theme} siteContent={siteContent} />} />
                 <Route path="/events" element={<Events theme={theme} />} />
                 <Route path="/past-events" element={<PastEvents />} />
                 <Route path="/experiences" element={<Experiences />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="/merchandise" element={<Merchandise />} />
+                <Route path="/account" element={<Account siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
+                <Route path="/merchandise" element={<Merchandise siteContent={siteContent} />} />
                 <Route path="/artwork" element={<Artwork />} />
                 <Route path="/mixtape-exchange" element={<MixtapeExchange globeComponent={<Earth />} />} />
                 <Route path="/ember-room" element={<EmberRoom />} />

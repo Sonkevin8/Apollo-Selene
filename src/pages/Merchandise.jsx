@@ -1,6 +1,15 @@
 import React from 'react';
 
-const Merchandise = () => {
+const Merchandise = ({ siteContent = {} }) => {
+  const {
+    merchandise_hero_kicker = 'Merchandise',
+    merchandise_hero_title = 'Coming Soon',
+    merchandise_hero_lead = 'The Apollo Selene shop is being prepared now and is not open yet.',
+    merchandise_hero_description = 'When it launches, it will include a small collection of thoughtful pieces that match the tone of the space: calm, useful, and easy to bring into everyday life.',
+    merchandise_mission_label = 'What To Expect',
+    merchandise_mission_text = 'Apparel, art prints, and a few quiet keepsakes that help support future gatherings without turning the site into a storefront too early.',
+  } = siteContent;
+
   return (
     <div className="content-section">
       <section className="hero-card">
