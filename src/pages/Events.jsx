@@ -672,6 +672,11 @@ const Events = ({ theme }) => {
 
   const addEventToGallery = async (event) => {
     if (!supabase) return;
+    if (!isAdmin || !adminPassRef.current) {
+      setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Admin login is required to add events to the gallery.' }));
+      return;
+    }
+
     const posters = resolvePosters(event);
     const imageUrl = posters[0];
     if (!imageUrl) {
@@ -683,33 +688,40 @@ const Events = ({ theme }) => {
     setGalleryActionMsg((prev) => ({ ...prev, [event.id]: '' }));
 
     try {
-      const { data: existing } = await supabase.from('gallery_items').select('id').eq('image_url', imageUrl).maybeSingle();
-      if (existing) {
-        setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'This event poster is already in the gallery.' }));
-        return;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
       }
 
-      const { data: inserted, error } = await supabase
-        .from('gallery_items')
-        .insert([
-          {
-            title: event.title || 'Untitled Event Artwork',
-            artist: 'Apollo Selene',
-            description: event.description || 'Artwork added from a completed Apollo Selene event.',
-            medium: 'Event Poster',
-            year: event.date ? new Date(event.date).getFullYear().toString() : '',
-            story: `Added from the completed event on ${event.date}${event.time ? ` (${event.time})` : ''}.`,
-            image_url: imageUrl,
-          },
-        ])
-        .select()
-        .single();
+      const res = await fetch(`${supabaseUrl}/functions/v1/add-gallery-item`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${anonKey}`,
+          apikey: anonKey,
+        },
+        body: JSON.stringify({
+          adminPassword: adminPassRef.current,
+          eventId: event.id,
+          eventDate: event.date,
+          eventTime: event.time,
+          eventLocation: event.location,
+          title: event.title || 'Untitled Event Artwork',
+          description: event.description || 'Artwork added from a completed Apollo Selene event.',
+          medium: 'Event Poster',
+          year: event.date ? new Date(event.date).getFullYear().toString() : '',
+          story: `Added from the completed event on ${event.date}${event.time ? ` (${event.time})` : ''}.`,
+          imageUrl,
+        }),
+      });
 
-      if (error || !inserted) {
-        setGalleryActionMsg((prev) => ({ ...prev, [event.id]: `Failed to add to gallery: ${error?.message || 'unknown error'}` }));
-      } else {
-        setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || `Edge function returned ${res.status}`);
       }
+
+      setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
     } catch (error) {
       setGalleryActionMsg((prev) => ({ ...prev, [event.id]: error?.message || 'Failed to add to gallery.' }));
     } finally {
