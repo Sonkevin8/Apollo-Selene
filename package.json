@@ -11,8 +11,9 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "@vercel/og": "^0.6.0",
+    "@clerk/clerk-react": "^5.61.8",
     "@supabase/supabase-js": "^2.105.4",
+    "@vercel/og": "^0.6.0",
     "globe.gl": "^2.46.1",
     "leaflet": "^1.9.4",
     "phaser": "^4.1.0",

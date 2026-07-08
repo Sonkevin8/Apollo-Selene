@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SignIn, SignUp, useUser, useClerk } from '@clerk/clerk-react';
 import LocationCapture from '../components/LocationCapture';
 import { supabase, isSupabaseConfigured, SUPABASE_AUTH_STORAGE_KEY } from '../lib/supabaseClient';
 import AdminHeroContent from './AdminHeroContent';
@@ -65,6 +66,8 @@ const readAuthDebugSnapshot = ({ session, eventLabel }) => {
 };
 
 const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = false, onAdminStateChanged }) => {
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const { signOut } = useClerk();
   const [session, setSession] = useState(null);
   const [isAdmin, setIsAdmin] = useState(() => initialAdmin || window.localStorage.getItem('apollo-admin') === 'true');
   const [authMode, setAuthMode] = useState('signin');
@@ -78,6 +81,16 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
   const [authDebug, setAuthDebug] = useState(() =>
     readAuthDebugSnapshot({ session: null, eventLabel: 'init' })
   );
+
+  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+  const clerkEnabled = Boolean(clerkPublishableKey);
+  const clerkSignedIn = clerkEnabled && isUserLoaded && Boolean(user);
+  const effectiveSession = session || (clerkSignedIn ? {
+    user: {
+      id: user.id,
+      email: user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || null,
+    },
+  } : null);
 
   // ── Voucher admin state ───────────────────────────────────
   const [vouchers, setVouchers] = useState([]);
@@ -273,7 +286,7 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
 
   const handleProfileSave = async (event) => {
     event.preventDefault();
-    if (!session?.user?.id) {
+    if (!effectiveSession?.user?.id) {
       return;
     }
 
@@ -288,7 +301,7 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
 
     try {
       await updateMyProfile({
-        userId: session.user.id,
+        userId: effectiveSession.user.id,
         profile: profileForm,
       });
       setMessage('Profile updated. Your account is ready for mixtape exchange.');
@@ -304,6 +317,9 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
     setMessage('');
 
     try {
+      if (typeof signOut === 'function') {
+        await signOut();
+      }
       await signOutUser();
       setMessage('Signed out.');
     } catch (error) {
@@ -326,7 +342,7 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
 
   return (
     <div className="content-section account-shell">
-      {!session ? (
+      {!effectiveSession ? (
         <section className="account-card">
           <h2>Account Access</h2>
           <div className="account-actions">
@@ -486,7 +502,7 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
         </section>
       ) : (
         <section className="account-card">
-          <p>Signed in as {session.user.email}</p>
+          <p>Signed in as {effectiveSession?.user?.email || 'your account'}</p>
           <form onSubmit={handleProfileSave} className="account-form-grid">
             <div className="account-field">
               <label htmlFor="profile-display-name">Display Name</label>
