@@ -361,6 +361,7 @@ const Events = ({ theme }) => {
   const [posterUploadError, setPosterUploadError] = useState([null, null, null, null, null, null, null, null]);
   const [showLogin, setShowLogin] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
+  const [adminPassword, setAdminPassword] = useState(() => window.localStorage.getItem('apollo-admin-password') || '');
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showEditEvent, setShowEditEvent] = useState(false);
   const [newEvent, setNewEvent] = useState(() => createEventDraft(theme));
@@ -410,7 +411,6 @@ const Events = ({ theme }) => {
   const [igLoading, setIgLoading] = useState(false);
   const [igError, setIgError] = useState('');
   const [igSuccess, setIgSuccess] = useState('');
-  const adminPassRef = React.useRef('');
   const [qrModal, setQrModal] = useState(null);   // null or event object
   const [qrCopied, setQrCopied] = useState(false);
   const [qrDownloading, setQrDownloading] = useState(false);
@@ -649,7 +649,8 @@ const Events = ({ theme }) => {
       }
       setIsAdmin(true);
       window.localStorage.setItem('apollo-admin', 'true');
-      adminPassRef.current = loginData.password;
+      setAdminPassword(loginData.password);
+      window.localStorage.setItem('apollo-admin-password', loginData.password);
       setShowLogin(false);
       setLoginData({ username: '', password: '' });
       // galleryItems will be fetched by the isAdmin useEffect
@@ -672,7 +673,7 @@ const Events = ({ theme }) => {
 
   const addEventToGallery = async (event) => {
     if (!supabase) return;
-    if (!isAdmin || !adminPassRef.current) {
+    if (!isAdmin || !adminPassword) {
       setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Admin login is required to add events to the gallery.' }));
       return;
     }
@@ -702,7 +703,7 @@ const Events = ({ theme }) => {
           apikey: anonKey,
         },
         body: JSON.stringify({
-          adminPassword: adminPassRef.current,
+          adminPassword,
           eventId: event.id,
           eventDate: event.date,
           eventTime: event.time,
@@ -756,7 +757,7 @@ const Events = ({ theme }) => {
         body: JSON.stringify({
           imageUrl,
           caption: igCaption,
-          adminToken: adminPassRef.current,
+          adminToken: adminPassword,
         }),
       });
       const data = await res.json();
@@ -1283,7 +1284,12 @@ const Events = ({ theme }) => {
               <button onClick={() => setShowAddEvent(true)} className="add-event-btn">
                 Add Event
               </button>
-              <button onClick={() => { setIsAdmin(false); window.localStorage.removeItem('apollo-admin'); }} className="logout-btn">
+              <button onClick={() => {
+                setIsAdmin(false);
+                setAdminPassword('');
+                window.localStorage.removeItem('apollo-admin');
+                window.localStorage.removeItem('apollo-admin-password');
+              }} className="logout-btn">
                 Logout
               </button>
             </>
