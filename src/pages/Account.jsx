@@ -64,8 +64,9 @@ const readAuthDebugSnapshot = ({ session, eventLabel }) => {
   return snapshot;
 };
 
-const Account = ({ siteContent, onSiteContentUpdated }) => {
+const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = false, onAdminStateChanged }) => {
   const [session, setSession] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(() => initialAdmin || window.localStorage.getItem('apollo-admin') === 'true');
   const [authMode, setAuthMode] = useState('signin');
   const [authForm, setAuthForm] = useState(defaultAuthForm);
   const [profileForm, setProfileForm] = useState(defaultProfileForm);
@@ -74,7 +75,6 @@ const Account = ({ siteContent, onSiteContentUpdated }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [usernameError, setUsernameError] = useState('');
   const [adminForm, setAdminForm] = useState(defaultAdminForm);
-  const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
   const [authDebug, setAuthDebug] = useState(() =>
     readAuthDebugSnapshot({ session: null, eventLabel: 'init' })
   );
@@ -196,7 +196,11 @@ const Account = ({ siteContent, onSiteContentUpdated }) => {
         setMessage('Invalid admin credentials.');
       } else {
         window.localStorage.setItem('apollo-admin', 'true');
+        window.localStorage.setItem('apollo-admin-password', adminForm.password);
         setIsAdmin(true);
+        if (typeof onAdminStateChanged === 'function') {
+          onAdminStateChanged(true);
+        }
         setMessage('Admin access granted.');
         setAdminForm(defaultAdminForm);
       }
@@ -210,6 +214,9 @@ const Account = ({ siteContent, onSiteContentUpdated }) => {
   const handleAdminLogout = () => {
     setIsAdmin(false);
     window.localStorage.removeItem('apollo-admin');
+    if (typeof onAdminStateChanged === 'function') {
+      onAdminStateChanged(false);
+    }
     setMessage('');
   };
 

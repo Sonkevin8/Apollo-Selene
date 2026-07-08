@@ -10,24 +10,33 @@ const Merchandise = ({ siteContent = {} }) => {
     merchandise_mission_text = 'Apparel, art prints, and a few quiet keepsakes that help support future gatherings without turning the site into a storefront too early.',
   } = siteContent;
 
+  const merchFields = [
+    { key: 'merchandise_hero_kicker', label: 'Kicker', multiline: false },
+    { key: 'merchandise_hero_title', label: 'Title', multiline: false },
+    { key: 'merchandise_hero_lead', label: 'Lead', multiline: false },
+    { key: 'merchandise_hero_description', label: 'Description', multiline: true },
+    { key: 'merchandise_mission_label', label: 'Mission label', multiline: false },
+    { key: 'merchandise_mission_text', label: 'Mission text', multiline: true },
+  ];
+
   return (
     <div className="content-section">
       <section className="hero-card">
         <div className="hero-copy">
-          <p className="section-kicker">Merchandise</p>
-          <h1>Coming Soon</h1>
+          <p className="section-kicker">{merchandise_hero_kicker}</p>
+          <h1>{merchandise_hero_title}</h1>
           <p className="hero-lead">
-            The Apollo Selene shop is being prepared now and is not open yet.
+            {merchandise_hero_lead}
           </p>
           <p>
-            When it launches, it will include a small collection of thoughtful pieces that match the tone of the space: calm, useful, and easy to bring into everyday life.
+            {merchandise_hero_description}
           </p>
         </div>
 
         <div className="mission-panel">
-          <p className="mission-label">What To Expect</p>
+          <p className="mission-label">{merchandise_mission_label}</p>
           <p className="mission-text">
-            Apparel, art prints, and a few quiet keepsakes that help support future gatherings without turning the site into a storefront too early.
+            {merchandise_mission_text}
           </p>
         </div>
       </section>

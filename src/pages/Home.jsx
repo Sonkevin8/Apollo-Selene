@@ -11,19 +11,28 @@ export default function Home({ theme = 'apollo', siteContent = {} }) {
     home_mission_text = 'Apollo Selene brings people together by sharing gatherings clearly and welcoming everyone with thoughtful care. It aims to create a space where people can relax, reconnect, and feel at ease before they even arrive.',
   } = siteContent;
 
+  const homeFields = [
+    { key: 'home_hero_kicker', label: 'Kicker', multiline: false },
+    { key: 'home_hero_title', label: 'Title', multiline: false },
+    { key: 'home_hero_lead', label: 'Lead', multiline: false },
+    { key: 'home_hero_description', label: 'Description', multiline: true },
+    { key: 'home_mission_label', label: 'Mission label', multiline: false },
+    { key: 'home_mission_text', label: 'Mission text', multiline: true },
+  ];
+
   return (
     <div className="content-section home-page">
       <section className="hero-card">
         <div className="hero-copy">
-          <p className="section-kicker">Apollo by light. Selene by night.</p>
+          <p className="section-kicker">{home_hero_kicker}</p>
           <h1>
-            Welcome to Apollo Selene <span className="name-secret">secrets</span>
+            {home_hero_title} <span className="name-secret">secrets</span>
           </h1>
           <p className="hero-lead">
-            A quiet place to arrive, find the next gathering, and feel welcome enough to come back again.
+            {home_hero_lead}
           </p>
           <p>
-            Apollo Selene is a warm landing spot for community life. It keeps event details in focus, while still aiming to feel calm, clear, and inviting from the very first visit.
+            {home_hero_description}
           </p>
           <div className="hero-actions">
             <Link to="/events" className="button-link primary-link">See Upcoming Events</Link>
@@ -44,9 +53,9 @@ export default function Home({ theme = 'apollo', siteContent = {} }) {
             )}
           </div>
           <div className="mission-panel">
-            <p className="mission-label">Mission Statement</p>
+            <p className="mission-label">{home_mission_label}</p>
             <p className="mission-text">
-              Apollo Selene brings people together by sharing gatherings clearly and welcoming everyone with thoughtful care. It aims to create a space where people can relax, reconnect, and feel at ease before they even arrive.
+              {home_mission_text}
             </p>
           </div>
         </div>
