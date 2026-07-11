@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { fetchPublicSubmissions, submitArtworkUpload, validateUpload } from '../lib/emberRoomUploads';
+import { isAdminUiEnabled } from '../lib/adminAccess';
 
 const EmberRoom = ({ siteContent = {}, onSiteContentUpdated }) => {
+  const isAdmin = isAdminUiEnabled();
   const {
     ember_kicker = 'Public Creative Hub',
     ember_title = 'Ember Room',
@@ -154,13 +156,13 @@ const EmberRoom = ({ siteContent = {}, onSiteContentUpdated }) => {
     <div className="content-section ember-room-page">
       <AnimatedBackground className="ember-room-canvas" />
       <div className="ember-room-overlay card">
-        <p className="section-kicker"><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={ember_kicker} fieldKey="ember_kicker" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
-        <h1><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={ember_title} fieldKey="ember_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h1>
+        <p className="section-kicker"><InlineEditor isAdmin={isAdmin} value={ember_kicker} fieldKey="ember_kicker" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+        <h1><InlineEditor isAdmin={isAdmin} value={ember_title} fieldKey="ember_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h1>
         <p className="hero-lead">
-          <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={ember_lead} fieldKey="ember_lead" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+          <InlineEditor isAdmin={isAdmin} value={ember_lead} fieldKey="ember_lead" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
         <p>
-          <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={ember_description} fieldKey="ember_description" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+          <InlineEditor isAdmin={isAdmin} value={ember_description} fieldKey="ember_description" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
         <ul className="ember-room-highlights">
           <li>Upload artwork in three formats: music, drawings, and photos.</li>

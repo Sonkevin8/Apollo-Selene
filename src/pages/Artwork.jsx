@@ -1,5 +1,7 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import InlineEditor from '../components/InlineEditor';
+import { isAdminUiEnabled } from '../lib/adminAccess';
 
 const GALLERY_TABLE = 'gallery_items';
 const GALLERY_BUCKET = 'gallery';
@@ -40,8 +42,16 @@ const STATIC_ARTWORKS = [
 
 const defaultUploadForm = { title: '', artist: '', description: '', medium: '', year: '', story: '', price: '' };
 
-export default function Artwork() {
-  const isAdmin = window.localStorage.getItem('apollo-admin') === 'true';
+export default function Artwork({ siteContent = {}, onSiteContentUpdated }) {
+  const isAdmin = isAdminUiEnabled();
+  const {
+    artwork_intro_title = 'Apollo Selene Gallery',
+    artwork_intro_text = 'The gallery reflects the emotional tone of Apollo Selene: calm, welcoming, and quietly alive. These works help shape the atmosphere around our events and give people another way to connect with the space.',
+    artwork_intro_living = 'Living Gallery: This collection grows through gatherings, conversations, and shared moments of reflection. Each piece carries a little of the mood people come here to find.',
+    artwork_outro_title = 'Creativity Sets the Tone',
+    artwork_outro_text = 'In Apollo Selene, art helps create a softer entry into community. It gives people something to notice, reflect on, and talk about before the room ever asks anything from them.',
+    artwork_outro_cta = 'Want to contribute? Join an art night or share a piece that captures comfort, rest, gathering, or reflection. It does not need to be polished. It only needs to be honest.',
+  } = siteContent;
   const [currentUserId, setCurrentUserId] = useState(null);
 
   const [artworks, setArtworks] = useState(STATIC_ARTWORKS);
@@ -188,14 +198,37 @@ export default function Artwork() {
 
   return (
     <div className="content-section">
-      <h1>Apollo Selene Gallery</h1>
+      <h1>
+        <InlineEditor
+          isAdmin={isAdmin}
+          value={artwork_intro_title}
+          fieldKey="artwork_intro_title"
+          multiline={false}
+          siteContent={siteContent}
+          onSiteContentUpdated={onSiteContentUpdated}
+        />
+      </h1>
 
       <div className="card">
         <p>
-          The gallery reflects the emotional tone of Apollo Selene: calm, welcoming, and quietly alive. These works help shape the atmosphere around our events and give people another way to connect with the space.
+          <InlineEditor
+            isAdmin={isAdmin}
+            value={artwork_intro_text}
+            fieldKey="artwork_intro_text"
+            multiline={true}
+            siteContent={siteContent}
+            onSiteContentUpdated={onSiteContentUpdated}
+          />
         </p>
         <p>
-          <strong>Living Gallery:</strong> This collection grows through gatherings, conversations, and shared moments of reflection. Each piece carries a little of the mood people come here to find.
+          <InlineEditor
+            isAdmin={isAdmin}
+            value={artwork_intro_living}
+            fieldKey="artwork_intro_living"
+            multiline={true}
+            siteContent={siteContent}
+            onSiteContentUpdated={onSiteContentUpdated}
+          />
         </p>
       </div>
 
@@ -353,12 +386,35 @@ export default function Artwork() {
       )}
 
       <div className="card">
-        <h3>Creativity Sets the Tone</h3>
+        <h3>
+          <InlineEditor
+            isAdmin={isAdmin}
+            value={artwork_outro_title}
+            fieldKey="artwork_outro_title"
+            multiline={false}
+            siteContent={siteContent}
+            onSiteContentUpdated={onSiteContentUpdated}
+          />
+        </h3>
         <p>
-          In Apollo Selene, art helps create a softer entry into community. It gives people something to notice, reflect on, and talk about before the room ever asks anything from them.
+          <InlineEditor
+            isAdmin={isAdmin}
+            value={artwork_outro_text}
+            fieldKey="artwork_outro_text"
+            multiline={true}
+            siteContent={siteContent}
+            onSiteContentUpdated={onSiteContentUpdated}
+          />
         </p>
         <p>
-          <strong>Want to contribute?</strong> Join an art night or share a piece that captures comfort, rest, gathering, or reflection. It does not need to be polished. It only needs to be honest.
+          <InlineEditor
+            isAdmin={isAdmin}
+            value={artwork_outro_cta}
+            fieldKey="artwork_outro_cta"
+            multiline={true}
+            siteContent={siteContent}
+            onSiteContentUpdated={onSiteContentUpdated}
+          />
         </p>
       </div>
 

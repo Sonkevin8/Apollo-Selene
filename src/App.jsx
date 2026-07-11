@@ -79,10 +79,10 @@ const App = () => {
                 <Route path="/" element={<Home theme={theme} siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/events" element={<Events theme={theme} />} />
                 <Route path="/past-events" element={<PastEvents />} />
-                <Route path="/experiences" element={<Experiences />} />
+                <Route path="/experiences" element={<Experiences siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/account" element={<Account siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/merchandise" element={<Merchandise siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
-                <Route path="/artwork" element={<Artwork />} />
+                <Route path="/artwork" element={<Artwork siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/mixtape-exchange" element={<MixtapeExchange globeComponent={<Earth />} />} />
                 <Route path="/ember-room" element={<EmberRoom siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/thank-you" element={<ThankYou />} />

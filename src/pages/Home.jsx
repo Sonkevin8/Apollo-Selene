@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import InlineEditor from '../components/InlineEditor';
-import { saveSiteContent } from '../lib/siteContent';
+import { isAdminUiEnabled } from '../lib/adminAccess';
 
 export default function Home({ theme = 'apollo', siteContent = {}, onSiteContentUpdated }) {
+  const isAdmin = isAdminUiEnabled();
   const {
     home_hero_kicker = 'Apollo by light. Selene by night.',
     home_hero_title = 'Welcome to Apollo Selene',
@@ -11,6 +12,13 @@ export default function Home({ theme = 'apollo', siteContent = {}, onSiteContent
     home_hero_description = 'Apollo Selene is a warm landing spot for community life. It keeps event details in focus, while still aiming to feel calm, clear, and inviting from the very first visit.',
     home_mission_label = 'Mission Statement',
     home_mission_text = 'Apollo Selene brings people together by sharing gatherings clearly and welcoming everyone with thoughtful care. It aims to create a space where people can relax, reconnect, and feel at ease before they even arrive.',
+    home_feel_title = 'What People Should Feel Here',
+    home_principle_unrushed_title = 'Unrushed',
+    home_principle_unrushed_text = 'Announcements are easy to read, and the tone never asks visitors to perform or keep up.',
+    home_principle_included_title = 'Included',
+    home_principle_included_text = 'Every page should make it clear that newcomers, regulars, and quiet observers all belong here.',
+    home_principle_ready_title = 'Ready',
+    home_principle_ready_text = 'By the time someone leaves the page for an event, they should know what to expect and feel at ease about going.',
   } = siteContent;
 
   const homeFields = [
@@ -26,15 +34,15 @@ export default function Home({ theme = 'apollo', siteContent = {}, onSiteContent
     <div className="content-section home-page">
       <section className="hero-card">
         <div className="hero-copy">
-          <p className="section-kicker"><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_hero_kicker} fieldKey="home_hero_kicker" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p className="section-kicker"><InlineEditor isAdmin={isAdmin} value={home_hero_kicker} fieldKey="home_hero_kicker" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
           <h1>
-            <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_hero_title} fieldKey="home_hero_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /> <span className="name-secret">secrets</span>
+            <InlineEditor isAdmin={isAdmin} value={home_hero_title} fieldKey="home_hero_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /> <span className="name-secret">secrets</span>
           </h1>
           <p className="hero-lead">
-            <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_hero_lead} fieldKey="home_hero_lead" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+            <InlineEditor isAdmin={isAdmin} value={home_hero_lead} fieldKey="home_hero_lead" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
           </p>
           <p>
-            <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_hero_description} fieldKey="home_hero_description" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+            <InlineEditor isAdmin={isAdmin} value={home_hero_description} fieldKey="home_hero_description" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
           </p>
           <div className="hero-actions">
             <Link to="/events" className="button-link primary-link">See Upcoming Events</Link>
@@ -55,9 +63,9 @@ export default function Home({ theme = 'apollo', siteContent = {}, onSiteContent
             )}
           </div>
           <div className="mission-panel">
-            <p className="mission-label"><InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_mission_label} fieldKey="home_mission_label" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p className="mission-label"><InlineEditor isAdmin={isAdmin} value={home_mission_label} fieldKey="home_mission_label" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
             <p className="mission-text">
-              <InlineEditor isAdmin={window.localStorage.getItem('apollo-admin') === 'true'} value={home_mission_text} fieldKey="home_mission_text" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+              <InlineEditor isAdmin={isAdmin} value={home_mission_text} fieldKey="home_mission_text" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
             </p>
           </div>
         </div>
@@ -80,19 +88,21 @@ export default function Home({ theme = 'apollo', siteContent = {}, onSiteContent
       </section>
 
       <section className="card">
-        <h2>What People Should Feel Here</h2>
+        <h2>
+          <InlineEditor isAdmin={isAdmin} value={home_feel_title} fieldKey="home_feel_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+        </h2>
         <div className="grid grid-3">
           <div className="principle-card">
-            <h4>Unrushed</h4>
-            <p>Announcements are easy to read, and the tone never asks visitors to perform or keep up.</p>
+            <h4><InlineEditor isAdmin={isAdmin} value={home_principle_unrushed_title} fieldKey="home_principle_unrushed_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h4>
+            <p><InlineEditor isAdmin={isAdmin} value={home_principle_unrushed_text} fieldKey="home_principle_unrushed_text" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
           </div>
           <div className="principle-card">
-            <h4>Included</h4>
-            <p>Every page should make it clear that newcomers, regulars, and quiet observers all belong here.</p>
+            <h4><InlineEditor isAdmin={isAdmin} value={home_principle_included_title} fieldKey="home_principle_included_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h4>
+            <p><InlineEditor isAdmin={isAdmin} value={home_principle_included_text} fieldKey="home_principle_included_text" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
           </div>
           <div className="principle-card">
-            <h4>Ready</h4>
-            <p>By the time someone leaves the page for an event, they should know what to expect and feel at ease about going.</p>
+            <h4><InlineEditor isAdmin={isAdmin} value={home_principle_ready_title} fieldKey="home_principle_ready_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h4>
+            <p><InlineEditor isAdmin={isAdmin} value={home_principle_ready_text} fieldKey="home_principle_ready_text" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
           </div>
         </div>
       </section>

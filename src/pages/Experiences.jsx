@@ -1,5 +1,7 @@
 ﻿import React, { useCallback, useEffect, useState } from 'react';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import InlineEditor from '../components/InlineEditor';
+import { isAdminUiEnabled } from '../lib/adminAccess';
 
 const STATIC_REFLECTIONS = [
   { id: 1, author: 'Sarah M.', title: 'I Felt Comfortable Right Away', content: 'I came to Apollo Selene not knowing anyone and expected to feel awkward. Instead, the room felt soft, friendly, and easy to settle into. By the end of the night, I had sketched, laughed, and actually relaxed.', likes: 12, tags: ['welcome', 'art', 'calm'], approved: true, created_at: '2024-12-15' },
@@ -9,8 +11,13 @@ const STATIC_REFLECTIONS = [
 
 const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
-const Experiences = () => {
-  const isAdmin = window.localStorage.getItem('apollo-admin') === 'true';
+const Experiences = ({ siteContent = {}, onSiteContentUpdated }) => {
+  const isAdmin = isAdminUiEnabled();
+  const {
+    experiences_intro_text = 'This is where people share how Apollo Selene felt to them - about the events, the comfort, the quiet, and the connection they found.',
+    experiences_outro_title = 'Every Experience Matters',
+    experiences_outro_text = 'Every reflection helps define the kind of place Apollo Selene is becoming. Whether your story is about meeting someone new, finding a quiet corner, or finally feeling able to relax - it helps others know they can belong here too.',
+  } = siteContent;
 
   const [reflections, setReflections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,7 +115,16 @@ const Experiences = () => {
       </div>
 
       <div className="card">
-        <p>This is where people share how Apollo Selene felt to them â€” about the events, the comfort, the quiet, and the connection they found.</p>
+        <p>
+          <InlineEditor
+            isAdmin={isAdmin}
+            value={experiences_intro_text}
+            fieldKey="experiences_intro_text"
+            multiline={true}
+            siteContent={siteContent}
+            onSiteContentUpdated={onSiteContentUpdated}
+          />
+        </p>
       </div>
 
       {submitMsg && (
@@ -212,8 +228,26 @@ const Experiences = () => {
       )}
 
       <div className="card text-center">
-        <h3>Every Experience Matters</h3>
-        <p>Every reflection helps define the kind of place Apollo Selene is becoming. Whether your story is about meeting someone new, finding a quiet corner, or finally feeling able to relax â€” it helps others know they can belong here too.</p>
+        <h3>
+          <InlineEditor
+            isAdmin={isAdmin}
+            value={experiences_outro_title}
+            fieldKey="experiences_outro_title"
+            multiline={false}
+            siteContent={siteContent}
+            onSiteContentUpdated={onSiteContentUpdated}
+          />
+        </h3>
+        <p>
+          <InlineEditor
+            isAdmin={isAdmin}
+            value={experiences_outro_text}
+            fieldKey="experiences_outro_text"
+            multiline={true}
+            siteContent={siteContent}
+            onSiteContentUpdated={onSiteContentUpdated}
+          />
+        </p>
       </div>
     </div>
   );

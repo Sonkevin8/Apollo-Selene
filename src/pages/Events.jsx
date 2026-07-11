@@ -361,21 +361,37 @@ const getClerkTokenSafe = async () => {
   }
 };
 
+const isClerkSessionActive = () => {
+  if (typeof window === 'undefined') return false;
+  return Boolean(window.Clerk?.session);
+};
+
 const Events = ({ theme }) => {
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const legacyAdmin = window.localStorage.getItem('apollo-admin') === 'true';
+    return legacyAdmin || isClerkSessionActive();
+  });
   const [galleryItems, setGalleryItems] = useState([]);
-  // sync admin state when other pages update it
+  // Sync admin state from legacy password auth and Clerk session auth.
   useEffect(() => {
     const syncAdmin = () => {
-      setIsAdmin(window.localStorage.getItem('apollo-admin') === 'true');
+      const legacyAdmin = window.localStorage.getItem('apollo-admin') === 'true';
+      const clerkAdmin = isClerkSessionActive();
+      setIsAdmin(legacyAdmin || clerkAdmin);
       setAdminPassword(window.localStorage.getItem('apollo-admin-password') || '');
     };
-    // initial sync
+
+    const timer = window.setInterval(syncAdmin, 1000);
     syncAdmin();
     window.addEventListener('apollo-admin-changed', syncAdmin);
-    return () => window.removeEventListener('apollo-admin-changed', syncAdmin);
+    window.addEventListener('focus', syncAdmin);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('apollo-admin-changed', syncAdmin);
+      window.removeEventListener('focus', syncAdmin);
+    };
   }, []);
   const [galleryActionLoading, setGalleryActionLoading] = useState({});
   const [galleryActionMsg, setGalleryActionMsg] = useState({});
