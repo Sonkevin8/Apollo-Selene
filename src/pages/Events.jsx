@@ -769,37 +769,34 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
         imageUrl,
       };
 
-      // Prefer Clerk token when Clerk is available.
-      const clerkToken = await getClerkTokenSafe();
-
-      // If we have a Clerk token, use the Clerk-backed function
-      if (clerkToken) {
-        const { data, error } = await supabase.functions.invoke('add-gallery-item-clerk', {
-          body: payload,
-          headers: {
-            Authorization: `Bearer ${clerkToken}`,
+      // Most reliable path: if admin password login is active, use password-backed function first.
+      if (isAdmin && adminPassword) {
+        const { data, error } = await supabase.functions.invoke('add-gallery-item', {
+          body: {
+            ...payload,
+            adminPassword,
           },
         });
-        if (error) {
-          throw new Error(data?.error || error.message || 'Failed to call add-gallery-item-clerk.');
+        if (!error) {
+          setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
+          return;
         }
-        setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
-        return;
       }
 
-      // Fall back to password-based auth if no Clerk token
-      if (!isAdmin || !adminPassword) {
+      // Clerk fallback path for admin sessions that don't have saved password auth.
+      const clerkToken = await getClerkTokenSafe();
+      if (!clerkToken) {
         throw new Error('Admin login is required to add events to the gallery.');
       }
 
-      const { data, error } = await supabase.functions.invoke('add-gallery-item', {
-        body: {
-          ...payload,
-          adminPassword,
+      const { data, error } = await supabase.functions.invoke('add-gallery-item-clerk', {
+        body: payload,
+        headers: {
+          Authorization: `Bearer ${clerkToken}`,
         },
       });
       if (error) {
-        throw new Error(data?.error || error.message || 'Failed to call add-gallery-item.');
+        throw new Error(data?.error || error.message || 'Failed to call add-gallery-item-clerk.');
       }
       setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
 
