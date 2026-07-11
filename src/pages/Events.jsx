@@ -786,6 +786,10 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
       // Clerk fallback path for admin sessions that don't have saved password auth.
       const clerkToken = await getClerkTokenSafe();
       if (!clerkToken) {
+        if (isAdmin && !adminPassword) {
+          setShowLogin(true);
+          throw new Error('Please log in as admin once on the Events page, then try Add to Gallery again.');
+        }
         throw new Error('Admin login is required to add events to the gallery.');
       }
 
