@@ -756,39 +756,32 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
     setGalleryActionMsg((prev) => ({ ...prev, [event.id]: '' }));
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      if (!supabaseUrl || !anonKey) {
-        throw new Error('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
-      }
+      const payload = {
+        eventId: event.id,
+        eventDate: event.date,
+        eventTime: event.time,
+        eventLocation: event.location,
+        title: event.title || 'Untitled Event Artwork',
+        description: event.description || 'Artwork added from a completed Apollo Selene event.',
+        medium: 'Event Poster',
+        year: event.date ? new Date(event.date).getFullYear().toString() : '',
+        story: `Added from the completed event on ${event.date}${event.time ? ` (${event.time})` : ''}.`,
+        imageUrl,
+      };
 
       // Prefer Clerk token when Clerk is available.
       const clerkToken = await getClerkTokenSafe();
 
       // If we have a Clerk token, use the Clerk-backed function
       if (clerkToken) {
-        const res = await fetch(`${supabaseUrl}/functions/v1/add-gallery-item-clerk`, {
-          method: 'POST',
+        const { data, error } = await supabase.functions.invoke('add-gallery-item-clerk', {
+          body: payload,
           headers: {
-            'Content-Type': 'application/json',
             Authorization: `Bearer ${clerkToken}`,
           },
-          body: JSON.stringify({
-            eventId: event.id,
-            eventDate: event.date,
-            eventTime: event.time,
-            eventLocation: event.location,
-            title: event.title || 'Untitled Event Artwork',
-            description: event.description || 'Artwork added from a completed Apollo Selene event.',
-            medium: 'Event Poster',
-            year: event.date ? new Date(event.date).getFullYear().toString() : '',
-            story: `Added from the completed event on ${event.date}${event.time ? ` (${event.time})` : ''}.`,
-            imageUrl,
-          }),
         });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data?.error || `Edge function returned ${res.status}`);
+        if (error) {
+          throw new Error(data?.error || error.message || 'Failed to call add-gallery-item-clerk.');
         }
         setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
         return;
@@ -799,30 +792,14 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
         throw new Error('Admin login is required to add events to the gallery.');
       }
 
-      const res = await fetch(`${supabaseUrl}/functions/v1/add-gallery-item`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${anonKey}`,
-          apikey: anonKey,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('add-gallery-item', {
+        body: {
+          ...payload,
           adminPassword,
-          eventId: event.id,
-          eventDate: event.date,
-          eventTime: event.time,
-          eventLocation: event.location,
-          title: event.title || 'Untitled Event Artwork',
-          description: event.description || 'Artwork added from a completed Apollo Selene event.',
-          medium: 'Event Poster',
-          year: event.date ? new Date(event.date).getFullYear().toString() : '',
-          story: `Added from the completed event on ${event.date}${event.time ? ` (${event.time})` : ''}.`,
-          imageUrl,
-        }),
+        },
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || `Edge function returned ${res.status}`);
+      if (error) {
+        throw new Error(data?.error || error.message || 'Failed to call add-gallery-item.');
       }
       setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
 
