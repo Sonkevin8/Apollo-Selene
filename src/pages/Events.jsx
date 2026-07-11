@@ -2,6 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, EVENTS_TABLE, EVENT_GUESTS_TABLE, EVENT_ATTENDANCE_TABLE } from '../lib/supabaseClient';
 import InlineEditor from '../components/InlineEditor';
+import {
+  ADMIN_CHANGED_EVENT,
+  clearLegacyAdminSession,
+  getLegacyAdminPassword,
+  isLegacyAdminEnabled,
+  setLegacyAdminSession,
+} from '../lib/adminAccess';
 
 
 // Helper to call Supabase Edge Function for Stripe checkout
@@ -371,27 +378,56 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => {
-    const legacyAdmin = window.localStorage.getItem('apollo-admin') === 'true';
+    const legacyAdmin = isLegacyAdminEnabled();
     return legacyAdmin || isClerkSessionActive();
   });
   const [galleryItems, setGalleryItems] = useState([]);
   // Sync admin state from legacy password auth and Clerk session auth.
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
     const syncAdmin = () => {
-      const legacyAdmin = window.localStorage.getItem('apollo-admin') === 'true';
+      const legacyAdmin = isLegacyAdminEnabled();
       const clerkAdmin = isClerkSessionActive();
       setIsAdmin(legacyAdmin || clerkAdmin);
-      setAdminPassword(window.localStorage.getItem('apollo-admin-password') || '');
+      setAdminPassword(getLegacyAdminPassword());
     };
 
-    const timer = window.setInterval(syncAdmin, 1000);
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        syncAdmin();
+      }
+    };
+
+    let removeClerkListener = null;
+    if (typeof window.Clerk?.addListener === 'function') {
+      try {
+        const unsubscribe = window.Clerk.addListener(() => {
+          syncAdmin();
+        });
+        if (typeof unsubscribe === 'function') {
+          removeClerkListener = unsubscribe;
+        }
+      } catch {
+        // No-op: Clerk listener is optional.
+      }
+    }
+
     syncAdmin();
-    window.addEventListener('apollo-admin-changed', syncAdmin);
+    window.addEventListener(ADMIN_CHANGED_EVENT, syncAdmin);
+    window.addEventListener('storage', syncAdmin);
     window.addEventListener('focus', syncAdmin);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
-      window.clearInterval(timer);
-      window.removeEventListener('apollo-admin-changed', syncAdmin);
+      window.removeEventListener(ADMIN_CHANGED_EVENT, syncAdmin);
+      window.removeEventListener('storage', syncAdmin);
       window.removeEventListener('focus', syncAdmin);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (typeof removeClerkListener === 'function') {
+        removeClerkListener();
+      }
     };
   }, []);
   const [galleryActionLoading, setGalleryActionLoading] = useState({});
@@ -400,7 +436,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
   const [posterUploadError, setPosterUploadError] = useState([null, null, null, null, null, null, null, null]);
   const [showLogin, setShowLogin] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
-  const [adminPassword, setAdminPassword] = useState(() => window.localStorage.getItem('apollo-admin-password') || '');
+  const [adminPassword, setAdminPassword] = useState(() => getLegacyAdminPassword());
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showEditEvent, setShowEditEvent] = useState(false);
   const [newEvent, setNewEvent] = useState(() => createEventDraft(theme));
@@ -718,9 +754,8 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
         return;
       }
       setIsAdmin(true);
-      window.localStorage.setItem('apollo-admin', 'true');
+      setLegacyAdminSession({ password: loginData.password });
       setAdminPassword(loginData.password);
-      window.localStorage.setItem('apollo-admin-password', loginData.password);
       setGalleryActionMsg({});
       setShowLogin(false);
       setLoginData({ username: '', password: '' });
@@ -787,8 +822,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
       const clerkToken = await getClerkTokenSafe();
       if (!clerkToken) {
         if (isAdmin && !adminPassword) {
-          setShowLogin(true);
-          throw new Error('Please log in as admin once on the Events page, then try Add to Gallery again.');
+          throw new Error('Admin password session is missing for this site URL. Open Admin Login and sign in once, then retry Add to Gallery.');
         }
         throw new Error('Admin login is required to add events to the gallery.');
       }
@@ -1370,8 +1404,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
                 setIsAdmin(false);
                 setAdminPassword('');
                 setGalleryActionMsg({});
-                window.localStorage.removeItem('apollo-admin');
-                window.localStorage.removeItem('apollo-admin-password');
+                clearLegacyAdminSession();
               }} className="logout-btn">
                 {events_btn_logout}
               </button>

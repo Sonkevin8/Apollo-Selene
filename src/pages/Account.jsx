@@ -11,6 +11,11 @@ import {
   signUpWithEmail,
   updateMyProfile,
 } from '../lib/mixtapeExchange';
+import {
+  clearLegacyAdminSession,
+  isAdminUiEnabled,
+  setLegacyAdminSession,
+} from '../lib/adminAccess';
 import './Account.css';
 
 const defaultAuthForm = {
@@ -67,7 +72,7 @@ const readAuthDebugSnapshot = ({ session, eventLabel }) => {
 const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = false, onAdminStateChanged }) => {
   const [session, setSession] = useState(null);
   const [clerkUser, setClerkUser] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(() => initialAdmin || window.localStorage.getItem('apollo-admin') === 'true');
+  const [isAdmin, setIsAdmin] = useState(() => initialAdmin || isAdminUiEnabled());
   const [authMode, setAuthMode] = useState('signin');
   const [authForm, setAuthForm] = useState(defaultAuthForm);
   const [profileForm, setProfileForm] = useState(defaultProfileForm);
@@ -103,13 +108,44 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
       return;
     }
 
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
     const syncClerk = () => {
       setClerkUser(window.Clerk?.user || null);
     };
 
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        syncClerk();
+      }
+    };
+
+    let removeClerkListener = null;
+    if (typeof window.Clerk?.addListener === 'function') {
+      try {
+        const unsubscribe = window.Clerk.addListener(() => {
+          syncClerk();
+        });
+        if (typeof unsubscribe === 'function') {
+          removeClerkListener = unsubscribe;
+        }
+      } catch {
+        // No-op: listener API availability can vary by Clerk runtime.
+      }
+    }
+
     syncClerk();
-    const timer = window.setInterval(syncClerk, 1000);
-    return () => window.clearInterval(timer);
+    window.addEventListener('focus', syncClerk);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', syncClerk);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (typeof removeClerkListener === 'function') {
+        removeClerkListener();
+      }
+    };
   }, [clerkEnabled]);
 
   useEffect(() => {
@@ -221,14 +257,11 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
       if (error || !data?.success) {
         setMessage('Invalid admin credentials.');
       } else {
-        window.localStorage.setItem('apollo-admin', 'true');
-        window.localStorage.setItem('apollo-admin-password', adminForm.password);
+        setLegacyAdminSession({ password: adminForm.password });
         setIsAdmin(true);
         if (typeof onAdminStateChanged === 'function') {
           onAdminStateChanged(true);
         }
-        // notify other pages in this window
-        try { window.dispatchEvent(new Event('apollo-admin-changed')); } catch {}
         setMessage('Admin access granted.');
         setAdminForm(defaultAdminForm);
       }
@@ -241,8 +274,7 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
 
   const handleAdminLogout = () => {
     setIsAdmin(false);
-    window.localStorage.removeItem('apollo-admin');
-    try { window.dispatchEvent(new Event('apollo-admin-changed')); } catch {}
+    clearLegacyAdminSession();
     if (typeof onAdminStateChanged === 'function') {
       onAdminStateChanged(false);
     }

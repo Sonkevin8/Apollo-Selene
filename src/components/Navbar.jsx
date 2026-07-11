@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import MobileScrollGuide from './MobileScrollGuide';
 import { supabase } from '../lib/supabaseClient';
+import { clearLegacyAdminSession, isLegacyAdminEnabled } from '../lib/adminAccess';
 import '../styles/Navbar.css';
 
 const navigationItems = [
@@ -27,12 +28,12 @@ const Navbar = ({ theme, onToggleTheme, session }) => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const navigate = useNavigate();
-  const isAdmin = window.localStorage.getItem('apollo-admin') === 'true';
+  const isAdmin = isLegacyAdminEnabled();
   const initial = getInitial(session, isAdmin);
 
   const handleLogout = async () => {
     if (isAdmin) {
-      window.localStorage.removeItem('apollo-admin');
+      clearLegacyAdminSession();
       setMenuOpen(false);
       window.location.reload();
       return;
