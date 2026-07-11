@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { SignIn, SignUp, useUser, useClerk } from '@clerk/clerk-react';
 import LocationCapture from '../components/LocationCapture';
 import { supabase, isSupabaseConfigured, SUPABASE_AUTH_STORAGE_KEY } from '../lib/supabaseClient';
 import AdminHeroContent from './AdminHeroContent';
@@ -66,9 +65,8 @@ const readAuthDebugSnapshot = ({ session, eventLabel }) => {
 };
 
 const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = false, onAdminStateChanged }) => {
-  const { user, isLoaded: isUserLoaded } = useUser();
-  const { signOut } = useClerk();
   const [session, setSession] = useState(null);
+  const [clerkUser, setClerkUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(() => initialAdmin || window.localStorage.getItem('apollo-admin') === 'true');
   const [authMode, setAuthMode] = useState('signin');
   const [authForm, setAuthForm] = useState(defaultAuthForm);
@@ -84,11 +82,11 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
 
   const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
   const clerkEnabled = Boolean(clerkPublishableKey);
-  const clerkSignedIn = clerkEnabled && isUserLoaded && Boolean(user);
+  const clerkSignedIn = clerkEnabled && Boolean(clerkUser);
   const effectiveSession = session || (clerkSignedIn ? {
     user: {
-      id: user.id,
-      email: user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || null,
+      id: clerkUser.id,
+      email: clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || null,
     },
   } : null);
 
@@ -98,6 +96,21 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherMsg, setVoucherMsg] = useState('');
   const [copiedId, setCopiedId] = useState(null);
+
+  useEffect(() => {
+    if (!clerkEnabled) {
+      setClerkUser(null);
+      return;
+    }
+
+    const syncClerk = () => {
+      setClerkUser(window.Clerk?.user || null);
+    };
+
+    syncClerk();
+    const timer = window.setInterval(syncClerk, 1000);
+    return () => window.clearInterval(timer);
+  }, [clerkEnabled]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -320,8 +333,8 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
     setMessage('');
 
     try {
-      if (typeof signOut === 'function') {
-        await signOut();
+      if (typeof window !== 'undefined' && typeof window.Clerk?.signOut === 'function') {
+        await window.Clerk.signOut();
       }
       await signOutUser();
       setMessage('Signed out.');
