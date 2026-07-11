@@ -19,6 +19,12 @@ export default function Home({ theme = 'apollo', siteContent = {}, onSiteContent
     home_principle_included_text = 'Every page should make it clear that newcomers, regulars, and quiet observers all belong here.',
     home_principle_ready_title = 'Ready',
     home_principle_ready_text = 'By the time someone leaves the page for an event, they should know what to expect and feel at ease about going.',
+    home_apollo_mode_title = 'Apollo Mode',
+    home_apollo_mode_text = 'Light mode carries the daytime side of the identity: warm, bright, and oriented around momentum, visibility, and clear event details.',
+    home_selene_mode_title = 'Selene Mode',
+    home_selene_mode_text = 'Dark mode shifts into the evening mood: reflective, soft, and grounded, with the same information delivered in a more restful atmosphere.',
+    home_btn_events = 'See Upcoming Events',
+    home_btn_ember = 'Visit the Ember Room',
   } = siteContent;
 
   const homeFields = [
@@ -45,9 +51,16 @@ export default function Home({ theme = 'apollo', siteContent = {}, onSiteContent
             <InlineEditor isAdmin={isAdmin} value={home_hero_description} fieldKey="home_hero_description" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
           </p>
           <div className="hero-actions">
-            <Link to="/events" className="button-link primary-link">See Upcoming Events</Link>
-            <Link to="/ember-room" className="button-link secondary-link">Visit the Ember Room</Link>
+            <Link to="/events" className="button-link primary-link">{home_btn_events}</Link>
+            <Link to="/ember-room" className="button-link secondary-link">{home_btn_ember}</Link>
           </div>
+          {isAdmin && (
+            <div style={{ marginTop: '0.65rem' }}>
+              <p style={{ margin: '0 0 0.3rem', fontSize: '0.78rem', opacity: 0.75 }}>Button labels</p>
+              <p style={{ margin: '0 0 0.3rem' }}><InlineEditor isAdmin={isAdmin} value={home_btn_events} fieldKey="home_btn_events" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+              <p style={{ margin: 0 }}><InlineEditor isAdmin={isAdmin} value={home_btn_ember} fieldKey="home_btn_ember" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            </div>
+          )}
         </div>
 
         <div className="hero-panel">
@@ -73,16 +86,20 @@ export default function Home({ theme = 'apollo', siteContent = {}, onSiteContent
 
       <section className="grid grid-2">
         <div className="feature-card card">
-          <h3>Apollo Mode</h3>
+          <h3>
+            <InlineEditor isAdmin={isAdmin} value={home_apollo_mode_title} fieldKey="home_apollo_mode_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+          </h3>
           <p>
-            Light mode carries the daytime side of the identity: warm, bright, and oriented around momentum, visibility, and clear event details.
+            <InlineEditor isAdmin={isAdmin} value={home_apollo_mode_text} fieldKey="home_apollo_mode_text" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
           </p>
         </div>
 
         <div className="feature-card card">
-          <h3>Selene Mode</h3>
+          <h3>
+            <InlineEditor isAdmin={isAdmin} value={home_selene_mode_title} fieldKey="home_selene_mode_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+          </h3>
           <p>
-            Dark mode shifts into the evening mood: reflective, soft, and grounded, with the same information delivered in a more restful atmosphere.
+            <InlineEditor isAdmin={isAdmin} value={home_selene_mode_text} fieldKey="home_selene_mode_text" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
           </p>
         </div>
       </section>

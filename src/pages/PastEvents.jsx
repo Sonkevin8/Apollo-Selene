@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import InlineEditor from '../components/InlineEditor';
+import { isAdminUiEnabled } from '../lib/adminAccess';
 
-const PastEvents = () => {
+const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
+  const isAdmin = isAdminUiEnabled();
+  const {
+    past_events_title = 'Past Events',
+    past_events_intro = 'These are completed events that have been moved into the gallery after they finished. Each entry is treated as a piece of artwork from the community.',
+  } = siteContent;
   const [pastEvents, setPastEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,9 +38,11 @@ const PastEvents = () => {
   return (
     <div className="content-section">
       <div className="card">
-        <h1>Past Events</h1>
+        <h1>
+          <InlineEditor isAdmin={isAdmin} value={past_events_title} fieldKey="past_events_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+        </h1>
         <p>
-          These are completed events that have been moved into the gallery after they finished. Each entry is treated as a piece of artwork from the community.
+          <InlineEditor isAdmin={isAdmin} value={past_events_intro} fieldKey="past_events_intro" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
       </div>
 

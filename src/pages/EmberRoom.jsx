@@ -13,6 +13,28 @@ const EmberRoom = ({ siteContent = {}, onSiteContentUpdated }) => {
     ember_title = 'Ember Room',
     ember_lead = 'Ember Room is now a public space for the community to share creative work in one place.',
     ember_description = 'Upload music, drawings, and photographs so visitors can explore what everyone is making. The upload experience is being prepared for full storage support.',
+    ember_highlight_1 = 'Upload artwork in three formats: music, drawings, and photos.',
+    ember_highlight_2 = 'Open to everyone, with no invite required.',
+    ember_highlight_3 = 'Submissions are built for Supabase storage and a public gallery feed.',
+    ember_form_label_title = 'Title',
+    ember_form_label_type = 'Artwork Type',
+    ember_form_label_file = 'File Upload',
+    ember_form_label_description = 'Description',
+    ember_ph_title = 'Name your piece',
+    ember_ph_description = 'Tell people about your work',
+    ember_option_drawing = 'Drawing',
+    ember_option_photo = 'Photograph',
+    ember_option_music = 'Music',
+    ember_note_connected = 'Supabase is connected. New uploads are now saved to storage and your submissions table.',
+    ember_note_preview = 'Uploads are in preview mode until Supabase keys are added in your env file.',
+    ember_btn_submit = 'Submit Artwork',
+    ember_gallery_title = 'Community Uploads',
+    ember_btn_refresh = 'Refresh Feed',
+    ember_note_missing_keys = 'Add Supabase keys to show the live community feed.',
+    ember_note_loading = 'Loading community submissions...',
+    ember_note_empty = 'No uploads yet. Be the first to share your art.',
+    ember_btn_back_events = 'Back to Events',
+    ember_btn_back_home = 'Return Home',
   } = siteContent;
   const [title, setTitle] = useState('');
   const [type, setType] = useState('drawing');
@@ -27,9 +49,9 @@ const EmberRoom = ({ siteContent = {}, onSiteContentUpdated }) => {
 
   const integrationNote = useMemo(() => {
     return isSupabaseConfigured
-      ? 'Supabase is connected. New uploads are now saved to storage and your submissions table.'
-      : 'Uploads are in preview mode until Supabase keys are added in your env file.';
-  }, []);
+      ? ember_note_connected
+      : ember_note_preview;
+  }, [ember_note_connected, ember_note_preview]);
 
   const loadGallery = async () => {
     if (!isSupabaseConfigured) {
@@ -165,25 +187,41 @@ const EmberRoom = ({ siteContent = {}, onSiteContentUpdated }) => {
           <InlineEditor isAdmin={isAdmin} value={ember_description} fieldKey="ember_description" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
         <ul className="ember-room-highlights">
-          <li>Upload artwork in three formats: music, drawings, and photos.</li>
-          <li>Open to everyone, with no invite required.</li>
-          <li>Submissions are built for Supabase storage and a public gallery feed.</li>
+          <li><InlineEditor isAdmin={isAdmin} value={ember_highlight_1} fieldKey="ember_highlight_1" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></li>
+          <li><InlineEditor isAdmin={isAdmin} value={ember_highlight_2} fieldKey="ember_highlight_2" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></li>
+          <li><InlineEditor isAdmin={isAdmin} value={ember_highlight_3} fieldKey="ember_highlight_3" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></li>
         </ul>
+        {isAdmin && (
+          <div className="card" style={{ marginBottom: '0.75rem' }}>
+            <p className="section-kicker" style={{ marginBottom: '0.45rem' }}>Ember labels</p>
+            <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={ember_form_label_title} fieldKey="ember_form_label_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={ember_form_label_type} fieldKey="ember_form_label_type" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={ember_form_label_file} fieldKey="ember_form_label_file" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={ember_form_label_description} fieldKey="ember_form_label_description" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={ember_ph_title} fieldKey="ember_ph_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={ember_ph_description} fieldKey="ember_ph_description" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={ember_btn_submit} fieldKey="ember_btn_submit" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={ember_gallery_title} fieldKey="ember_gallery_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={ember_btn_refresh} fieldKey="ember_btn_refresh" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={ember_btn_back_events} fieldKey="ember_btn_back_events" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+            <p style={{ margin: 0 }}><InlineEditor isAdmin={isAdmin} value={ember_btn_back_home} fieldKey="ember_btn_back_home" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          </div>
+        )}
         <form className="ember-upload-form" onSubmit={handleSubmit}>
           <label htmlFor="ember-title">
-            Title
+            {ember_form_label_title}
             <input
               id="ember-title"
               name="title"
               type="text"
-              placeholder="Name your piece"
+              placeholder={ember_ph_title}
               required
               value={title}
               onChange={(event) => setTitle(event.target.value)}
             />
           </label>
           <label htmlFor="ember-type">
-            Artwork Type
+            {ember_form_label_type}
             <select
               id="ember-type"
               name="type"
@@ -191,13 +229,13 @@ const EmberRoom = ({ siteContent = {}, onSiteContentUpdated }) => {
               onChange={(event) => setType(event.target.value)}
               required
             >
-              <option value="drawing">Drawing</option>
-              <option value="photograph">Photograph</option>
-              <option value="music">Music</option>
+              <option value="drawing">{ember_option_drawing}</option>
+              <option value="photograph">{ember_option_photo}</option>
+              <option value="music">{ember_option_music}</option>
             </select>
           </label>
           <label htmlFor="ember-file">
-            File Upload
+            {ember_form_label_file}
             <input
               id="ember-file"
               name="file"
@@ -208,11 +246,11 @@ const EmberRoom = ({ siteContent = {}, onSiteContentUpdated }) => {
             />
           </label>
           <label htmlFor="ember-description">
-            Description
+            {ember_form_label_description}
             <textarea
               id="ember-description"
               name="description"
-              placeholder="Tell people about your work"
+              placeholder={ember_ph_description}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
             />
@@ -223,25 +261,25 @@ const EmberRoom = ({ siteContent = {}, onSiteContentUpdated }) => {
           {formError && <p className="ember-upload-feedback ember-upload-feedback--error">{formError}</p>}
           {formSuccess && <p className="ember-upload-feedback ember-upload-feedback--success">{formSuccess}</p>}
           <button type="submit" className="button-link primary-link ember-upload-button" disabled={isSubmitting}>
-            {isSubmitting ? 'Uploading...' : 'Submit Artwork'}
+            {isSubmitting ? 'Uploading...' : ember_btn_submit}
           </button>
         </form>
         <section className="ember-gallery" aria-live="polite">
           <div className="ember-gallery-header">
-            <h2>Community Uploads</h2>
+            <h2>{ember_gallery_title}</h2>
             <button type="button" className="button-link secondary-link" onClick={loadGallery} disabled={galleryLoading}>
-              {galleryLoading ? 'Refreshing...' : 'Refresh Feed'}
+              {galleryLoading ? 'Refreshing...' : ember_btn_refresh}
             </button>
           </div>
           {!isSupabaseConfigured && (
             <p className="ember-upload-note">
-              Add Supabase keys to show the live community feed.
+              {ember_note_missing_keys}
             </p>
           )}
           {galleryError && <p className="ember-upload-feedback ember-upload-feedback--error">{galleryError}</p>}
-          {galleryLoading && <p className="ember-upload-note">Loading community submissions...</p>}
+          {galleryLoading && <p className="ember-upload-note">{ember_note_loading}</p>}
           {!galleryLoading && isSupabaseConfigured && !galleryError && galleryItems.length === 0 && (
-            <p className="ember-upload-note">No uploads yet. Be the first to share your art.</p>
+            <p className="ember-upload-note">{ember_note_empty}</p>
           )}
           {!galleryLoading && galleryItems.length > 0 && (
             <div className="ember-gallery-grid">
@@ -250,8 +288,8 @@ const EmberRoom = ({ siteContent = {}, onSiteContentUpdated }) => {
           )}
         </section>
         <div className="hero-actions">
-          <Link to="/events" className="button-link primary-link">Back to Events</Link>
-          <Link to="/" className="button-link secondary-link">Return Home</Link>
+          <Link to="/events" className="button-link primary-link">{ember_btn_back_events}</Link>
+          <Link to="/" className="button-link secondary-link">{ember_btn_back_home}</Link>
         </div>
       </div>
     </div>

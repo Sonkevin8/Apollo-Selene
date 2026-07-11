@@ -14,9 +14,22 @@ const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 const Experiences = ({ siteContent = {}, onSiteContentUpdated }) => {
   const isAdmin = isAdminUiEnabled();
   const {
+    experiences_page_title = 'Reflections',
+    experiences_btn_open_form = 'Share Your Reflection',
     experiences_intro_text = 'This is where people share how Apollo Selene felt to them - about the events, the comfort, the quiet, and the connection they found.',
     experiences_outro_title = 'Every Experience Matters',
     experiences_outro_text = 'Every reflection helps define the kind of place Apollo Selene is becoming. Whether your story is about meeting someone new, finding a quiet corner, or finally feeling able to relax - it helps others know they can belong here too.',
+    experiences_modal_title = 'Share Your Reflection',
+    experiences_ph_author = 'Your name or initials',
+    experiences_ph_title = 'Reflection title',
+    experiences_ph_content = 'How did Apollo Selene make you feel? What stayed with you?',
+    experiences_ph_tags = 'Tags (comma-separated, e.g. calm, connection, welcome)',
+    experiences_btn_submit = 'Share Reflection',
+    experiences_btn_cancel = 'Cancel',
+    experiences_btn_approve = 'Approve',
+    experiences_btn_delete = 'Delete',
+    experiences_loading_text = 'Loading reflections...',
+    experiences_empty_text = 'No reflections yet. Be the first to share yours.',
   } = siteContent;
 
   const [reflections, setReflections] = useState([]);
@@ -108,9 +121,9 @@ const Experiences = ({ siteContent = {}, onSiteContentUpdated }) => {
   return (
     <div className="content-section">
       <div className="flex justify-between items-center mb-4">
-        <h1>Reflections</h1>
+        <h1>{experiences_page_title}</h1>
         <button onClick={() => setShowForm(true)} className="share-experience-btn">
-          Share Your Reflection
+          {experiences_btn_open_form}
         </button>
       </div>
 
@@ -127,6 +140,21 @@ const Experiences = ({ siteContent = {}, onSiteContentUpdated }) => {
         </p>
       </div>
 
+      {isAdmin && (
+        <div className="card" style={{ marginTop: '0.75rem' }}>
+          <p className="section-kicker" style={{ marginBottom: '0.45rem' }}>Reflections labels</p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={experiences_page_title} fieldKey="experiences_page_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={experiences_btn_open_form} fieldKey="experiences_btn_open_form" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={experiences_modal_title} fieldKey="experiences_modal_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={experiences_ph_author} fieldKey="experiences_ph_author" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={experiences_ph_title} fieldKey="experiences_ph_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={experiences_ph_content} fieldKey="experiences_ph_content" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={experiences_ph_tags} fieldKey="experiences_ph_tags" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={experiences_btn_submit} fieldKey="experiences_btn_submit" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: 0 }}><InlineEditor isAdmin={isAdmin} value={experiences_btn_cancel} fieldKey="experiences_btn_cancel" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+        </div>
+      )}
+
       {submitMsg && (
         <div className="card" style={{ borderColor: 'var(--accent-strong)', marginBottom: '1rem' }}>
           <p style={{ margin: 0 }}>{submitMsg}</p>
@@ -137,15 +165,15 @@ const Experiences = ({ siteContent = {}, onSiteContentUpdated }) => {
       {showForm && (
         <div className="modal-overlay">
           <div className="modal experience-modal">
-            <h3>Share Your Reflection</h3>
+            <h3>{experiences_modal_title}</h3>
             <form onSubmit={handleSubmit}>
-              <input type="text" placeholder="Your name or initials" value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} required />
-              <input type="text" placeholder="Reflection title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
-              <textarea placeholder="How did Apollo Selene make you feel? What stayed with you?" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows="6" required />
-              <input type="text" placeholder="Tags (comma-separated, e.g. calm, connection, welcome)" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
+              <input type="text" placeholder={experiences_ph_author} value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} required />
+              <input type="text" placeholder={experiences_ph_title} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+              <textarea placeholder={experiences_ph_content} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows="6" required />
+              <input type="text" placeholder={experiences_ph_tags} value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
               <div className="modal-actions">
-                <button type="submit" disabled={submitting}>{submitting ? 'Submittingâ€¦' : 'Share Reflection'}</button>
-                <button type="button" onClick={() => setShowForm(false)}>Cancel</button>
+                <button type="submit" disabled={submitting}>{submitting ? 'Submitting...' : experiences_btn_submit}</button>
+                <button type="button" onClick={() => setShowForm(false)}>{experiences_btn_cancel}</button>
               </div>
             </form>
           </div>
@@ -178,8 +206,8 @@ const Experiences = ({ siteContent = {}, onSiteContentUpdated }) => {
                   <div className="experience-tags">{r.tags.map((t) => <span key={t} className="tag">#{t}</span>)}</div>
                 )}
                 <div className="experience-actions" style={{ gap: '0.5rem' }}>
-                  <button className="share-experience-btn" style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem' }} onClick={() => handleApprove(r.id)}>âœ“ Approve</button>
-                  <button onClick={() => handleDelete(r.id)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem', background: 'none', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '20px', color: '#ff6060', cursor: 'pointer' }}>âœ• Delete</button>
+                  <button className="share-experience-btn" style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem' }} onClick={() => handleApprove(r.id)}>✓ {experiences_btn_approve}</button>
+                  <button onClick={() => handleDelete(r.id)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem', background: 'none', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '20px', color: '#ff6060', cursor: 'pointer' }}>✕ {experiences_btn_delete}</button>
                 </div>
               </div>
             ))}
@@ -189,9 +217,9 @@ const Experiences = ({ siteContent = {}, onSiteContentUpdated }) => {
 
       {/* Published reflections */}
       {loading ? (
-        <p style={{ opacity: 0.5 }}>Loading reflectionsâ€¦</p>
+        <p style={{ opacity: 0.5 }}>{experiences_loading_text}</p>
       ) : approved.length === 0 ? (
-        <div className="card"><p style={{ opacity: 0.6 }}>No reflections yet. Be the first to share yours.</p></div>
+        <div className="card"><p style={{ opacity: 0.6 }}>{experiences_empty_text}</p></div>
       ) : (
         <div className="experiences-feed">
           {approved.map((r) => (
@@ -218,7 +246,7 @@ const Experiences = ({ siteContent = {}, onSiteContentUpdated }) => {
                 </button>
                 {isAdmin && (
                   <button onClick={() => handleDelete(r.id)} style={{ background: 'none', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '20px', color: '#ff6060', cursor: 'pointer', fontSize: '0.78rem', padding: '0.25rem 0.65rem' }}>
-                    Delete
+                    {experiences_btn_delete}
                   </button>
                 )}
               </div>

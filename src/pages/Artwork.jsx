@@ -51,6 +51,23 @@ export default function Artwork({ siteContent = {}, onSiteContentUpdated }) {
     artwork_outro_title = 'Creativity Sets the Tone',
     artwork_outro_text = 'In Apollo Selene, art helps create a softer entry into community. It gives people something to notice, reflect on, and talk about before the room ever asks anything from them.',
     artwork_outro_cta = 'Want to contribute? Join an art night or share a piece that captures comfort, rest, gathering, or reflection. It does not need to be polished. It only needs to be honest.',
+    artwork_holds_title = 'What the Gallery Holds',
+    artwork_holds_item_1 = 'Atmosphere Pieces: Work that helps the space feel warm, steady, and welcoming',
+    artwork_holds_item_2 = 'Story-Carrying Art: Each piece reflects a real gathering, feeling, or conversation',
+    artwork_holds_item_3 = 'Collaborative Spirit: Many works begin with more than one person contributing',
+    artwork_holds_item_4 = 'Open Creativity: Anyone can contribute, regardless of experience or training',
+    artwork_holds_item_5 = 'Growing Collection: The gallery evolves as the community continues to gather',
+    artwork_modal_story_title = 'The Story Behind the Art',
+    artwork_modal_edit_title = 'Edit Card',
+    artwork_modal_replace_image = 'Replace image (JPG, PNG, WEBP, GIF - max 10 MB)',
+    artwork_modal_ph_title = 'Title',
+    artwork_modal_ph_artist = 'Artist',
+    artwork_modal_ph_medium = 'Medium',
+    artwork_modal_ph_year = 'Year',
+    artwork_modal_ph_description = 'Description',
+    artwork_modal_ph_story = 'Story',
+    artwork_modal_btn_save = 'Save',
+    artwork_modal_btn_cancel = 'Cancel',
   } = siteContent;
   const [currentUserId, setCurrentUserId] = useState(null);
 
@@ -232,6 +249,23 @@ export default function Artwork({ siteContent = {}, onSiteContentUpdated }) {
         </p>
       </div>
 
+      {isAdmin && (
+        <div className="card" style={{ marginTop: '0.75rem' }}>
+          <p className="section-kicker" style={{ marginBottom: '0.45rem' }}>Artwork modal labels</p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_story_title} fieldKey="artwork_modal_story_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_edit_title} fieldKey="artwork_modal_edit_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_replace_image} fieldKey="artwork_modal_replace_image" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_ph_title} fieldKey="artwork_modal_ph_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_ph_artist} fieldKey="artwork_modal_ph_artist" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_ph_medium} fieldKey="artwork_modal_ph_medium" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_ph_year} fieldKey="artwork_modal_ph_year" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_ph_description} fieldKey="artwork_modal_ph_description" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_ph_story} fieldKey="artwork_modal_ph_story" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_btn_save} fieldKey="artwork_modal_btn_save" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: 0 }}><InlineEditor isAdmin={isAdmin} value={artwork_modal_btn_cancel} fieldKey="artwork_modal_btn_cancel" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+        </div>
+      )}
+
       {/* Admin upload controls */}
       {isAdmin && (
         <div className="gallery-admin-bar">
@@ -335,7 +369,7 @@ export default function Artwork({ siteContent = {}, onSiteContentUpdated }) {
                 <p className="detail-medium">{selectedArtwork.medium} â€¢ {selectedArtwork.year}</p>
                 <p className="detail-description">{selectedArtwork.description}</p>
                 <div className="artwork-story">
-                  <h4>The Story Behind the Art</h4>
+                  <h4>{artwork_modal_story_title}</h4>
                   <p>{selectedArtwork.story}</p>
                 </div>
               </div>
@@ -349,7 +383,7 @@ export default function Artwork({ siteContent = {}, onSiteContentUpdated }) {
         <div className="modal-overlay" onClick={() => setEditingCard(null)}>
           <div className="modal artwork-modal" onClick={(e) => e.stopPropagation()}>
             <button className="close-btn" onClick={() => { setEditingCard(null); setEditFile(null); setEditStatus(''); }}>Ã—</button>
-            <h2 style={{ marginTop: 0 }}>Edit Card</h2>
+            <h2 style={{ marginTop: 0 }}>{artwork_modal_edit_title}</h2>
             <div style={{ marginBottom: '0.75rem' }}>
               <img
                 src={editFile ? URL.createObjectURL(editFile) : (editingCard.image_url || editingCard.image)}
@@ -357,7 +391,7 @@ export default function Artwork({ siteContent = {}, onSiteContentUpdated }) {
                 style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px' }}
               />
               <label className="gallery-upload-file-label" style={{ display: 'block', marginTop: '0.5rem', cursor: 'pointer' }}>
-                {editFile ? editFile.name : 'Replace image (JPG, PNG, WEBP, GIF — max 10 MB)'}
+                {editFile ? editFile.name : artwork_modal_replace_image}
                 <input
                   type="file"
                   accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
@@ -367,18 +401,18 @@ export default function Artwork({ siteContent = {}, onSiteContentUpdated }) {
               </label>
             </div>
             <div className="gallery-upload-fields">
-              <input placeholder="Title" value={editingCard.title} onChange={(e) => setEditingCard((c) => ({ ...c, title: e.target.value }))} />
-              <input placeholder="Artist" value={editingCard.artist} onChange={(e) => setEditingCard((c) => ({ ...c, artist: e.target.value }))} />
-              <input placeholder="Medium" value={editingCard.medium} onChange={(e) => setEditingCard((c) => ({ ...c, medium: e.target.value }))} />
-              <input placeholder="Year" value={editingCard.year} onChange={(e) => setEditingCard((c) => ({ ...c, year: e.target.value }))} />
-              <textarea placeholder="Description" value={editingCard.description} onChange={(e) => setEditingCard((c) => ({ ...c, description: e.target.value }))} />
-              <textarea placeholder="Story" value={editingCard.story} onChange={(e) => setEditingCard((c) => ({ ...c, story: e.target.value }))} />
+              <input placeholder={artwork_modal_ph_title} value={editingCard.title} onChange={(e) => setEditingCard((c) => ({ ...c, title: e.target.value }))} />
+              <input placeholder={artwork_modal_ph_artist} value={editingCard.artist} onChange={(e) => setEditingCard((c) => ({ ...c, artist: e.target.value }))} />
+              <input placeholder={artwork_modal_ph_medium} value={editingCard.medium} onChange={(e) => setEditingCard((c) => ({ ...c, medium: e.target.value }))} />
+              <input placeholder={artwork_modal_ph_year} value={editingCard.year} onChange={(e) => setEditingCard((c) => ({ ...c, year: e.target.value }))} />
+              <textarea placeholder={artwork_modal_ph_description} value={editingCard.description} onChange={(e) => setEditingCard((c) => ({ ...c, description: e.target.value }))} />
+              <textarea placeholder={artwork_modal_ph_story} value={editingCard.story} onChange={(e) => setEditingCard((c) => ({ ...c, story: e.target.value }))} />
             </div>
             <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.75rem' }}>
               <button type="button" className="button-link primary-link" onClick={handleEditSave} disabled={editUploading}>
-                {editUploading ? 'Uploading…' : 'Save'}
+                {editUploading ? 'Uploading…' : artwork_modal_btn_save}
               </button>
-              <button type="button" className="button-link secondary-link" onClick={() => { setEditingCard(null); setEditFile(null); setEditStatus(''); }}>Cancel</button>
+              <button type="button" className="button-link secondary-link" onClick={() => { setEditingCard(null); setEditFile(null); setEditStatus(''); }}>{artwork_modal_btn_cancel}</button>
             </div>
             {editStatus && <p className="gallery-status">{editStatus}</p>}
           </div>
@@ -419,13 +453,67 @@ export default function Artwork({ siteContent = {}, onSiteContentUpdated }) {
       </div>
 
       <div className="card">
-        <h3>What the Gallery Holds</h3>
+        <h3>
+          <InlineEditor
+            isAdmin={isAdmin}
+            value={artwork_holds_title}
+            fieldKey="artwork_holds_title"
+            multiline={false}
+            siteContent={siteContent}
+            onSiteContentUpdated={onSiteContentUpdated}
+          />
+        </h3>
         <ul>
-          <li><strong>Atmosphere Pieces:</strong> Work that helps the space feel warm, steady, and welcoming</li>
-          <li><strong>Story-Carrying Art:</strong> Each piece reflects a real gathering, feeling, or conversation</li>
-          <li><strong>Collaborative Spirit:</strong> Many works begin with more than one person contributing</li>
-          <li><strong>Open Creativity:</strong> Anyone can contribute, regardless of experience or training</li>
-          <li><strong>Growing Collection:</strong> The gallery evolves as the community continues to gather</li>
+          <li>
+            <InlineEditor
+              isAdmin={isAdmin}
+              value={artwork_holds_item_1}
+              fieldKey="artwork_holds_item_1"
+              multiline={true}
+              siteContent={siteContent}
+              onSiteContentUpdated={onSiteContentUpdated}
+            />
+          </li>
+          <li>
+            <InlineEditor
+              isAdmin={isAdmin}
+              value={artwork_holds_item_2}
+              fieldKey="artwork_holds_item_2"
+              multiline={true}
+              siteContent={siteContent}
+              onSiteContentUpdated={onSiteContentUpdated}
+            />
+          </li>
+          <li>
+            <InlineEditor
+              isAdmin={isAdmin}
+              value={artwork_holds_item_3}
+              fieldKey="artwork_holds_item_3"
+              multiline={true}
+              siteContent={siteContent}
+              onSiteContentUpdated={onSiteContentUpdated}
+            />
+          </li>
+          <li>
+            <InlineEditor
+              isAdmin={isAdmin}
+              value={artwork_holds_item_4}
+              fieldKey="artwork_holds_item_4"
+              multiline={true}
+              siteContent={siteContent}
+              onSiteContentUpdated={onSiteContentUpdated}
+            />
+          </li>
+          <li>
+            <InlineEditor
+              isAdmin={isAdmin}
+              value={artwork_holds_item_5}
+              fieldKey="artwork_holds_item_5"
+              multiline={true}
+              siteContent={siteContent}
+              onSiteContentUpdated={onSiteContentUpdated}
+            />
+          </li>
         </ul>
       </div>
     </div>

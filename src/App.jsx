@@ -77,8 +77,8 @@ const App = () => {
             <Suspense fallback={<div className="card">Loading Earth Explorer...</div>}>
               <Routes>
                 <Route path="/" element={<Home theme={theme} siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
-                <Route path="/events" element={<Events theme={theme} />} />
-                <Route path="/past-events" element={<PastEvents />} />
+                <Route path="/events" element={<Events theme={theme} siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
+                <Route path="/past-events" element={<PastEvents siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/experiences" element={<Experiences siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/account" element={<Account siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />
                 <Route path="/merchandise" element={<Merchandise siteContent={siteContent} onSiteContentUpdated={setSiteContent} />} />

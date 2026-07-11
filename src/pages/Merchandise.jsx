@@ -11,6 +11,9 @@ const Merchandise = ({ siteContent = {}, onSiteContentUpdated }) => {
     merchandise_hero_description = 'When it launches, it will include a small collection of thoughtful pieces that match the tone of the space: calm, useful, and easy to bring into everyday life.',
     merchandise_mission_label = 'What To Expect',
     merchandise_mission_text = 'Apparel, art prints, and a few quiet keepsakes that help support future gatherings without turning the site into a storefront too early.',
+    merchandise_locked_title = 'Why It Is Locked For Now',
+    merchandise_locked_text = 'The merchandise section is paused until the first collection, pricing, and fulfillment details are ready. That keeps the site focused on events and community updates until the shop experience is complete.',
+    merchandise_locked_note = 'Check back soon for the official launch.',
   } = siteContent;
 
   const merchFields = [
@@ -45,12 +48,12 @@ const Merchandise = ({ siteContent = {}, onSiteContentUpdated }) => {
       </section>
 
       <section className="card">
-        <h2>Why It Is Locked For Now</h2>
+        <h2><InlineEditor isAdmin={isAdmin} value={merchandise_locked_title} fieldKey="merchandise_locked_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h2>
         <p>
-          The merchandise section is paused until the first collection, pricing, and fulfillment details are ready. That keeps the site focused on events and community updates until the shop experience is complete.
+          <InlineEditor isAdmin={isAdmin} value={merchandise_locked_text} fieldKey="merchandise_locked_text" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
         <p>
-          Check back soon for the official launch.
+          <InlineEditor isAdmin={isAdmin} value={merchandise_locked_note} fieldKey="merchandise_locked_note" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
       </section>
     </div>

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase, EVENTS_TABLE, EVENT_GUESTS_TABLE, EVENT_ATTENDANCE_TABLE } from '../lib/supabaseClient';
+import InlineEditor from '../components/InlineEditor';
 
 
 // Helper to call Supabase Edge Function for Stripe checkout
@@ -366,7 +367,7 @@ const isClerkSessionActive = () => {
   return Boolean(window.Clerk?.session);
 };
 
-const Events = ({ theme }) => {
+const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => {
@@ -457,6 +458,37 @@ const Events = ({ theme }) => {
   const [contributionAmount, setContributionAmount] = useState('10');
   const [contributionLoading, setContributionLoading] = useState(false);
   const [contributionError, setContributionError] = useState('');
+
+  const {
+    events_intro_kicker = 'Invitation Circle',
+    events_intro_title_apollo = 'Apollo daylight invitations',
+    events_intro_title_selene = 'Selene night invitations',
+    events_intro_body = 'This is the private bulletin room of Apollo Selene. New gatherings appear here quietly, with limited seats and details shared only when each announcement is unsealed.',
+    events_intro_summary_apollo = 'Apollo mode reveals only daytime gatherings, salons, and afternoon invitations held in full light.',
+    events_intro_summary_selene = 'Selene mode reveals only night gatherings, after-dark circles, and invitations meant for the late-hour atmosphere.',
+    events_empty_title_apollo = 'Apollo daylight invitations',
+    events_empty_title_selene = 'Selene night invitations',
+    events_empty_text_apollo = 'No daytime invitations are unsealed right now. Switch to Selene to browse the night list.',
+    events_empty_text_selene = 'No night invitations are unsealed right now. Switch to Apollo to browse the daytime list.',
+    events_btn_login = 'Login',
+    events_btn_add_event = 'Add Event',
+    events_btn_logout = 'Logout',
+    events_qr_modal_title = 'Share Event',
+    events_qr_modal_hint = 'Scan to land directly on this event and purchase tickets',
+    events_qr_btn_copy = 'Copy Link',
+    events_qr_btn_download = 'Download QR Code',
+    events_qr_btn_close = 'Close',
+    events_ig_modal_title = 'Post to Instagram',
+    events_ig_modal_hint = 'First poster image will be used.',
+    events_ig_btn_post = 'Post Now',
+    events_ig_btn_cancel = 'Cancel',
+    events_ig_btn_close = 'Close',
+    events_login_modal_title = 'Admin Login',
+    events_login_btn_submit = 'Login',
+    events_login_btn_cancel = 'Cancel',
+    events_btn_add_to_gallery = 'Add to Gallery and Artwork',
+    events_btn_guest_list = 'View Guest List',
+  } = siteContent;
 
   const redeemVoucher = async (event) => {
     const code = (voucherInputs[event.id] || '').trim().toUpperCase();
@@ -1319,13 +1351,14 @@ const Events = ({ theme }) => {
   };
 
   const visibleEvents = events.filter((event) => (event.phase || inferEventPhase(event.time)) === theme);
-  const phaseTitle = theme === EVENT_PHASES.apollo ? 'Apollo daylight invitations' : 'Selene night invitations';
-  const phaseSummary = theme === EVENT_PHASES.apollo
-    ? 'Apollo mode reveals only daytime gatherings, salons, and afternoon invitations held in full light.'
-    : 'Selene mode reveals only night gatherings, after-dark circles, and invitations meant for the late-hour atmosphere.';
-  const emptyStateCopy = theme === EVENT_PHASES.apollo
-    ? 'No daytime invitations are unsealed right now. Switch to Selene to browse the night list.'
-    : 'No night invitations are unsealed right now. Switch to Apollo to browse the daytime list.';
+  const phaseTitle = theme === EVENT_PHASES.apollo ? events_intro_title_apollo : events_intro_title_selene;
+  const phaseSummary = theme === EVENT_PHASES.apollo ? events_intro_summary_apollo : events_intro_summary_selene;
+  const emptyStateTitle = theme === EVENT_PHASES.apollo ? events_empty_title_apollo : events_empty_title_selene;
+  const emptyStateCopy = theme === EVENT_PHASES.apollo ? events_empty_text_apollo : events_empty_text_selene;
+  const phaseTitleFieldKey = theme === EVENT_PHASES.apollo ? 'events_intro_title_apollo' : 'events_intro_title_selene';
+  const phaseSummaryFieldKey = theme === EVENT_PHASES.apollo ? 'events_intro_summary_apollo' : 'events_intro_summary_selene';
+  const emptyTitleFieldKey = theme === EVENT_PHASES.apollo ? 'events_empty_title_apollo' : 'events_empty_title_selene';
+  const emptyCopyFieldKey = theme === EVENT_PHASES.apollo ? 'events_empty_text_apollo' : 'events_empty_text_selene';
 
   const selectedGuestEvent = events.find((event) => event.id === openGuestListForEvent);
 
@@ -1347,13 +1380,13 @@ const Events = ({ theme }) => {
         <div className="flex gap-2">
           {!isAdmin && (
             <button onClick={() => setShowLogin(true)} className="admin-btn">
-              Login
+              {events_btn_login}
             </button>
           )}
           {isAdmin && (
             <>
               <button onClick={() => setShowAddEvent(true)} className="add-event-btn">
-                Add Event
+                {events_btn_add_event}
               </button>
               <button onClick={() => {
                 setIsAdmin(false);
@@ -1362,7 +1395,7 @@ const Events = ({ theme }) => {
                 window.localStorage.removeItem('apollo-admin');
                 window.localStorage.removeItem('apollo-admin-password');
               }} className="logout-btn">
-                Logout
+                {events_btn_logout}
               </button>
             </>
           )}
@@ -1370,21 +1403,36 @@ const Events = ({ theme }) => {
       </div>
 
       <div className="card events-intro-card">
-        <p className="section-kicker" style={{ color: 'var(--accent-color)', fontWeight: 700, letterSpacing: '0.22em' }}>Invitation Circle</p>
-        <h2>{phaseTitle}</h2>
+        <p className="section-kicker" style={{ color: 'var(--accent-color)', fontWeight: 700, letterSpacing: '0.22em' }}>
+          <InlineEditor isAdmin={isAdmin} value={events_intro_kicker} fieldKey="events_intro_kicker" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+        </p>
+        <h2>
+          <InlineEditor isAdmin={isAdmin} value={phaseTitle} fieldKey={phaseTitleFieldKey} multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+        </h2>
         <p>
-          This is the private bulletin room of Apollo Selene. New gatherings appear here quietly, with limited seats and details shared only when each announcement is unsealed.
+          <InlineEditor isAdmin={isAdmin} value={events_intro_body} fieldKey="events_intro_body" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
         <p>
-          {phaseSummary}
+          <InlineEditor isAdmin={isAdmin} value={phaseSummary} fieldKey={phaseSummaryFieldKey} multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
       </div>
+
+      {isAdmin && (
+        <div className="card" style={{ marginTop: '0.75rem' }}>
+          <p className="section-kicker" style={{ marginBottom: '0.45rem' }}>Events labels</p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={events_btn_login} fieldKey="events_btn_login" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={events_btn_add_event} fieldKey="events_btn_add_event" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={events_btn_logout} fieldKey="events_btn_logout" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: '0 0 0.35rem' }}><InlineEditor isAdmin={isAdmin} value={events_btn_add_to_gallery} fieldKey="events_btn_add_to_gallery" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+          <p style={{ margin: 0 }}><InlineEditor isAdmin={isAdmin} value={events_btn_guest_list} fieldKey="events_btn_guest_list" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></p>
+        </div>
+      )}
 
       {/* Admin Login Modal */}
       {qrModal && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>Share Event</h3>
+            <h3><InlineEditor isAdmin={isAdmin} value={events_qr_modal_title} fieldKey="events_qr_modal_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--muted-color)', marginBottom: '0.85rem' }}>
               <strong>{qrModal.title}</strong>
               {qrModal.date && <span> &mdash; {new Date(qrModal.date).toLocaleDateString()}</span>}
@@ -1397,7 +1445,7 @@ const Events = ({ theme }) => {
               />
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--muted-color)', textAlign: 'center', marginBottom: '0.75rem' }}>
-              Scan to land directly on this event &amp; purchase tickets
+              <InlineEditor isAdmin={isAdmin} value={events_qr_modal_hint} fieldKey="events_qr_modal_hint" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
             </p>
             <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.85rem', alignItems: 'center' }}>
               <input
@@ -1412,7 +1460,7 @@ const Events = ({ theme }) => {
                 onClick={() => copyEventLink(qrModal)}
                 style={{ padding: '0.38rem 0.75rem', fontSize: '0.78rem', whiteSpace: 'nowrap', borderRadius: 8, flexShrink: 0 }}
               >
-                {qrCopied ? '✓ Copied!' : 'Copy Link'}
+                {qrCopied ? '✓ Copied!' : events_qr_btn_copy}
               </button>
             </div>
             <div className="modal-actions">
@@ -1421,9 +1469,9 @@ const Events = ({ theme }) => {
                 onClick={() => downloadQrCode(qrModal)}
                 disabled={qrDownloading}
               >
-                {qrDownloading ? 'Downloading…' : 'Download QR Code'}
+                {qrDownloading ? 'Downloading…' : events_qr_btn_download}
               </button>
-              <button type="button" onClick={() => setQrModal(null)}>Close</button>
+              <button type="button" onClick={() => setQrModal(null)}>{events_qr_btn_close}</button>
             </div>
           </div>
         </div>
@@ -1432,9 +1480,9 @@ const Events = ({ theme }) => {
       {igModal && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>Post to Instagram</h3>
+            <h3><InlineEditor isAdmin={isAdmin} value={events_ig_modal_title} fieldKey="events_ig_modal_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--muted-color)', marginBottom: '0.5rem' }}>
-              <strong>{igModal.title}</strong> — first poster image will be used.
+              <strong>{igModal.title}</strong> — <InlineEditor isAdmin={isAdmin} value={events_ig_modal_hint} fieldKey="events_ig_modal_hint" multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
             </p>
             {resolvePosters(igModal)[0] && (
               <img
@@ -1461,11 +1509,11 @@ const Events = ({ theme }) => {
                   disabled={igLoading || !resolvePosters(igModal)[0] || !igCaption.trim()}
                   style={{ background: 'linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)', color: '#fff', border: 'none' }}
                 >
-                  {igLoading ? 'Posting…' : 'Post Now'}
+                  {igLoading ? 'Posting…' : events_ig_btn_post}
                 </button>
               )}
               <button type="button" onClick={() => { setIgModal(null); setIgError(''); setIgSuccess(''); }} disabled={igLoading}>
-                {igSuccess ? 'Close' : 'Cancel'}
+                {igSuccess ? events_ig_btn_close : events_ig_btn_cancel}
               </button>
             </div>
           </div>
@@ -1475,7 +1523,7 @@ const Events = ({ theme }) => {
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>Admin Login</h3>
+            <h3><InlineEditor isAdmin={isAdmin} value={events_login_modal_title} fieldKey="events_login_modal_title" multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} /></h3>
             <form onSubmit={handleLogin}>
               <input
                 type="text"
@@ -1492,8 +1540,8 @@ const Events = ({ theme }) => {
                 required
               />
               <div className="modal-actions">
-                <button type="submit" disabled={loginLoading}>{loginLoading ? 'Logging in…' : 'Login'}</button>
-                <button type="button" onClick={() => setShowLogin(false)} disabled={loginLoading}>Cancel</button>
+                <button type="submit" disabled={loginLoading}>{loginLoading ? 'Logging in…' : events_login_btn_submit}</button>
+                <button type="button" onClick={() => setShowLogin(false)} disabled={loginLoading}>{events_login_btn_cancel}</button>
               </div>
             </form>
           </div>
@@ -2015,8 +2063,12 @@ const Events = ({ theme }) => {
         ) : visibleEvents.length === 0 ? (
           <div className="card events-empty-state">
             <p className="section-kicker">Nothing Unsealed</p>
-            <h3>{phaseTitle}</h3>
-            <p>{emptyStateCopy}</p>
+            <h3>
+              <InlineEditor isAdmin={isAdmin} value={emptyStateTitle} fieldKey={emptyTitleFieldKey} multiline={false} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+            </h3>
+            <p>
+              <InlineEditor isAdmin={isAdmin} value={emptyStateCopy} fieldKey={emptyCopyFieldKey} multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
+            </p>
           </div>
         ) : visibleEvents.map(event => (
           <div
@@ -2093,7 +2145,7 @@ const Events = ({ theme }) => {
                           onClick={() => addEventToGallery(event)}
                           disabled={galleryActionLoading[event.id]}
                         >
-                          {galleryActionLoading[event.id] ? 'Adding…' : 'Add to Gallery and Artwork'}
+                          {galleryActionLoading[event.id] ? 'Adding…' : events_btn_add_to_gallery}
                         </button>
                         {galleryActionMsg[event.id] && (
                           <span style={{ fontSize: '0.82rem', color: galleryActionMsg[event.id].includes('successfully') ? '#4caf50' : '#e55' }}>
@@ -2275,7 +2327,7 @@ const Events = ({ theme }) => {
                     className="guest-list-btn"
                     onClick={() => toggleGuestList(event.id)}
                   >
-                    View Guest List
+                    {events_btn_guest_list}
                   </button>
                 </div>
               </div>
