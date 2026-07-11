@@ -23,13 +23,13 @@ export default function InlineEditor({ value = '', fieldKey, multiline = false, 
       if (error) {
         // revert
         if (typeof onSiteContentUpdated === 'function') onSiteContentUpdated(prev);
-        setMsg('Save failed.');
+        setMsg(error.message || 'Save failed.');
       } else {
         if (typeof onSiteContentUpdated === 'function') onSiteContentUpdated(data || payload);
         setEditing(false);
       }
     } catch (e) {
-      setMsg('Save failed.');
+      setMsg(e?.message || 'Save failed.');
     } finally {
       setLoading(false);
     }
