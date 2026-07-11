@@ -389,30 +389,6 @@ const isClerkSessionActive = () => {
   return Boolean(window.Clerk?.session);
 };
 
-const getAdminDiagnostics = ({ tokenStatus = 'unknown', note = '' } = {}) => {
-  const legacyAdmin = isLegacyAdminEnabled();
-  const hasLegacyPassword = Boolean(getLegacyAdminPassword());
-  const clerkSession = isClerkSessionActive();
-
-  let path = 'none';
-  if (legacyAdmin && hasLegacyPassword) {
-    path = 'legacy-password';
-  } else if (clerkSession) {
-    path = 'clerk-session';
-  } else if (legacyAdmin) {
-    path = 'legacy-flag-only';
-  }
-
-  return {
-    legacyAdmin,
-    hasLegacyPassword,
-    clerkSession,
-    tokenStatus,
-    path,
-    note,
-  };
-};
-
 const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
@@ -432,7 +408,6 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
       const clerkAdmin = isClerkSessionActive();
       setIsAdmin(legacyAdmin || clerkAdmin);
       setAdminPassword(getLegacyAdminPassword());
-      setAdminDiagnostics((prev) => getAdminDiagnostics({ tokenStatus: prev.tokenStatus, note: prev.note }));
     };
 
     const onVisibilityChange = () => {
@@ -481,7 +456,6 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [adminPassword, setAdminPassword] = useState(() => getLegacyAdminPassword());
-  const [adminDiagnostics, setAdminDiagnostics] = useState(() => getAdminDiagnostics());
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showEditEvent, setShowEditEvent] = useState(false);
   const [newEvent, setNewEvent] = useState(() => createEventDraft(theme));
@@ -801,7 +775,6 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
       setIsAdmin(true);
       setLegacyAdminSession({ password: loginData.password });
       setAdminPassword(loginData.password);
-      setAdminDiagnostics(getAdminDiagnostics({ tokenStatus: 'not-needed', note: 'Admin password login successful.' }));
       setGalleryActionMsg({});
       setShowLogin(false);
       setLoginData({ username: '', password: '' });
@@ -859,7 +832,6 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
           },
         });
         if (!error) {
-          setAdminDiagnostics(getAdminDiagnostics({ tokenStatus: 'not-needed', note: 'Using legacy password path for gallery add.' }));
           setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
           return;
         }
@@ -868,14 +840,11 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
       // Clerk fallback path for admin sessions that don't have saved password auth.
       const clerkToken = await getClerkTokenWithRetry();
       if (!clerkToken) {
-        setAdminDiagnostics(getAdminDiagnostics({ tokenStatus: 'missing', note: 'No Clerk token available during gallery add attempt.' }));
         if (isAdmin && !adminPassword) {
           throw new Error('Admin password session is missing for this site URL. Open Admin Login and sign in once, then retry Add to Gallery.');
         }
         throw new Error('Admin login is required to add events to the gallery.');
       }
-
-      setAdminDiagnostics(getAdminDiagnostics({ tokenStatus: 'available', note: 'Using Clerk token path for gallery add.' }));
 
       const { data, error } = await supabase.functions.invoke('add-gallery-item-clerk', {
         body: payload,
@@ -884,10 +853,8 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
         },
       });
       if (error) {
-        setAdminDiagnostics(getAdminDiagnostics({ tokenStatus: 'available', note: data?.error || error.message || 'Clerk auth path failed.' }));
         throw new Error(data?.error || error.message || 'Failed to call add-gallery-item-clerk.');
       }
-      setAdminDiagnostics(getAdminDiagnostics({ tokenStatus: 'available', note: 'Gallery add succeeded.' }));
       setGalleryActionMsg((prev) => ({ ...prev, [event.id]: 'Added to gallery successfully.' }));
 
     } catch (error) {
@@ -1478,24 +1445,6 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
         <p>
           <InlineEditor isAdmin={isAdmin} value={phaseSummary} fieldKey={phaseSummaryFieldKey} multiline={true} siteContent={siteContent} onSiteContentUpdated={onSiteContentUpdated} />
         </p>
-      </div>
-
-      <div className="card" style={{ marginTop: '0.75rem' }}>
-        <p className="section-kicker" style={{ marginBottom: '0.45rem' }}>Admin auth diagnostics</p>
-        <p style={{ margin: '0 0 0.25rem', fontSize: '0.84rem' }}>
-          Active path: <strong>{adminDiagnostics.path}</strong>
-        </p>
-        <p style={{ margin: '0 0 0.25rem', fontSize: '0.84rem' }}>
-          Legacy flag: <strong>{adminDiagnostics.legacyAdmin ? 'on' : 'off'}</strong> | Legacy password: <strong>{adminDiagnostics.hasLegacyPassword ? 'present' : 'missing'}</strong>
-        </p>
-        <p style={{ margin: '0 0 0.25rem', fontSize: '0.84rem' }}>
-          Clerk session: <strong>{adminDiagnostics.clerkSession ? 'active' : 'inactive'}</strong> | Clerk token status: <strong>{adminDiagnostics.tokenStatus}</strong>
-        </p>
-        {adminDiagnostics.note ? (
-          <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--muted-color)' }}>
-            Last note: {adminDiagnostics.note}
-          </p>
-        ) : null}
       </div>
 
       {isAdmin && (
