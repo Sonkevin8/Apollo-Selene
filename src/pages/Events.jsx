@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@clerk/clerk-react';
 import { supabase, EVENTS_TABLE, EVENT_GUESTS_TABLE, EVENT_ATTENDANCE_TABLE } from '../lib/supabaseClient';
 
 
@@ -351,8 +350,18 @@ const uploadPosterImage = async (file, index) => {
   return data.publicUrl;
 };
 
+const getClerkTokenSafe = async () => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const token = await window.Clerk?.session?.getToken?.();
+    return token || null;
+  } catch {
+    return null;
+  }
+};
+
 const Events = ({ theme }) => {
-  const { getToken } = useAuth();
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => window.localStorage.getItem('apollo-admin') === 'true');
@@ -705,15 +714,8 @@ const Events = ({ theme }) => {
         throw new Error('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
       }
 
-      // Prefer Clerk token if available via useAuth hook
-      let clerkToken = null;
-      try {
-        if (typeof getToken === 'function') {
-          clerkToken = await getToken();
-        }
-      } catch (e) {
-        clerkToken = null;
-      }
+      // Prefer Clerk token when Clerk is available.
+      const clerkToken = await getClerkTokenSafe();
 
       // If we have a Clerk token, use the Clerk-backed function
       if (clerkToken) {
