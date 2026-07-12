@@ -10,6 +10,9 @@ const CLOUD_LAYOUTS = [
   { top: '62%', left: '78%', width: 'clamp(88px, 12vw, 156px)', opacity: 0.48, animation: 'apollo-cloud-bob 12.1s ease-in-out infinite 1.4s' },
 ];
 
+// Distribute early clouds across the scene so low counts still look scattered.
+const CLOUD_RENDER_ORDER = [0, 3, 5, 1, 4, 2];
+
 const clampCloudCount = (value) => {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed)) return 3;
@@ -36,8 +39,8 @@ const getCloudColor = (siteContent, index) => {
   return /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : fallback;
 };
 
-const buildCloudStyle = (hexColor, index) => {
-  const layout = CLOUD_LAYOUTS[index % CLOUD_LAYOUTS.length];
+const buildCloudStyle = (hexColor, layoutIndex) => {
+  const layout = CLOUD_LAYOUTS[layoutIndex % CLOUD_LAYOUTS.length];
   const base = toRgbTuple(hexColor);
   return {
     top: layout.top,
@@ -56,7 +59,10 @@ const ApolloDayVibe = ({ siteContent = {} }) => {
   const cloudCount = clampCloudCount(siteContent.apollo_cloud_count);
   const clouds = Array.from({ length: cloudCount }, (_, index) => ({
     key: `apollo-cloud-${index}`,
-    style: buildCloudStyle(getCloudColor(siteContent, index), index),
+    style: buildCloudStyle(
+      getCloudColor(siteContent, index),
+      CLOUD_RENDER_ORDER[index % CLOUD_RENDER_ORDER.length],
+    ),
   }));
 
   return (
