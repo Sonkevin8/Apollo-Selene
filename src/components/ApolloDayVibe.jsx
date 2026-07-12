@@ -2,12 +2,12 @@ import React from 'react';
 
 const DEFAULT_CLOUD_COLORS = ['#ffffff', '#fff7ea', '#ffeccf'];
 const CLOUD_LAYOUTS = [
-  { top: '8%', left: '8%', width: 'clamp(110px, 16vw, 196px)', opacity: 0.9, animation: 'apollo-cloud-bob 9.4s ease-in-out infinite 0.2s' },
-  { top: '16%', left: '66%', width: 'clamp(96px, 14vw, 170px)', opacity: 0.66, animation: 'apollo-cloud-bob 10.2s ease-in-out infinite 1.1s' },
-  { top: '30%', left: '30%', width: 'clamp(92px, 13vw, 162px)', opacity: 0.62, animation: 'apollo-cloud-bob 11s ease-in-out infinite 0.6s' },
-  { top: '44%', left: '78%', width: 'clamp(88px, 12vw, 156px)', opacity: 0.56, animation: 'apollo-cloud-bob 12.2s ease-in-out infinite 1.5s' },
-  { top: '56%', left: '12%', width: 'clamp(98px, 14vw, 172px)', opacity: 0.54, animation: 'apollo-cloud-bob 10.8s ease-in-out infinite 0.9s' },
-  { top: '66%', left: '50%', width: 'clamp(86px, 12vw, 150px)', opacity: 0.5, animation: 'apollo-cloud-bob 12.8s ease-in-out infinite 1.8s' },
+  { top: '8%', left: '-18%', width: 'clamp(110px, 16vw, 196px)', opacity: 0.9, animation: 'apollo-cloud-drift 27s linear infinite 0s' },
+  { top: '20%', left: '-42%', width: 'clamp(96px, 14vw, 170px)', opacity: 0.66, animation: 'apollo-cloud-drift 35s linear infinite 4s' },
+  { top: '34%', left: '-8%', width: 'clamp(92px, 13vw, 162px)', opacity: 0.62, animation: 'apollo-cloud-drift 30s linear infinite 2s' },
+  { top: '46%', left: '-30%', width: 'clamp(88px, 12vw, 156px)', opacity: 0.56, animation: 'apollo-cloud-drift 38s linear infinite 6s' },
+  { top: '60%', left: '-16%', width: 'clamp(98px, 14vw, 172px)', opacity: 0.54, animation: 'apollo-cloud-drift 29s linear infinite 3s' },
+  { top: '72%', left: '-38%', width: 'clamp(86px, 12vw, 150px)', opacity: 0.5, animation: 'apollo-cloud-drift 41s linear infinite 9s' },
 ];
 
 // Distribute early clouds across the scene so low counts still look scattered.
