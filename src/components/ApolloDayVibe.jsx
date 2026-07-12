@@ -2,16 +2,16 @@ import React from 'react';
 
 const DEFAULT_CLOUD_COLORS = ['#ffffff', '#fff7ea', '#ffeccf'];
 const CLOUD_LAYOUTS = [
-  { top: '9%', left: '-12%', width: 'clamp(120px, 17vw, 208px)', opacity: 0.92, animation: 'apollo-cloud-drift 23s linear infinite' },
-  { top: '24%', left: '12%', width: 'clamp(84px, 12vw, 148px)', opacity: 0.62, animation: 'apollo-cloud-bob 8.6s ease-in-out infinite 0.6s' },
-  { top: '14%', left: '42%', width: 'clamp(106px, 14vw, 176px)', opacity: 0.68, animation: 'apollo-cloud-bob 9.8s ease-in-out infinite 1.1s' },
-  { top: '32%', left: '72%', width: 'clamp(92px, 13vw, 164px)', opacity: 0.6, animation: 'apollo-cloud-bob 10.8s ease-in-out infinite 1.9s' },
-  { top: '56%', left: '22%', width: 'clamp(98px, 14vw, 170px)', opacity: 0.52, animation: 'apollo-cloud-bob 11.4s ease-in-out infinite 0.9s' },
-  { top: '62%', left: '78%', width: 'clamp(88px, 12vw, 156px)', opacity: 0.48, animation: 'apollo-cloud-bob 12.1s ease-in-out infinite 1.4s' },
+  { top: '8%', left: '8%', width: 'clamp(110px, 16vw, 196px)', opacity: 0.9, animation: 'apollo-cloud-bob 9.4s ease-in-out infinite 0.2s' },
+  { top: '16%', left: '66%', width: 'clamp(96px, 14vw, 170px)', opacity: 0.66, animation: 'apollo-cloud-bob 10.2s ease-in-out infinite 1.1s' },
+  { top: '30%', left: '30%', width: 'clamp(92px, 13vw, 162px)', opacity: 0.62, animation: 'apollo-cloud-bob 11s ease-in-out infinite 0.6s' },
+  { top: '44%', left: '78%', width: 'clamp(88px, 12vw, 156px)', opacity: 0.56, animation: 'apollo-cloud-bob 12.2s ease-in-out infinite 1.5s' },
+  { top: '56%', left: '12%', width: 'clamp(98px, 14vw, 172px)', opacity: 0.54, animation: 'apollo-cloud-bob 10.8s ease-in-out infinite 0.9s' },
+  { top: '66%', left: '50%', width: 'clamp(86px, 12vw, 150px)', opacity: 0.5, animation: 'apollo-cloud-bob 12.8s ease-in-out infinite 1.8s' },
 ];
 
 // Distribute early clouds across the scene so low counts still look scattered.
-const CLOUD_RENDER_ORDER = [0, 3, 5, 1, 4, 2];
+const CLOUD_RENDER_ORDER = [0, 1, 4, 2, 3, 5];
 
 const clampCloudCount = (value) => {
   const parsed = Number.parseInt(value, 10);
