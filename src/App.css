@@ -288,21 +288,21 @@ body {
   background:
     repeating-linear-gradient(
       45deg,
-      rgba(230, 180, 255, 0.95) 0 6px,
-      rgba(130, 0, 200, 0.82) 6px 10px
+      var(--orb-light, rgba(230, 180, 255, 0.95)) 0 6px,
+      var(--orb-dark, rgba(130, 0, 200, 0.82)) 6px 10px
     );
   box-shadow:
-    0 0 0 1px rgba(210, 100, 255, 0.55),
-    0 0 22px rgba(180, 0, 255, 0.65),
-    0 0 60px rgba(140, 0, 230, 0.4);
+    0 0 0 1px var(--orb-ring, rgba(210, 100, 255, 0.55)),
+    0 0 22px var(--orb-glow-soft, rgba(180, 0, 255, 0.65)),
+    0 0 60px var(--orb-glow-strong, rgba(140, 0, 230, 0.4));
 }
 
 .disco-reflection {
   position: absolute;
   border-radius: 999px;
-  background: rgba(240, 180, 255, 0.9);
+  background: var(--orb-reflection, rgba(240, 180, 255, 0.9));
   filter: blur(0.5px);
-  box-shadow: 0 0 8px 2px rgba(200, 0, 255, 0.6);
+  box-shadow: 0 0 8px 2px var(--orb-reflection-glow, rgba(200, 0, 255, 0.6));
 }
 
 .disco-reflection--one {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import LocationCapture from '../components/LocationCapture';
 import { supabase, isSupabaseConfigured, SUPABASE_AUTH_STORAGE_KEY } from '../lib/supabaseClient';
 import AdminHeroContent from './AdminHeroContent';
+import { saveSiteContent } from '../lib/siteContent';
 import {
   fetchMyProfile,
   getCurrentSession,
@@ -39,6 +40,23 @@ const defaultProfileForm = {
   address: '',
   address_lat: '',
   address_lng: '',
+};
+
+const ORB_MIN = 1;
+const ORB_MAX = 6;
+const DEFAULT_ORB_COLORS = ['#c200ff', '#8f00ff'];
+
+const clampOrbCount = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return 2;
+  return Math.max(ORB_MIN, Math.min(ORB_MAX, parsed));
+};
+
+const getOrbColorFromContent = (content, index) => {
+  const key = `selene_orb_${index + 1}_color`;
+  const fallback = DEFAULT_ORB_COLORS[index % DEFAULT_ORB_COLORS.length];
+  const value = content?.[key] || fallback;
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
 };
 
 const readAuthDebugSnapshot = ({ session, eventLabel }) => {
@@ -101,6 +119,18 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherMsg, setVoucherMsg] = useState('');
   const [copiedId, setCopiedId] = useState(null);
+  const [orbSettings, setOrbSettings] = useState({
+    count: 2,
+    colors: Array.from({ length: ORB_MAX }, (_, index) => DEFAULT_ORB_COLORS[index % DEFAULT_ORB_COLORS.length]),
+  });
+  const [orbSaving, setOrbSaving] = useState(false);
+  const [orbMessage, setOrbMessage] = useState('');
+
+  useEffect(() => {
+    const count = clampOrbCount(siteContent?.selene_orb_count);
+    const colors = Array.from({ length: ORB_MAX }, (_, index) => getOrbColorFromContent(siteContent, index));
+    setOrbSettings({ count, colors });
+  }, [siteContent]);
 
   useEffect(() => {
     if (!clerkEnabled) {
@@ -321,6 +351,46 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
     navigator.clipboard.writeText(voucher.code).catch(() => {});
     setCopiedId(voucher.id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleOrbCountChange = (event) => {
+    const count = clampOrbCount(event.target.value);
+    setOrbSettings((prev) => ({ ...prev, count }));
+  };
+
+  const handleOrbColorChange = (index, value) => {
+    setOrbSettings((prev) => ({
+      ...prev,
+      colors: prev.colors.map((color, i) => (i === index ? value : color)),
+    }));
+  };
+
+  const handleSaveOrbSettings = async (event) => {
+    event.preventDefault();
+    setOrbSaving(true);
+    setOrbMessage('');
+
+    const count = clampOrbCount(orbSettings.count);
+    const payload = {
+      ...(siteContent || {}),
+      selene_orb_count: count,
+    };
+
+    for (let i = 0; i < ORB_MAX; i += 1) {
+      payload[`selene_orb_${i + 1}_color`] = orbSettings.colors[i] || DEFAULT_ORB_COLORS[i % DEFAULT_ORB_COLORS.length];
+    }
+
+    const { error } = await saveSiteContent(payload);
+    if (error) {
+      setOrbMessage('Could not save Selene orb settings.');
+    } else {
+      setOrbMessage('Selene orb settings saved.');
+      if (typeof onSiteContentUpdated === 'function') {
+        onSiteContentUpdated(payload);
+      }
+    }
+
+    setOrbSaving(false);
   };
 
   const validateUsername = (value) => {
@@ -636,6 +706,54 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
       )}
 
       {isAdmin && <AdminHeroContent isAdmin={isAdmin} onContentSaved={onSiteContentUpdated} />}
+
+      {isAdmin && (
+        <section className="account-card" style={{ marginTop: '1.5rem' }}>
+          <h2 style={{ marginBottom: '1rem' }}>Selene Orb Settings</h2>
+          <p style={{ opacity: 0.65, fontSize: '0.85rem', marginBottom: '1rem' }}>
+            Control how many animated Selene orbs appear and set each orb color.
+          </p>
+
+          <form onSubmit={handleSaveOrbSettings} className="account-form-grid">
+            <div className="account-field">
+              <label htmlFor="selene-orb-count">Number of Orbs</label>
+              <input
+                id="selene-orb-count"
+                type="number"
+                min={ORB_MIN}
+                max={ORB_MAX}
+                value={orbSettings.count}
+                onChange={handleOrbCountChange}
+              />
+            </div>
+
+            <div className="account-field" style={{ gridColumn: '1 / -1' }}>
+              <label style={{ marginBottom: '0.5rem', display: 'block' }}>Orb Colors</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                {Array.from({ length: orbSettings.count }, (_, index) => (
+                  <label key={`orb-color-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <span style={{ minWidth: '66px', fontSize: '0.82rem', opacity: 0.85 }}>Orb {index + 1}</span>
+                    <input
+                      type="color"
+                      value={orbSettings.colors[index]}
+                      onChange={(event) => handleOrbColorChange(index, event.target.value)}
+                      style={{ width: '46px', height: '34px', padding: 0, border: '1px solid var(--border-color-strong)', borderRadius: '8px', margin: 0, cursor: 'pointer' }}
+                    />
+                    <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', opacity: 0.8 }}>{orbSettings.colors[index]}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="account-actions" style={{ gridColumn: '1 / -1' }}>
+              <button type="submit" className="button-link primary-link" disabled={orbSaving}>
+                {orbSaving ? 'Saving…' : 'Save Selene Orbs'}
+              </button>
+            </div>
+            {orbMessage ? <p className="account-message" style={{ gridColumn: '1 / -1' }}>{orbMessage}</p> : null}
+          </form>
+        </section>
+      )}
 
       {/* ── Admin: Voucher Manager ──────────────────────────────────── */}
       {isAdmin && (
