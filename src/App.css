@@ -198,11 +198,11 @@ body {
   position: absolute;
   height: clamp(48px, 7vw, 88px);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.58);
+  background: var(--cloud-base, rgba(255, 255, 255, 0.58));
   box-shadow:
-    22px 10px 0 6px rgba(255, 255, 255, 0.54),
-    56px 4px 0 10px rgba(255, 255, 255, 0.46),
-    88px 12px 0 2px rgba(255, 255, 255, 0.52);
+    22px 10px 0 6px var(--cloud-shadow-a, rgba(255, 255, 255, 0.54)),
+    56px 4px 0 10px var(--cloud-shadow-b, rgba(255, 255, 255, 0.46)),
+    88px 12px 0 2px var(--cloud-shadow-c, rgba(255, 255, 255, 0.52));
   filter: blur(1px);
 }
 
@@ -670,45 +670,19 @@ body {
 
 .neon-scanner {
   position: absolute;
+  left: -10%;
+  width: clamp(80px, 14vw, 200px);
+  height: clamp(80px, 14vw, 200px);
   border-radius: 50%;
   mix-blend-mode: screen;
   filter: blur(22px);
-}
-
-.neon-scanner--one {
-  width: clamp(80px, 14vw, 200px);
-  height: clamp(80px, 14vw, 200px);
-  top: 18%;
-  background: radial-gradient(circle, rgba(200, 0, 255, 0.85), rgba(160, 0, 210, 0.1) 70%);
+  background: radial-gradient(
+    circle,
+    var(--scanner-core, rgba(200, 0, 255, 0.85)),
+    var(--scanner-fade, rgba(160, 0, 210, 0.1)) 70%
+  );
+  box-shadow: 0 0 40px 10px var(--scanner-glow, rgba(200, 0, 255, 0.35));
   animation: neon-scan-h 9s ease-in-out infinite;
-  box-shadow: 0 0 40px 10px rgba(200, 0, 255, 0.35);
-}
-
-.neon-scanner--two {
-  width: clamp(60px, 10vw, 140px);
-  height: clamp(60px, 10vw, 140px);
-  top: 42%;
-  background: radial-gradient(circle, rgba(180, 0, 255, 0.8), rgba(140, 0, 220, 0.08) 70%);
-  animation: neon-scan-h 12s ease-in-out infinite 2.5s reverse;
-  box-shadow: 0 0 30px 8px rgba(180, 0, 255, 0.3);
-}
-
-.neon-scanner--three {
-  width: clamp(50px, 8vw, 110px);
-  height: clamp(50px, 8vw, 110px);
-  top: 65%;
-  background: radial-gradient(circle, rgba(220, 60, 255, 0.78), rgba(180, 0, 230, 0.08) 70%);
-  animation: neon-scan-h 7s ease-in-out infinite 1s;
-  box-shadow: 0 0 24px 6px rgba(220, 60, 255, 0.28);
-}
-
-.neon-scanner--four {
-  width: clamp(90px, 16vw, 220px);
-  height: clamp(90px, 16vw, 220px);
-  top: 8%;
-  background: radial-gradient(circle, rgba(160, 0, 240, 0.72), rgba(120, 0, 200, 0.06) 70%);
-  animation: neon-scan-h 14s ease-in-out infinite 4s reverse;
-  box-shadow: 0 0 48px 12px rgba(160, 0, 240, 0.28);
 }
 
 @keyframes neon-scan-h {

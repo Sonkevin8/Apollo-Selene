@@ -65,7 +65,7 @@ const App = () => {
 
   return (
     <div className="app-shell">
-      {theme === 'apollo' ? <ApolloDayVibe /> : <SeleneNightVibe siteContent={siteContent} />}
+      {theme === 'apollo' ? <ApolloDayVibe siteContent={siteContent} /> : <SeleneNightVibe siteContent={siteContent} />}
       <SunMoonOrbit theme={theme} />
       <RaverSprites theme={theme} />
       <Router>

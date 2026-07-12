@@ -45,6 +45,12 @@ const defaultProfileForm = {
 const ORB_MIN = 1;
 const ORB_MAX = 6;
 const DEFAULT_ORB_COLORS = ['#c200ff', '#8f00ff'];
+const BLUR_ORB_MIN = 1;
+const BLUR_ORB_MAX = 6;
+const DEFAULT_BLUR_ORB_COLORS = ['#c200ff', '#b400ff', '#db3fff', '#8f00ff'];
+const CLOUD_MIN = 1;
+const CLOUD_MAX = 6;
+const DEFAULT_CLOUD_COLORS = ['#ffffff', '#fff7ea', '#ffeccf'];
 
 const clampOrbCount = (value) => {
   const parsed = Number.parseInt(value, 10);
@@ -52,9 +58,35 @@ const clampOrbCount = (value) => {
   return Math.max(ORB_MIN, Math.min(ORB_MAX, parsed));
 };
 
+const clampBlurOrbCount = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return 4;
+  return Math.max(BLUR_ORB_MIN, Math.min(BLUR_ORB_MAX, parsed));
+};
+
+const clampCloudCount = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return 3;
+  return Math.max(CLOUD_MIN, Math.min(CLOUD_MAX, parsed));
+};
+
 const getOrbColorFromContent = (content, index) => {
   const key = `selene_orb_${index + 1}_color`;
   const fallback = DEFAULT_ORB_COLORS[index % DEFAULT_ORB_COLORS.length];
+  const value = content?.[key] || fallback;
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
+};
+
+const getBlurOrbColorFromContent = (content, index) => {
+  const key = `selene_blur_orb_${index + 1}_color`;
+  const fallback = DEFAULT_BLUR_ORB_COLORS[index % DEFAULT_BLUR_ORB_COLORS.length];
+  const value = content?.[key] || fallback;
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
+};
+
+const getCloudColorFromContent = (content, index) => {
+  const key = `apollo_cloud_${index + 1}_color`;
+  const fallback = DEFAULT_CLOUD_COLORS[index % DEFAULT_CLOUD_COLORS.length];
   const value = content?.[key] || fallback;
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
 };
@@ -122,6 +154,10 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
   const [orbSettings, setOrbSettings] = useState({
     count: 2,
     colors: Array.from({ length: ORB_MAX }, (_, index) => DEFAULT_ORB_COLORS[index % DEFAULT_ORB_COLORS.length]),
+    blurCount: 4,
+    blurColors: Array.from({ length: BLUR_ORB_MAX }, (_, index) => DEFAULT_BLUR_ORB_COLORS[index % DEFAULT_BLUR_ORB_COLORS.length]),
+    cloudCount: 3,
+    cloudColors: Array.from({ length: CLOUD_MAX }, (_, index) => DEFAULT_CLOUD_COLORS[index % DEFAULT_CLOUD_COLORS.length]),
   });
   const [orbSaving, setOrbSaving] = useState(false);
   const [orbMessage, setOrbMessage] = useState('');
@@ -129,7 +165,11 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
   useEffect(() => {
     const count = clampOrbCount(siteContent?.selene_orb_count);
     const colors = Array.from({ length: ORB_MAX }, (_, index) => getOrbColorFromContent(siteContent, index));
-    setOrbSettings({ count, colors });
+    const blurCount = clampBlurOrbCount(siteContent?.selene_blur_orb_count);
+    const blurColors = Array.from({ length: BLUR_ORB_MAX }, (_, index) => getBlurOrbColorFromContent(siteContent, index));
+    const cloudCount = clampCloudCount(siteContent?.apollo_cloud_count);
+    const cloudColors = Array.from({ length: CLOUD_MAX }, (_, index) => getCloudColorFromContent(siteContent, index));
+    setOrbSettings({ count, colors, blurCount, blurColors, cloudCount, cloudColors });
   }, [siteContent]);
 
   useEffect(() => {
@@ -365,6 +405,30 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
     }));
   };
 
+  const handleBlurOrbCountChange = (event) => {
+    const blurCount = clampBlurOrbCount(event.target.value);
+    setOrbSettings((prev) => ({ ...prev, blurCount }));
+  };
+
+  const handleBlurOrbColorChange = (index, value) => {
+    setOrbSettings((prev) => ({
+      ...prev,
+      blurColors: prev.blurColors.map((color, i) => (i === index ? value : color)),
+    }));
+  };
+
+  const handleCloudCountChange = (event) => {
+    const cloudCount = clampCloudCount(event.target.value);
+    setOrbSettings((prev) => ({ ...prev, cloudCount }));
+  };
+
+  const handleCloudColorChange = (index, value) => {
+    setOrbSettings((prev) => ({
+      ...prev,
+      cloudColors: prev.cloudColors.map((color, i) => (i === index ? value : color)),
+    }));
+  };
+
   const handleSaveOrbSettings = async (event) => {
     event.preventDefault();
     setOrbSaving(true);
@@ -374,10 +438,20 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
     const payload = {
       ...(siteContent || {}),
       selene_orb_count: count,
+      selene_blur_orb_count: clampBlurOrbCount(orbSettings.blurCount),
+      apollo_cloud_count: clampCloudCount(orbSettings.cloudCount),
     };
 
     for (let i = 0; i < ORB_MAX; i += 1) {
       payload[`selene_orb_${i + 1}_color`] = orbSettings.colors[i] || DEFAULT_ORB_COLORS[i % DEFAULT_ORB_COLORS.length];
+    }
+
+    for (let i = 0; i < BLUR_ORB_MAX; i += 1) {
+      payload[`selene_blur_orb_${i + 1}_color`] = orbSettings.blurColors[i] || DEFAULT_BLUR_ORB_COLORS[i % DEFAULT_BLUR_ORB_COLORS.length];
+    }
+
+    for (let i = 0; i < CLOUD_MAX; i += 1) {
+      payload[`apollo_cloud_${i + 1}_color`] = orbSettings.cloudColors[i] || DEFAULT_CLOUD_COLORS[i % DEFAULT_CLOUD_COLORS.length];
     }
 
     const { error } = await saveSiteContent(payload);
@@ -534,9 +608,69 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
                       </div>
                     </div>
 
+                    <div className="account-field">
+                      <label htmlFor="selene-blur-orb-count">Moving Blurred Orbs</label>
+                      <input
+                        id="selene-blur-orb-count"
+                        type="number"
+                        min={BLUR_ORB_MIN}
+                        max={BLUR_ORB_MAX}
+                        value={orbSettings.blurCount}
+                        onChange={handleBlurOrbCountChange}
+                      />
+                    </div>
+
+                    <div className="account-field" style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ marginBottom: '0.5rem', display: 'block' }}>Moving Blurred Orb Colors</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                        {Array.from({ length: orbSettings.blurCount }, (_, index) => (
+                          <label key={`blur-orb-color-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ minWidth: '66px', fontSize: '0.82rem', opacity: 0.85 }}>Blur {index + 1}</span>
+                            <input
+                              type="color"
+                              value={orbSettings.blurColors[index]}
+                              onChange={(event) => handleBlurOrbColorChange(index, event.target.value)}
+                              style={{ width: '46px', height: '34px', padding: 0, border: '1px solid var(--border-color-strong)', borderRadius: '8px', margin: 0, cursor: 'pointer' }}
+                            />
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', opacity: 0.8 }}>{orbSettings.blurColors[index]}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="account-field">
+                      <label htmlFor="apollo-cloud-count">Apollo Clouds</label>
+                      <input
+                        id="apollo-cloud-count"
+                        type="number"
+                        min={CLOUD_MIN}
+                        max={CLOUD_MAX}
+                        value={orbSettings.cloudCount}
+                        onChange={handleCloudCountChange}
+                      />
+                    </div>
+
+                    <div className="account-field" style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ marginBottom: '0.5rem', display: 'block' }}>Apollo Cloud Colors</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                        {Array.from({ length: orbSettings.cloudCount }, (_, index) => (
+                          <label key={`cloud-color-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ minWidth: '66px', fontSize: '0.82rem', opacity: 0.85 }}>Cloud {index + 1}</span>
+                            <input
+                              type="color"
+                              value={orbSettings.cloudColors[index]}
+                              onChange={(event) => handleCloudColorChange(index, event.target.value)}
+                              style={{ width: '46px', height: '34px', padding: 0, border: '1px solid var(--border-color-strong)', borderRadius: '8px', margin: 0, cursor: 'pointer' }}
+                            />
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', opacity: 0.8 }}>{orbSettings.cloudColors[index]}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="account-actions" style={{ gridColumn: '1 / -1' }}>
                       <button type="submit" className="button-link primary-link" disabled={orbSaving}>
-                        {orbSaving ? 'Saving…' : 'Save Selene Orbs'}
+                        {orbSaving ? 'Saving…' : 'Save Background Effects'}
                       </button>
                     </div>
                     {orbMessage ? <p className="account-message" style={{ gridColumn: '1 / -1' }}>{orbMessage}</p> : null}
