@@ -209,6 +209,28 @@
   padding: 0.65rem 0.72rem;
 }
 
+.account-clerk-shell .cl-formFieldInputShowPasswordButton {
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  line-height: 0;
+  opacity: 0.58;
+  transition: opacity 0.2s ease;
+}
+
+.account-clerk-shell .cl-formFieldInputShowPasswordButton:hover {
+  transform: none !important;
+  filter: none !important;
+  background: transparent !important;
+  opacity: 0.95;
+}
+
 .account-clerk-shell .cl-formButtonPrimary {
   transition: transform 0.25s ease, filter 0.25s ease;
 }
