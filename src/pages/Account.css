@@ -196,6 +196,32 @@
   justify-content: center;
 }
 
+.account-clerk-shell .cl-card {
+  border-radius: 18px;
+}
+
+.account-clerk-shell .cl-formFieldLabel {
+  margin-bottom: 0.3rem;
+}
+
+.account-clerk-shell .cl-formFieldInput {
+  min-height: 42px;
+  padding: 0.65rem 0.72rem;
+}
+
+.account-clerk-shell .cl-formButtonPrimary {
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.account-clerk-shell .cl-formButtonPrimary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.account-clerk-shell .cl-footer {
+  margin-top: 0.65rem;
+}
+
 .account-auth-debug h3 {
   margin: 0;
 }
