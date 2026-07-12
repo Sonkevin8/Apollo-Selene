@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SignIn, SignUp } from '@clerk/clerk-react';
 import LocationCapture from '../components/LocationCapture';
 import { supabase, isSupabaseConfigured, SUPABASE_AUTH_STORAGE_KEY } from '../lib/supabaseClient';
 import AdminHeroContent from './AdminHeroContent';
@@ -117,6 +118,85 @@ const readAuthDebugSnapshot = ({ session, eventLabel }) => {
   }
 
   return snapshot;
+};
+
+const clerkAppearance = {
+  variables: {
+    colorPrimary: '#8aa4ca',
+    colorBackground: 'rgba(15, 26, 46, 0.92)',
+    colorInputBackground: 'rgba(255, 255, 255, 0.06)',
+    colorInputText: '#e8eef9',
+    colorText: '#e8eef9',
+    colorTextSecondary: 'rgba(232, 238, 249, 0.75)',
+    colorNeutral: '#8ea6cd',
+    borderRadius: '12px',
+    fontFamily: 'inherit',
+  },
+  elements: {
+    rootBox: {
+      width: '100%',
+      display: 'flex',
+      justifyContent: 'center',
+    },
+    card: {
+      boxShadow: '0 18px 55px rgba(3, 8, 20, 0.35)',
+      border: '1px solid rgba(201, 212, 234, 0.22)',
+      background: 'rgba(15, 26, 46, 0.92)',
+      width: '100%',
+      maxWidth: '460px',
+      borderRadius: '18px',
+      padding: '1rem',
+    },
+    headerTitle: {
+      color: '#f6f8fe',
+      fontWeight: 600,
+    },
+    headerSubtitle: {
+      color: 'rgba(232, 238, 249, 0.72)',
+    },
+    formFieldLabel: {
+      color: 'rgba(232, 238, 249, 0.78)',
+      fontSize: '0.82rem',
+    },
+    formFieldInputShowPasswordButton: {
+      color: 'rgba(232, 238, 249, 0.76)',
+    },
+    formFieldSuccessText: {
+      color: '#b8ffd4',
+    },
+    formFieldErrorText: {
+      color: '#ffb8c2',
+    },
+    socialButtonsBlockButton: {
+      border: '1px solid rgba(201, 212, 234, 0.25)',
+      background: 'rgba(255, 255, 255, 0.03)',
+      borderRadius: '999px',
+    },
+    socialButtonsBlockButtonText: {
+      color: '#e8eef9',
+    },
+    formFieldInput: {
+      border: '1px solid rgba(201, 212, 234, 0.3)',
+      boxShadow: 'none',
+      borderRadius: '10px',
+    },
+    formButtonPrimary: {
+      background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)',
+      color: '#08111f',
+      border: 'none',
+      borderRadius: '999px',
+      boxShadow: '0 18px 55px rgba(3, 8, 20, 0.28)',
+    },
+    dividerLine: {
+      background: 'rgba(201, 212, 234, 0.22)',
+    },
+    dividerText: {
+      color: 'rgba(232, 238, 249, 0.62)',
+    },
+    footerActionLink: {
+      color: '#c8d7f4',
+    },
+  },
 };
 
 const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = false, onAdminStateChanged }) => {
@@ -725,75 +805,95 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
               </form>
             )
           ) : (
-          <form onSubmit={handleAuthSubmit} className="account-form-grid">
-            <div className="account-field">
-              <label htmlFor="account-email">Email</label>
-              <input
-                id="account-email"
-                type="email"
-                value={authForm.email}
-                onChange={(event) => setAuthForm((prev) => ({ ...prev, email: event.target.value }))}
-                required
-              />
-            </div>
-            <div className="account-field">
-              <label htmlFor="account-password">Password</label>
-              <div className="password-row">
-                <input
-                  id="account-password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={authForm.password}
-                  onChange={(event) =>
-                    setAuthForm((prev) => ({
-                      ...prev,
-                      password: event.target.value,
-                    }))
-                  }
-                  required
-                  minLength={8}
+          clerkEnabled ? (
+            <div className="account-clerk-shell" style={{ display: 'flex', justifyContent: 'center', marginTop: '0.75rem' }}>
+              {authMode === 'signup' ? (
+                <SignUp
+                  appearance={clerkAppearance}
+                  routing="hash"
+                  signInUrl="#signin"
+                  fallbackRedirectUrl="/account"
                 />
-                <button type="button" className="sketch-eye-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((v) => !v)}>
-                  {showPassword ? (
-                    <svg key="closed" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path className="sketch-path" d="M2,12 C5,7 9,5 12,5 C15,5 19,7 22,12" />
-                      <path className="sketch-path" style={{animationDelay:'0.1s'}} d="M5,14 Q9,17.5 12,17.5 Q15,17.5 19,14" />
-                      <line className="sketch-path" style={{animationDelay:'0.18s'}} x1="8" y1="15.5" x2="7" y2="19" />
-                      <line className="sketch-path" style={{animationDelay:'0.22s'}} x1="12" y1="17.5" x2="12" y2="21" />
-                    </svg>
-                  ) : (
-                    <svg key="open" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path className="sketch-path" d="M2,12 C5,6 9,4 12,4 C15,4 19,6 22,12 C19,18 15,20 12,20 C9,20 5,18 2,12 Z" />
-                      <circle className="sketch-path" style={{animationDelay:'0.2s'}} cx="12" cy="12" r="3.5" />
-                    </svg>
-                  )}
+              ) : (
+                <SignIn
+                  appearance={clerkAppearance}
+                  routing="hash"
+                  signUpUrl="#signup"
+                  fallbackRedirectUrl="/account"
+                />
+              )}
+            </div>
+          ) : (
+            <form onSubmit={handleAuthSubmit} className="account-form-grid">
+              <div className="account-field">
+                <label htmlFor="account-email">Email</label>
+                <input
+                  id="account-email"
+                  type="email"
+                  value={authForm.email}
+                  onChange={(event) => setAuthForm((prev) => ({ ...prev, email: event.target.value }))}
+                  required
+                />
+              </div>
+              <div className="account-field">
+                <label htmlFor="account-password">Password</label>
+                <div className="password-row">
+                  <input
+                    id="account-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={authForm.password}
+                    onChange={(event) =>
+                      setAuthForm((prev) => ({
+                        ...prev,
+                        password: event.target.value,
+                      }))
+                    }
+                    required
+                    minLength={8}
+                  />
+                  <button type="button" className="sketch-eye-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((v) => !v)}>
+                    {showPassword ? (
+                      <svg key="closed" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path className="sketch-path" d="M2,12 C5,7 9,5 12,5 C15,5 19,7 22,12" />
+                        <path className="sketch-path" style={{animationDelay:'0.1s'}} d="M5,14 Q9,17.5 12,17.5 Q15,17.5 19,14" />
+                        <line className="sketch-path" style={{animationDelay:'0.18s'}} x1="8" y1="15.5" x2="7" y2="19" />
+                        <line className="sketch-path" style={{animationDelay:'0.22s'}} x1="12" y1="17.5" x2="12" y2="21" />
+                      </svg>
+                    ) : (
+                      <svg key="open" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path className="sketch-path" d="M2,12 C5,6 9,4 12,4 C15,4 19,6 22,12 C19,18 15,20 12,20 C9,20 5,18 2,12 Z" />
+                        <circle className="sketch-path" style={{animationDelay:'0.2s'}} cx="12" cy="12" r="3.5" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              {authMode === 'signup' ? (
+                <div className="account-field">
+                  <label htmlFor="account-username">Username</label>
+                  <input
+                    id="account-username"
+                    type="text"
+                    value={authForm.username}
+                    onChange={(event) =>
+                      setAuthForm((prev) => ({
+                        ...prev,
+                        username: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+                      }))
+                    }
+                    required
+                    maxLength={24}
+                    autoComplete="username"
+                  />
+                </div>
+              ) : null}
+              <div className="account-actions" style={{ gridColumn: '1 / -1' }}>
+                <button type="submit" className="button-link primary-link" disabled={loading}>
+                  {authMode === 'signup' ? 'Create Account' : 'Sign In'}
                 </button>
               </div>
-            </div>
-            {authMode === 'signup' ? (
-              <div className="account-field">
-                <label htmlFor="account-username">Username</label>
-                <input
-                  id="account-username"
-                  type="text"
-                  value={authForm.username}
-                  onChange={(event) =>
-                    setAuthForm((prev) => ({
-                      ...prev,
-                      username: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''),
-                    }))
-                  }
-                  required
-                  maxLength={24}
-                  autoComplete="username"
-                />
-              </div>
-            ) : null}
-            <div className="account-actions" style={{ gridColumn: '1 / -1' }}>
-              <button type="submit" className="button-link primary-link" disabled={loading}>
-                {authMode === 'signup' ? 'Create Account' : 'Sign In'}
-              </button>
-            </div>
-          </form>
+            </form>
+          )
           )}
 
           {message ? <p className="account-message">{message}</p> : null}

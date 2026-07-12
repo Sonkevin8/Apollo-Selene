@@ -186,6 +186,16 @@
   color: var(--muted-color);
 }
 
+.account-clerk-shell {
+  width: 100%;
+}
+
+.account-clerk-shell > div {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .account-auth-debug h3 {
   margin: 0;
 }
@@ -261,6 +271,10 @@
   .account-auth-debug-grid span {
     font-size: 0.75rem;
     margin-top: 0.35rem;
+  }
+
+  .account-clerk-shell > div {
+    justify-content: stretch;
   }
 
   .account-plan-row {
