@@ -496,6 +496,52 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
                     Revoke Admin Access
                   </button>
                 </div>
+
+                <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                  <h3 style={{ margin: '0 0 0.6rem' }}>Selene Orb Settings</h3>
+                  <p style={{ opacity: 0.7, fontSize: '0.84rem', marginBottom: '0.9rem' }}>
+                    Control how many animated Selene orbs appear and set each orb color.
+                  </p>
+
+                  <form onSubmit={handleSaveOrbSettings} className="account-form-grid">
+                    <div className="account-field">
+                      <label htmlFor="selene-orb-count">Number of Orbs</label>
+                      <input
+                        id="selene-orb-count"
+                        type="number"
+                        min={ORB_MIN}
+                        max={ORB_MAX}
+                        value={orbSettings.count}
+                        onChange={handleOrbCountChange}
+                      />
+                    </div>
+
+                    <div className="account-field" style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ marginBottom: '0.5rem', display: 'block' }}>Orb Colors</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                        {Array.from({ length: orbSettings.count }, (_, index) => (
+                          <label key={`orb-color-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ minWidth: '66px', fontSize: '0.82rem', opacity: 0.85 }}>Orb {index + 1}</span>
+                            <input
+                              type="color"
+                              value={orbSettings.colors[index]}
+                              onChange={(event) => handleOrbColorChange(index, event.target.value)}
+                              style={{ width: '46px', height: '34px', padding: 0, border: '1px solid var(--border-color-strong)', borderRadius: '8px', margin: 0, cursor: 'pointer' }}
+                            />
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', opacity: 0.8 }}>{orbSettings.colors[index]}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="account-actions" style={{ gridColumn: '1 / -1' }}>
+                      <button type="submit" className="button-link primary-link" disabled={orbSaving}>
+                        {orbSaving ? 'Saving…' : 'Save Selene Orbs'}
+                      </button>
+                    </div>
+                    {orbMessage ? <p className="account-message" style={{ gridColumn: '1 / -1' }}>{orbMessage}</p> : null}
+                  </form>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleAdminLogin} className="account-form-grid">
@@ -706,54 +752,6 @@ const Account = ({ siteContent, onSiteContentUpdated, isAdmin: initialAdmin = fa
       )}
 
       {isAdmin && <AdminHeroContent isAdmin={isAdmin} onContentSaved={onSiteContentUpdated} />}
-
-      {isAdmin && (
-        <section className="account-card" style={{ marginTop: '1.5rem' }}>
-          <h2 style={{ marginBottom: '1rem' }}>Selene Orb Settings</h2>
-          <p style={{ opacity: 0.65, fontSize: '0.85rem', marginBottom: '1rem' }}>
-            Control how many animated Selene orbs appear and set each orb color.
-          </p>
-
-          <form onSubmit={handleSaveOrbSettings} className="account-form-grid">
-            <div className="account-field">
-              <label htmlFor="selene-orb-count">Number of Orbs</label>
-              <input
-                id="selene-orb-count"
-                type="number"
-                min={ORB_MIN}
-                max={ORB_MAX}
-                value={orbSettings.count}
-                onChange={handleOrbCountChange}
-              />
-            </div>
-
-            <div className="account-field" style={{ gridColumn: '1 / -1' }}>
-              <label style={{ marginBottom: '0.5rem', display: 'block' }}>Orb Colors</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-                {Array.from({ length: orbSettings.count }, (_, index) => (
-                  <label key={`orb-color-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <span style={{ minWidth: '66px', fontSize: '0.82rem', opacity: 0.85 }}>Orb {index + 1}</span>
-                    <input
-                      type="color"
-                      value={orbSettings.colors[index]}
-                      onChange={(event) => handleOrbColorChange(index, event.target.value)}
-                      style={{ width: '46px', height: '34px', padding: 0, border: '1px solid var(--border-color-strong)', borderRadius: '8px', margin: 0, cursor: 'pointer' }}
-                    />
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', opacity: 0.8 }}>{orbSettings.colors[index]}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="account-actions" style={{ gridColumn: '1 / -1' }}>
-              <button type="submit" className="button-link primary-link" disabled={orbSaving}>
-                {orbSaving ? 'Saving…' : 'Save Selene Orbs'}
-              </button>
-            </div>
-            {orbMessage ? <p className="account-message" style={{ gridColumn: '1 / -1' }}>{orbMessage}</p> : null}
-          </form>
-        </section>
-      )}
 
       {/* ── Admin: Voucher Manager ──────────────────────────────────── */}
       {isAdmin && (
