@@ -2206,7 +2206,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
                     onClick={() => navigate(`/past-events?event=${event.id}`)}
                     disabled={!isEventFinished(event) && !getLinkedPastEvent(event.id)}
                   >
-                    {isEventFinished(event) ? 'See Past Event Gallery' : 'See Past Event Gallery After It Ends'}
+                    {isEventFinished(event) ? 'See Past Event' : 'See Past Event'}
                   </button>
                   {!isEventFinished(event) && (
                     <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: 'var(--muted-color)' }}>
