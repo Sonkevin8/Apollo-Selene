@@ -119,35 +119,45 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         <div className="card">
           <p>Loading past events…</p>
         </div>
-      ) : selectedPastEvent ? (
+      ) : selectedEventMeta || selectedPastEvent ? (
         <div className="card">
           <p className="section-kicker">Selected Past Event</p>
-          <h2 style={{ marginTop: 0 }}>{selectedEventMeta?.title || selectedPastEvent.title}</h2>
-          <p style={{ opacity: 0.7, marginTop: 0 }}>{selectedEventMeta?.location || selectedPastEvent.artist || 'Apollo Selene'}</p>
+          <h2 style={{ marginTop: 0 }}>{selectedEventMeta?.title || selectedPastEvent?.title}</h2>
+          <p style={{ opacity: 0.7, marginTop: 0 }}>{selectedEventMeta?.location || selectedPastEvent?.artist || 'Apollo Selene'}</p>
           <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)' }}>
-            <div style={{ borderRadius: '18px', overflow: 'hidden' }}>
-              <img src={selectedPastEvent.image_url} alt={selectedPastEvent.title} style={{ width: '100%', display: 'block' }} />
+            <div style={{ borderRadius: '18px', overflow: 'hidden', minHeight: '220px', background: 'color-mix(in srgb, var(--nav-link-bg) 75%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {selectedPastEvent ? (
+                <img src={selectedPastEvent.image_url} alt={selectedPastEvent.title} style={{ width: '100%', display: 'block' }} />
+              ) : (
+                <p style={{ padding: '1.25rem', margin: 0, textAlign: 'center', color: 'var(--muted-color)' }}>
+                  No gallery item is linked yet for this finished event.
+                </p>
+              )}
             </div>
             <div>
-              <p><strong>Event Date:</strong> {selectedEventMeta?.date || selectedPastEvent.event_date || '—'} {selectedEventMeta?.time || selectedPastEvent.event_time ? `· ${selectedEventMeta?.time || selectedPastEvent.event_time}` : ''}</p>
-              <p><strong>Location:</strong> {selectedEventMeta?.location || selectedPastEvent.event_location || '—'}</p>
-              <p>{selectedEventMeta?.description || selectedPastEvent.description}</p>
-              {selectedPastEvent.story && <p>{selectedPastEvent.story}</p>}
+              <p><strong>Event Date:</strong> {selectedEventMeta?.date || selectedPastEvent?.event_date || '—'} {selectedEventMeta?.time || selectedPastEvent?.event_time ? `· ${selectedEventMeta?.time || selectedPastEvent?.event_time}` : ''}</p>
+              <p><strong>Location:</strong> {selectedEventMeta?.location || selectedPastEvent?.event_location || '—'}</p>
+              <p>{selectedEventMeta?.description || selectedPastEvent?.description || 'This past event is ready to be linked to gallery items and attendee records.'}</p>
+              {selectedPastEvent?.story && <p>{selectedPastEvent.story}</p>}
               <h3 style={{ marginTop: '1rem' }}>Photos</h3>
-              <div className="artwork-gallery" style={{ marginTop: '0.75rem' }}>
-                {selectedPastEventItems.map((item) => (
-                  <div key={item.id} className="artwork-card">
-                    <div className="artwork-image">
-                      <img src={item.image_url} alt={item.title} />
+              {selectedPastEventItems.length > 0 ? (
+                <div className="artwork-gallery" style={{ marginTop: '0.75rem' }}>
+                  {selectedPastEventItems.map((item) => (
+                    <div key={item.id} className="artwork-card">
+                      <div className="artwork-image">
+                        <img src={item.image_url} alt={item.title} />
+                      </div>
+                      <div className="artwork-info">
+                        <h3>{item.title}</h3>
+                        <p className="artwork-artist">{item.artist || 'Apollo Selene'}</p>
+                        <p className="artwork-description">{item.description}</p>
+                      </div>
                     </div>
-                    <div className="artwork-info">
-                      <h3>{item.title}</h3>
-                      <p className="artwork-artist">{item.artist || 'Apollo Selene'}</p>
-                      <p className="artwork-description">{item.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ marginTop: '0.75rem' }}>No gallery items are linked yet.</p>
+              )}
               <h3 style={{ marginTop: '1rem' }}>Attendees</h3>
               {selectedGuests.length > 0 ? (
                 <ul>
@@ -206,6 +216,12 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {selectedEventId && !loading && !selectedEventMeta && selectedPastEventItems.length === 0 && (
+        <div className="card" style={{ marginTop: '1rem' }}>
+          <p>No event was found for this link.</p>
         </div>
       )}
     </div>
