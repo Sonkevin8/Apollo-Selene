@@ -248,7 +248,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
 
         const responseBody = await response.json().catch(() => ({}));
         if (!response.ok) {
-          if (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid')) {
+          if (response.status === 401 || (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid'))) {
             clearLegacyAdminSession();
             throw new Error('Your admin session expired on this site. Open Admin Login and sign in again, then retry the upload.');
           }
@@ -314,7 +314,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
 
       const { data, error } = await supabase.functions.invoke('link-past-event', invokeOptions);
       if (error) {
-        if (typeof data?.error === 'string' && data.error.includes('Stored admin session is invalid')) {
+        if (error.status === 401 || (typeof data?.error === 'string' && data.error.includes('Stored admin session is invalid'))) {
           clearLegacyAdminSession();
           throw new Error('Your admin session expired on this site. Open Admin Login and sign in again, then retry linking this event.');
         }
