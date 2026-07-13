@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import InlineEditor from '../components/InlineEditor';
-import { clearLegacyAdminSession, getLegacyAdminPassword, isAdminUiEnabled } from '../lib/adminAccess';
+import { clearLegacyAdminSession, getLegacyAdminPassword, isAdminUiEnabled, setLegacyAdminSession } from '../lib/adminAccess';
 
 const GALLERY_TABLE = 'gallery_items';
 const GALLERY_BUCKET = 'gallery';
@@ -113,6 +113,9 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const [photoYear, setPhotoYear] = useState('');
   const [photoStatus, setPhotoStatus] = useState('');
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [adminPasswordStatus, setAdminPasswordStatus] = useState('');
+  const [adminPasswordSaving, setAdminPasswordSaving] = useState(false);
 
   const selectedEventId = searchParams.get('event');
 
@@ -152,6 +155,27 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
 
   const selectedGuests = selectedEventId ? (eventGuests[selectedEventId] || []) : [];
   const selectedPastEvent = selectedPastEventItems[0] || null;
+  const legacyAdminPassword = getLegacyAdminPassword();
+
+  const handleStoreAdminPassword = async () => {
+    const trimmedPassword = adminPasswordInput.trim();
+    if (!trimmedPassword) {
+      setAdminPasswordStatus('Enter the admin password for this site.');
+      return;
+    }
+
+    setAdminPasswordSaving(true);
+    setAdminPasswordStatus('');
+    try {
+      setLegacyAdminSession({ password: trimmedPassword });
+      setAdminPasswordInput('');
+      setAdminPasswordStatus('Admin media actions unlocked for this browser. If the password is wrong, the next upload or link attempt will tell you.');
+    } catch (error) {
+      setAdminPasswordStatus(error instanceof Error ? error.message : 'Could not validate the admin password.');
+    } finally {
+      setAdminPasswordSaving(false);
+    }
+  };
 
   const handleAddPhotosToEvent = async (event) => {
     if (!supabase || !event || !selectedEventId) {
@@ -388,6 +412,30 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                   <p style={{ marginTop: 0, fontSize: '0.88rem', color: 'var(--muted-color)' }}>
                     Upload extra images or a short video from this finished event. Videos must be under 4 minutes.
                   </p>
+                  {!legacyAdminPassword && (
+                    <div style={{ display: 'grid', gap: '0.65rem', marginBottom: '0.8rem' }}>
+                      <input
+                        type="password"
+                        value={adminPasswordInput}
+                        onChange={(e) => setAdminPasswordInput(e.target.value)}
+                        placeholder="Admin password required for uploads on this browser"
+                        style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleStoreAdminPassword}
+                        disabled={adminPasswordSaving}
+                        style={{ alignSelf: 'flex-start', padding: '0.55rem 0.95rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
+                      >
+                        {adminPasswordSaving ? 'Checking…' : 'Unlock admin media actions'}
+                      </button>
+                      {adminPasswordStatus && (
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: adminPasswordStatus.toLowerCase().includes('unlocked') ? '#4caf50' : '#e55' }}>
+                          {adminPasswordStatus}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div style={{ display: 'grid', gap: '0.65rem' }}>
                     <input
                       type="file"
@@ -433,7 +481,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                     <button
                       type="button"
                       onClick={() => handleAddPhotosToEvent(selectedEventMeta || selectedPastEvent)}
-                      disabled={photoUploading || photoFiles.length === 0}
+                      disabled={photoUploading || photoFiles.length === 0 || !legacyAdminPassword}
                       style={{ alignSelf: 'flex-start', padding: '0.55rem 0.95rem', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)', color: '#08111f', cursor: 'pointer' }}
                     >
                       {photoUploading ? 'Adding photos…' : 'Add photos to this event'}
