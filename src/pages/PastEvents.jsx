@@ -40,6 +40,32 @@ const getFileDuration = (file) =>
     resolve(0);
   });
 
+const getClerkTokenSafe = async () => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const token = await window.Clerk?.session?.getToken?.();
+    return token || null;
+  } catch {
+    return null;
+  }
+};
+
+const getClerkTokenWithRetry = async ({ attempts = 3, delayMs = 250 } = {}) => {
+  for (let index = 0; index < attempts; index += 1) {
+    const token = await getClerkTokenSafe();
+    if (token) {
+      return token;
+    }
+
+    if (index < attempts - 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, delayMs));
+    }
+  }
+
+  return null;
+};
+
 const loadPastEventsData = async () => {
   if (!supabase) {
     return { galleryItems: [], events: [], guests: [] };
@@ -78,6 +104,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const [eventGuests, setEventGuests] = useState({});
   const [loading, setLoading] = useState(true);
   const [savingLinkId, setSavingLinkId] = useState(null);
+  const [linkStatus, setLinkStatus] = useState({});
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoTitlePrefix, setPhotoTitlePrefix] = useState('');
   const [photoDescription, setPhotoDescription] = useState('');
@@ -248,24 +275,57 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const handleLinkEvent = async (galleryItemId, eventId) => {
     if (!supabase) return;
     setSavingLinkId(galleryItemId);
+    setLinkStatus((prev) => ({ ...prev, [galleryItemId]: '' }));
 
     const event = events.find((item) => String(item.id) === String(eventId));
-    const update = {
-      event_id: event ? String(event.id) : null,
-      event_date: event?.date || null,
-      event_time: event?.time || null,
-      event_location: event?.location || null,
+    const payload = {
+      galleryItemId,
+      eventId: event ? String(event.id) : null,
+      eventDate: event?.date || null,
+      eventTime: event?.time || null,
+      eventLocation: event?.location || null,
     };
 
-    const { error } = await supabase.from('gallery_items').update(update).eq('id', galleryItemId);
-    if (error) {
-      console.error('Failed to link past event', error);
-    } else {
-      const { data } = await supabase
-        .from('gallery_items')
-        .select('id, title, artist, description, medium, year, story, image_url, event_id, event_date, event_time, event_location')
-        .order('created_at', { ascending: false });
-      setPastEvents(data || []);
+    try {
+      const adminPassword = getLegacyAdminPassword();
+      let invokeOptions = { body: payload };
+
+      if (adminPassword) {
+        invokeOptions = { body: { ...payload, adminPassword } };
+      } else {
+        const clerkToken = await getClerkTokenWithRetry();
+        if (!clerkToken) {
+          throw new Error('Admin login is required to link this past event.');
+        }
+        invokeOptions = {
+          body: payload,
+          headers: {
+            Authorization: `Bearer ${clerkToken}`,
+          },
+        };
+      }
+
+      const { data, error } = await supabase.functions.invoke('link-past-event', invokeOptions);
+      if (error) {
+        throw new Error(data?.error || error.message || 'Failed to link this past event.');
+      }
+
+      const { galleryItems, events: nextEvents, guests } = await loadPastEventsData();
+      setPastEvents(galleryItems);
+      setEvents(nextEvents);
+      const nextGuests = {};
+      guests.forEach((guest) => {
+        if (!nextGuests[guest.event_id]) nextGuests[guest.event_id] = [];
+        nextGuests[guest.event_id].push(guest);
+      });
+      setEventGuests(nextGuests);
+      setLinkStatus((prev) => ({
+        ...prev,
+        [galleryItemId]: event ? `Linked to ${event.title}.` : 'Past event link removed.',
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to link this past event.';
+      setLinkStatus((prev) => ({ ...prev, [galleryItemId]: message }));
     }
 
     setSavingLinkId(null);
@@ -465,6 +525,11 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                     <p style={{ fontSize: '0.78rem', opacity: 0.7, marginTop: '0.35rem' }}>
                       Admin only: choose which live event card opens this past event.
                     </p>
+                    {linkStatus[event.id] && (
+                      <p style={{ fontSize: '0.78rem', marginTop: '0.35rem', color: linkStatus[event.id].toLowerCase().includes('failed') || linkStatus[event.id].toLowerCase().includes('required') ? '#e55' : '#4caf50' }}>
+                        {linkStatus[event.id]}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

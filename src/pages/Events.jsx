@@ -2208,7 +2208,12 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
                   >
                     {isEventFinished(event) ? 'See Past Event' : 'See Past Event'}
                   </button>
-                  {!isEventFinished(event) && (
+                  {!isEventFinished(event) && getLinkedPastEvent(event.id) && (
+                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: 'var(--muted-color)' }}>
+                      This event is linked to a past event gallery.
+                    </p>
+                  )}
+                  {!isEventFinished(event) && !getLinkedPastEvent(event.id) && (
                     <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: 'var(--muted-color)' }}>
                       This event is still upcoming.
                     </p>
