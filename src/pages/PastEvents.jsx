@@ -91,6 +91,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [adminPasswordStatus, setAdminPasswordStatus] = useState('');
   const [adminPasswordSaving, setAdminPasswordSaving] = useState(false);
+  const [showAdminUnlock, setShowAdminUnlock] = useState(false);
 
   const selectedEventId = searchParams.get('event');
 
@@ -131,6 +132,12 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const selectedGuests = selectedEventId ? (eventGuests[selectedEventId] || []) : [];
   const selectedPastEvent = selectedPastEventItems[0] || null;
   const legacyAdminPassword = getLegacyAdminPassword();
+  const hasStoredAdminPassword = Boolean(legacyAdminPassword);
+
+  const resetStoredAdminPassword = () => {
+    clearLegacyAdminSession({ clearPassword: true });
+    setLegacyAdminSession();
+  };
 
   const handleStoreAdminPassword = async () => {
     if (!supabase) return;
@@ -162,6 +169,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
       setLegacyAdminSession({ password: trimmedPassword });
       setAdminUsernameInput('');
       setAdminPasswordInput('');
+      setShowAdminUnlock(false);
       setAdminPasswordStatus('Admin media actions unlocked for this browser.');
     } catch (error) {
       setAdminPasswordStatus(error instanceof Error ? error.message : 'Could not validate the admin password.');
@@ -264,9 +272,13 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         const responseBody = await response.json().catch(() => ({}));
         if (!response.ok) {
           if (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid')) {
+            resetStoredAdminPassword();
+            setShowAdminUnlock(true);
             throw new Error('Your admin session expired on this site. Re-enter your admin credentials in the unlock fields, then retry the upload.');
           }
           if (response.status === 401) {
+            resetStoredAdminPassword();
+            setShowAdminUnlock(true);
             throw new Error('Upload was rejected (401). Re-enter your admin credentials in the unlock fields and try again.');
           }
           throw new Error(responseBody?.error || `Failed to upload ${file.name}.`);
@@ -321,9 +333,13 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
       });
       if (error) {
         if (typeof data?.error === 'string' && data.error.includes('Stored admin session is invalid')) {
+          resetStoredAdminPassword();
+          setShowAdminUnlock(true);
           throw new Error('Your admin session expired on this site. Re-enter your admin credentials in the unlock fields, then retry linking this event.');
         }
         if (error.status === 401) {
+          resetStoredAdminPassword();
+          setShowAdminUnlock(true);
           throw new Error('Link request was rejected (401). Re-enter your admin credentials in the unlock fields and try again.');
         }
         throw new Error(data?.error || error.message || 'Failed to link this past event.');
@@ -396,7 +412,19 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                   <p style={{ marginTop: 0, fontSize: '0.88rem', color: 'var(--muted-color)' }}>
                     Upload extra images or a short video from this finished event. Videos must be under 4 minutes.
                   </p>
-                  {!legacyAdminPassword && (
+                  {hasStoredAdminPassword && !showAdminUnlock && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAdminUnlock(true);
+                        setAdminPasswordStatus('');
+                      }}
+                      style={{ marginBottom: '0.8rem', padding: '0.55rem 0.95rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
+                    >
+                      Re-enter admin credentials
+                    </button>
+                  )}
+                  {(!hasStoredAdminPassword || showAdminUnlock) && (
                     <div style={{ display: 'grid', gap: '0.65rem', marginBottom: '0.8rem' }}>
                       <input
                         type="text"
@@ -472,7 +500,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                     <button
                       type="button"
                       onClick={() => handleAddPhotosToEvent(selectedEventMeta || selectedPastEvent)}
-                      disabled={photoUploading || photoFiles.length === 0 || !legacyAdminPassword}
+                      disabled={photoUploading || photoFiles.length === 0 || !hasStoredAdminPassword}
                       style={{ alignSelf: 'flex-start', padding: '0.55rem 0.95rem', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)', color: '#08111f', cursor: 'pointer' }}
                     >
                       {photoUploading ? 'Adding photos…' : 'Add photos to this event'}
