@@ -159,10 +159,6 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     }
 
     const adminPassword = getLegacyAdminPassword();
-    if (!adminPassword) {
-      setPhotoStatus('Open Admin Login first so I can save these photos to the gallery.');
-      return;
-    }
 
     if (!photoFiles.length) {
       setPhotoStatus('Choose at least one photo or video to upload.');
@@ -211,41 +207,48 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     const baseYear = photoYear.trim() || (eventDate ? String(new Date(eventDate).getFullYear()) : '');
 
     try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+      }
+
+      const clerkToken = adminPassword ? null : await getClerkTokenWithRetry();
+      if (!adminPassword && !clerkToken) {
+        throw new Error('Admin login is required to upload media to this past event.');
+      }
+
       for (let index = 0; index < photoFiles.length; index += 1) {
         const file = photoFiles[index];
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = `event-photos/${selectedEventId}/${Date.now()}-${index}-${safeName}`;
-
-        const { error: storageError } = await supabase.storage
-          .from(GALLERY_BUCKET)
-          .upload(path, file, { upsert: false, contentType: file.type || undefined });
-
-        if (storageError) {
-          throw new Error(`Failed to upload ${file.name}: ${storageError.message}`);
-        }
-
-        const { data: publicData } = supabase.storage.from(GALLERY_BUCKET).getPublicUrl(path);
         const titlePrefix = photoTitlePrefix.trim() || eventTitle;
         const fileExt = file.name.split('.').pop().toLowerCase();
         const isVideo = ['mp4', 'webm', 'ogg'].includes(fileExt) || file.type.startsWith('video/');
-        const payload = {
-          adminPassword,
-          title: photoFiles.length > 1 ? `${titlePrefix} ${isVideo ? 'video' : 'photo'} ${index + 1}` : titlePrefix,
-          artist: baseArtist,
-          description: isVideo ? `${baseDescription} Short video.` : baseDescription,
-          medium: isVideo ? `${baseMedium} / Video` : baseMedium,
-          year: baseYear,
-          story: `Added from the past event on ${eventDate || 'an unknown date'}${eventTime ? ` (${eventTime})` : ''}.`,
-          imageUrl: publicData.publicUrl,
-          eventId: String(selectedEventId),
-          eventDate,
-          eventTime,
-          eventLocation,
-        };
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('eventId', String(selectedEventId));
+        formData.append('title', photoFiles.length > 1 ? `${titlePrefix} ${isVideo ? 'video' : 'photo'} ${index + 1}` : titlePrefix);
+        formData.append('artist', baseArtist);
+        formData.append('description', isVideo ? `${baseDescription} Short video.` : baseDescription);
+        formData.append('medium', isVideo ? `${baseMedium} / Video` : baseMedium);
+        formData.append('year', baseYear);
+        formData.append('story', `Added from the past event on ${eventDate || 'an unknown date'}${eventTime ? ` (${eventTime})` : ''}.`);
+        if (eventDate) formData.append('eventDate', eventDate);
+        if (eventTime) formData.append('eventTime', eventTime);
+        if (eventLocation) formData.append('eventLocation', eventLocation);
+        if (adminPassword) formData.append('adminPassword', adminPassword);
 
-        const { error } = await supabase.functions.invoke('add-gallery-item', { body: payload });
-        if (error) {
-          throw new Error(error.message || `Failed to save ${file.name} to the gallery.`);
+        const response = await fetch(`${supabaseUrl}/functions/v1/upload-past-event-media`, {
+          method: 'POST',
+          headers: {
+            apikey: anonKey,
+            ...(clerkToken ? { Authorization: `Bearer ${clerkToken}` } : {}),
+          },
+          body: formData,
+        });
+
+        const responseBody = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(responseBody?.error || `Failed to upload ${file.name}.`);
         }
       }
 
@@ -266,7 +269,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
       setPhotoYear('');
       setPhotoStatus(`Added ${photoFiles.length} item${photoFiles.length === 1 ? '' : 's'} to this past event.`);
     } catch (error) {
-      setPhotoStatus(error instanceof Error ? error.message : 'Failed to add photos to this past event.');
+      setPhotoStatus(error instanceof Error ? error.message : 'Failed to add media to this past event.');
     } finally {
       setPhotoUploading(false);
     }
