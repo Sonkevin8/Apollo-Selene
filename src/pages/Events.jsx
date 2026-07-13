@@ -2198,23 +2198,27 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
                   </div>
                 )}
 
-                {isEventFinished(event) && (
-                  <div style={{ marginTop: '0.65rem' }}>
-                    <button
-                      type="button"
-                      className="attend-btn"
-                      style={{ background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)', color: '#08111f', border: 'none' }}
-                      onClick={() => navigate(`/past-events?event=${event.id}`)}
-                    >
-                      See Past Event
-                    </button>
-                    {!getLinkedPastEvent(event.id) && (
-                      <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: 'var(--muted-color)' }}>
-                        This finished event still needs an admin to connect its gallery entry.
-                      </p>
-                    )}
-                  </div>
-                )}
+                <div style={{ marginTop: '0.65rem' }}>
+                  <button
+                    type="button"
+                    className="attend-btn"
+                    style={{ background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)', color: '#08111f', border: 'none' }}
+                    onClick={() => navigate(`/past-events?event=${event.id}`)}
+                    disabled={!isEventFinished(event) && !getLinkedPastEvent(event.id)}
+                  >
+                    {isEventFinished(event) ? 'See Past Event' : 'See Past Event After It Ends'}
+                  </button>
+                  {!isEventFinished(event) && (
+                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: 'var(--muted-color)' }}>
+                      This event is still upcoming.
+                    </p>
+                  )}
+                  {isEventFinished(event) && !getLinkedPastEvent(event.id) && (
+                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: 'var(--muted-color)' }}>
+                      This finished event still needs an admin to connect its gallery entry.
+                    </p>
+                  )}
+                </div>
 
                 <div className="attendance-info">
                   <span className="attendee-count">

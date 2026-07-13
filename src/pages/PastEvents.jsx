@@ -8,7 +8,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const isAdmin = isAdminUiEnabled();
   const [searchParams] = useSearchParams();
   const {
-    past_events_title = 'Past Events',
+    past_events_title = 'Past events',
     past_events_intro = 'These are completed events that have been moved into the gallery after they finished. Each entry is treated as a piece of artwork from the community.',
   } = siteContent;
   const [pastEvents, setPastEvents] = useState([]);
@@ -121,7 +121,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         </div>
       ) : selectedEventMeta || selectedPastEvent ? (
         <div className="card">
-          <p className="section-kicker">Selected Past Event</p>
+          <p className="section-kicker">Selected past event</p>
           <h2 style={{ marginTop: 0 }}>{selectedEventMeta?.title || selectedPastEvent?.title}</h2>
           <p style={{ opacity: 0.7, marginTop: 0 }}>{selectedEventMeta?.location || selectedPastEvent?.artist || 'Apollo Selene'}</p>
           <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)' }}>
@@ -194,7 +194,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                 {event.event_location && <p className="artwork-date">Location: {event.event_location}</p>}
                 {isAdmin && (
                   <div style={{ marginTop: '0.9rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.82rem', opacity: 0.75 }}>Connect to Event</label>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.82rem', opacity: 0.75 }}>Connect this completed event to a button</label>
                     <select
                       value={event.event_id || ''}
                       onChange={(e) => handleLinkEvent(event.id, e.target.value)}
@@ -209,7 +209,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                       ))}
                     </select>
                     <p style={{ fontSize: '0.78rem', opacity: 0.7, marginTop: '0.35rem' }}>
-                      Admin only: links this completed event to the “See Past Event” button.
+                      Admin only: choose which live event card opens this past event.
                     </p>
                   </div>
                 )}
