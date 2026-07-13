@@ -263,9 +263,11 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
 
         const responseBody = await response.json().catch(() => ({}));
         if (!response.ok) {
-          if (response.status === 401 || (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid'))) {
-            clearLegacyAdminSession();
-            throw new Error('Your admin session expired on this site. Open Admin Login and sign in again, then retry the upload.');
+          if (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid')) {
+            throw new Error('Your admin session expired on this site. Re-enter your admin credentials in the unlock fields, then retry the upload.');
+          }
+          if (response.status === 401) {
+            throw new Error('Upload was rejected (401). Re-enter your admin credentials in the unlock fields and try again.');
           }
           throw new Error(responseBody?.error || `Failed to upload ${file.name}.`);
         }
@@ -318,9 +320,11 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         body: { ...payload, adminPassword },
       });
       if (error) {
-        if (error.status === 401 || (typeof data?.error === 'string' && data.error.includes('Stored admin session is invalid'))) {
-          clearLegacyAdminSession();
-          throw new Error('Your admin session expired on this site. Open Admin Login and sign in again, then retry linking this event.');
+        if (typeof data?.error === 'string' && data.error.includes('Stored admin session is invalid')) {
+          throw new Error('Your admin session expired on this site. Re-enter your admin credentials in the unlock fields, then retry linking this event.');
+        }
+        if (error.status === 401) {
+          throw new Error('Link request was rejected (401). Re-enter your admin credentials in the unlock fields and try again.');
         }
         throw new Error(data?.error || error.message || 'Failed to link this past event.');
       }
