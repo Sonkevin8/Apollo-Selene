@@ -74,7 +74,11 @@ serve(async (request) => {
     const body = await request.json().catch(() => ({}));
     const suppliedPassword = body?.adminPassword ? String(body.adminPassword) : '';
 
-    if (!suppliedPassword || suppliedPassword !== adminPassword) {
+    if (suppliedPassword && suppliedPassword !== adminPassword) {
+      return jsonResponse(401, { error: 'Stored admin session is invalid. Open Admin Login and sign in again.' });
+    }
+
+    if (!suppliedPassword) {
       const clerkCheck = await verifyClerkAdmin(request);
       if (!clerkCheck.ok) {
         return jsonResponse(401, { error: clerkCheck.error || 'Unauthorized.' });
