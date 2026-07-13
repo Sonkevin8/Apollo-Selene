@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase, EVENTS_TABLE, EVENT_GUESTS_TABLE, EVENT_ATTENDANCE_TABLE } from '../lib/supabaseClient';
 import InlineEditor from '../components/InlineEditor';
 import {
@@ -390,6 +391,7 @@ const isClerkSessionActive = () => {
 };
 
 const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(() => {
@@ -397,6 +399,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
     return legacyAdmin || isClerkSessionActive();
   });
   const [galleryItems, setGalleryItems] = useState([]);
+  const linkedPastEvents = galleryItems.filter((item) => item.event_id);
   // Sync admin state from legacy password auth and Clerk session auth.
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -684,14 +687,22 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
     fetchAll();
   }, [currentUserId]);
 
-  // Load gallery items whenever admin is active (covers page refresh while already logged in)
+  // Load gallery items so finished events can link to their past-event pages.
   useEffect(() => {
-    if (isAdmin && supabase && galleryItems.length === 0) {
-      supabase.from('gallery_items').select('id, title, artist').order('title').then(({ data }) => {
+    if (!supabase) {
+      return;
+    }
+
+    supabase
+      .from('gallery_items')
+      .select('id, title, artist, event_id, event_date, event_time, event_location')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
         if (data) setGalleryItems(data);
       });
-    }
-  }, [isAdmin]);
+  }, []);
+
+  const getLinkedPastEvent = (eventId) => linkedPastEvents.find((item) => String(item.event_id) === String(eventId));
 
   // Deep-link: scroll to + highlight event from ?event= URL param
   useEffect(() => {
@@ -2185,6 +2196,17 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
                       </div>
                     )}
                   </div>
+                )}
+
+                {isEventFinished(event) && getLinkedPastEvent(event.id) && (
+                  <button
+                    type="button"
+                    className="attend-btn"
+                    style={{ marginTop: '0.65rem', background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)', color: '#08111f', border: 'none' }}
+                    onClick={() => navigate(`/past-events?event=${event.id}`)}
+                  >
+                    See Past Event
+                  </button>
                 )}
 
                 <div className="attendance-info">
