@@ -40,32 +40,6 @@ const getFileDuration = (file) =>
     resolve(0);
   });
 
-const getClerkTokenSafe = async () => {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    const token = await window.Clerk?.session?.getToken?.();
-    return token || null;
-  } catch {
-    return null;
-  }
-};
-
-const getClerkTokenWithRetry = async ({ attempts = 3, delayMs = 250 } = {}) => {
-  for (let index = 0; index < attempts; index += 1) {
-    const token = await getClerkTokenSafe();
-    if (token) {
-      return token;
-    }
-
-    if (index < attempts - 1) {
-      await new Promise((resolve) => window.setTimeout(resolve, delayMs));
-    }
-  }
-
-  return null;
-};
-
 const loadPastEventsData = async () => {
   if (!supabase) {
     return { galleryItems: [], events: [], guests: [] };
@@ -113,6 +87,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const [photoYear, setPhotoYear] = useState('');
   const [photoStatus, setPhotoStatus] = useState('');
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [adminUsernameInput, setAdminUsernameInput] = useState('');
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [adminPasswordStatus, setAdminPasswordStatus] = useState('');
   const [adminPasswordSaving, setAdminPasswordSaving] = useState(false);
@@ -158,7 +133,13 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const legacyAdminPassword = getLegacyAdminPassword();
 
   const handleStoreAdminPassword = async () => {
+    if (!supabase) return;
+    const trimmedUsername = adminUsernameInput.trim();
     const trimmedPassword = adminPasswordInput.trim();
+    if (!trimmedUsername) {
+      setAdminPasswordStatus('Enter the admin username for this site.');
+      return;
+    }
     if (!trimmedPassword) {
       setAdminPasswordStatus('Enter the admin password for this site.');
       return;
@@ -167,9 +148,21 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     setAdminPasswordSaving(true);
     setAdminPasswordStatus('');
     try {
+      const { data, error } = await supabase.functions.invoke('verify-admin', {
+        body: {
+          username: trimmedUsername,
+          password: trimmedPassword,
+        },
+      });
+
+      if (error || !data?.success) {
+        throw new Error('That admin username or password was not accepted.');
+      }
+
       setLegacyAdminSession({ password: trimmedPassword });
+      setAdminUsernameInput('');
       setAdminPasswordInput('');
-      setAdminPasswordStatus('Admin media actions unlocked for this browser. If the password is wrong, the next upload or link attempt will tell you.');
+      setAdminPasswordStatus('Admin media actions unlocked for this browser.');
     } catch (error) {
       setAdminPasswordStatus(error instanceof Error ? error.message : 'Could not validate the admin password.');
     } finally {
@@ -237,8 +230,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         throw new Error('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
       }
 
-      const clerkToken = adminPassword ? null : await getClerkTokenWithRetry();
-      if (!adminPassword && !clerkToken) {
+      if (!adminPassword) {
         throw new Error('Admin login is required to upload media to this past event.');
       }
 
@@ -265,7 +257,6 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
           method: 'POST',
           headers: {
             apikey: anonKey,
-            ...(clerkToken ? { Authorization: `Bearer ${clerkToken}` } : {}),
           },
           body: formData,
         });
@@ -319,24 +310,13 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
 
     try {
       const adminPassword = getLegacyAdminPassword();
-      let invokeOptions = { body: payload };
-
-      if (adminPassword) {
-        invokeOptions = { body: { ...payload, adminPassword } };
-      } else {
-        const clerkToken = await getClerkTokenWithRetry();
-        if (!clerkToken) {
-          throw new Error('Admin login is required to link this past event.');
-        }
-        invokeOptions = {
-          body: payload,
-          headers: {
-            Authorization: `Bearer ${clerkToken}`,
-          },
-        };
+      if (!adminPassword) {
+        throw new Error('Admin login is required to link this past event.');
       }
 
-      const { data, error } = await supabase.functions.invoke('link-past-event', invokeOptions);
+      const { data, error } = await supabase.functions.invoke('link-past-event', {
+        body: { ...payload, adminPassword },
+      });
       if (error) {
         if (error.status === 401 || (typeof data?.error === 'string' && data.error.includes('Stored admin session is invalid'))) {
           clearLegacyAdminSession();
@@ -414,6 +394,13 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                   </p>
                   {!legacyAdminPassword && (
                     <div style={{ display: 'grid', gap: '0.65rem', marginBottom: '0.8rem' }}>
+                      <input
+                        type="text"
+                        value={adminUsernameInput}
+                        onChange={(e) => setAdminUsernameInput(e.target.value)}
+                        placeholder="Admin username"
+                        style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                      />
                       <input
                         type="password"
                         value={adminPasswordInput}
