@@ -2,7 +2,69 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import InlineEditor from '../components/InlineEditor';
-import { isAdminUiEnabled } from '../lib/adminAccess';
+import { getLegacyAdminPassword, isAdminUiEnabled } from '../lib/adminAccess';
+
+const GALLERY_TABLE = 'gallery_items';
+const GALLERY_BUCKET = 'gallery';
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_VIDEO_SECONDS = 4 * 60;
+
+const isVideoUrl = (value = '') => /\.(mp4|webm|ogg)(\?.*)?$/i.test(value);
+
+const getFileDuration = (file) =>
+  new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const mediaElement = document.createElement(file.type.startsWith('video/') ? 'video' : 'img');
+
+    const cleanup = () => {
+      URL.revokeObjectURL(objectUrl);
+      mediaElement.src = '';
+    };
+
+    if (mediaElement.tagName === 'VIDEO') {
+      mediaElement.preload = 'metadata';
+      mediaElement.onloadedmetadata = () => {
+        const duration = Number(mediaElement.duration);
+        cleanup();
+        resolve(duration);
+      };
+      mediaElement.onerror = () => {
+        cleanup();
+        reject(new Error(`Could not read the duration for ${file.name}.`));
+      };
+      mediaElement.src = objectUrl;
+      return;
+    }
+
+    cleanup();
+    resolve(0);
+  });
+
+const loadPastEventsData = async () => {
+  if (!supabase) {
+    return { galleryItems: [], events: [], guests: [] };
+  }
+
+  const [galleryRes, eventsRes, guestsRes] = await Promise.all([
+    supabase
+      .from(GALLERY_TABLE)
+      .select('id, title, artist, description, medium, year, story, image_url, event_id, event_date, event_time, event_location')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('events')
+      .select('id, title, date, time, location, description, attendees, max_attendees, poster, posters, phase, ticketed, ticket_price')
+      .order('date', { ascending: true }),
+    supabase
+      .from('event_guests')
+      .select('*'),
+  ]);
+
+  return {
+    galleryItems: galleryRes.data || [],
+    events: eventsRes.data || [],
+    guests: guestsRes.data || [],
+  };
+};
 
 const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const isAdmin = isAdminUiEnabled();
@@ -16,6 +78,14 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const [eventGuests, setEventGuests] = useState({});
   const [loading, setLoading] = useState(true);
   const [savingLinkId, setSavingLinkId] = useState(null);
+  const [photoFiles, setPhotoFiles] = useState([]);
+  const [photoTitlePrefix, setPhotoTitlePrefix] = useState('');
+  const [photoDescription, setPhotoDescription] = useState('');
+  const [photoArtist, setPhotoArtist] = useState('Apollo Selene');
+  const [photoMedium, setPhotoMedium] = useState('Event Photo');
+  const [photoYear, setPhotoYear] = useState('');
+  const [photoStatus, setPhotoStatus] = useState('');
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   const selectedEventId = searchParams.get('event');
 
@@ -36,38 +106,16 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         return;
       }
 
-      const [galleryRes, eventsRes, guestsRes] = await Promise.all([
-        supabase
-          .from('gallery_items')
-          .select('id, title, artist, description, medium, year, story, image_url, event_id, event_date, event_time, event_location')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('events')
-          .select('id, title, date, time, location, description, attendees, max_attendees, poster, posters, phase, ticketed, ticket_price')
-          .order('date', { ascending: true }),
-        supabase
-          .from('event_guests')
-          .select('*'),
-      ]);
+      const { galleryItems, events: nextEvents, guests } = await loadPastEventsData();
+      setPastEvents(galleryItems);
+      setEvents(nextEvents);
 
-      if (galleryRes.error) {
-        console.error('Failed to load past events', galleryRes.error);
-      } else {
-        setPastEvents(galleryRes.data || []);
-      }
-
-      if (eventsRes.data) {
-        setEvents(eventsRes.data || []);
-      }
-
-      if (guestsRes.data) {
-        const nextGuests = {};
-        (guestsRes.data || []).forEach((guest) => {
-          if (!nextGuests[guest.event_id]) nextGuests[guest.event_id] = [];
-          nextGuests[guest.event_id].push(guest);
-        });
-        setEventGuests(nextGuests);
-      }
+      const nextGuests = {};
+      guests.forEach((guest) => {
+        if (!nextGuests[guest.event_id]) nextGuests[guest.event_id] = [];
+        nextGuests[guest.event_id].push(guest);
+      });
+      setEventGuests(nextGuests);
 
       setLoading(false);
     };
@@ -77,6 +125,125 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
 
   const selectedGuests = selectedEventId ? (eventGuests[selectedEventId] || []) : [];
   const selectedPastEvent = selectedPastEventItems[0] || null;
+
+  const handleAddPhotosToEvent = async (event) => {
+    if (!supabase || !event || !selectedEventId) {
+      return;
+    }
+
+    const adminPassword = getLegacyAdminPassword();
+    if (!adminPassword) {
+      setPhotoStatus('Open Admin Login first so I can save these photos to the gallery.');
+      return;
+    }
+
+    if (!photoFiles.length) {
+      setPhotoStatus('Choose at least one photo or video to upload.');
+      return;
+    }
+
+    const invalidFile = photoFiles.find((file) => {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const isImage = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext);
+      const isVideo = ['mp4', 'webm', 'ogg'].includes(ext);
+      return (!isImage && !isVideo) || (isImage && file.size > MAX_IMAGE_BYTES);
+    });
+
+    if (invalidFile) {
+      const ext = invalidFile.name.split('.').pop().toLowerCase();
+      if (!['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'webm', 'ogg'].includes(ext)) {
+        setPhotoStatus('Only JPG, PNG, WEBP, GIF, MP4, WEBM, or OGG files are allowed.');
+      } else {
+        setPhotoStatus('File is too large. Maximum size is 10 MB.');
+      }
+      return;
+    }
+
+    for (const file of photoFiles) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const isVideo = ['mp4', 'webm', 'ogg'].includes(ext) || file.type.startsWith('video/');
+      if (isVideo) {
+        const duration = await getFileDuration(file);
+        if (duration > MAX_VIDEO_SECONDS) {
+          setPhotoStatus(`${file.name} is longer than 4 minutes. Please choose a shorter video.`);
+          return;
+        }
+      }
+    }
+
+    setPhotoUploading(true);
+    setPhotoStatus('');
+
+    const eventTitle = selectedEventMeta?.title || selectedPastEvent?.title || 'Past Event';
+    const eventDate = selectedEventMeta?.date || selectedPastEvent?.event_date || null;
+    const eventTime = selectedEventMeta?.time || selectedPastEvent?.event_time || null;
+    const eventLocation = selectedEventMeta?.location || selectedPastEvent?.event_location || null;
+    const baseDescription = photoDescription.trim() || `Additional media added from ${eventTitle}.`;
+    const baseArtist = photoArtist.trim() || 'Apollo Selene';
+    const baseMedium = photoMedium.trim() || 'Event Media';
+    const baseYear = photoYear.trim() || (eventDate ? String(new Date(eventDate).getFullYear()) : '');
+
+    try {
+      for (let index = 0; index < photoFiles.length; index += 1) {
+        const file = photoFiles[index];
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `event-photos/${selectedEventId}/${Date.now()}-${index}-${safeName}`;
+
+        const { error: storageError } = await supabase.storage
+          .from(GALLERY_BUCKET)
+          .upload(path, file, { upsert: false, contentType: file.type || undefined });
+
+        if (storageError) {
+          throw new Error(`Failed to upload ${file.name}: ${storageError.message}`);
+        }
+
+        const { data: publicData } = supabase.storage.from(GALLERY_BUCKET).getPublicUrl(path);
+        const titlePrefix = photoTitlePrefix.trim() || eventTitle;
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        const isVideo = ['mp4', 'webm', 'ogg'].includes(fileExt) || file.type.startsWith('video/');
+        const payload = {
+          adminPassword,
+          title: photoFiles.length > 1 ? `${titlePrefix} ${isVideo ? 'video' : 'photo'} ${index + 1}` : titlePrefix,
+          artist: baseArtist,
+          description: isVideo ? `${baseDescription} Short video.` : baseDescription,
+          medium: isVideo ? `${baseMedium} / Video` : baseMedium,
+          year: baseYear,
+          story: `Added from the past event on ${eventDate || 'an unknown date'}${eventTime ? ` (${eventTime})` : ''}.`,
+          imageUrl: publicData.publicUrl,
+          eventId: String(selectedEventId),
+          eventDate,
+          eventTime,
+          eventLocation,
+        };
+
+        const { error } = await supabase.functions.invoke('add-gallery-item', { body: payload });
+        if (error) {
+          throw new Error(error.message || `Failed to save ${file.name} to the gallery.`);
+        }
+      }
+
+      const { galleryItems, events: nextEvents, guests } = await loadPastEventsData();
+      setPastEvents(galleryItems);
+      setEvents(nextEvents);
+      const nextGuests = {};
+      guests.forEach((guest) => {
+        if (!nextGuests[guest.event_id]) nextGuests[guest.event_id] = [];
+        nextGuests[guest.event_id].push(guest);
+      });
+      setEventGuests(nextGuests);
+      setPhotoFiles([]);
+      setPhotoTitlePrefix('');
+      setPhotoDescription('');
+      setPhotoArtist('Apollo Selene');
+      setPhotoMedium('Event Media');
+      setPhotoYear('');
+      setPhotoStatus(`Added ${photoFiles.length} item${photoFiles.length === 1 ? '' : 's'} to this past event.`);
+    } catch (error) {
+      setPhotoStatus(error instanceof Error ? error.message : 'Failed to add photos to this past event.');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
 
   const handleLinkEvent = async (galleryItemId, eventId) => {
     if (!supabase) return;
@@ -127,7 +294,11 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
           <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)' }}>
             <div style={{ borderRadius: '18px', overflow: 'hidden', minHeight: '220px', background: 'color-mix(in srgb, var(--nav-link-bg) 75%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {selectedPastEvent ? (
-                <img src={selectedPastEvent.image_url} alt={selectedPastEvent.title} style={{ width: '100%', display: 'block' }} />
+                isVideoUrl(selectedPastEvent.image_url) ? (
+                  <video src={selectedPastEvent.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block' }} />
+                ) : (
+                  <img src={selectedPastEvent.image_url} alt={selectedPastEvent.title} style={{ width: '100%', display: 'block' }} />
+                )
               ) : (
                 <p style={{ padding: '1.25rem', margin: 0, textAlign: 'center', color: 'var(--muted-color)' }}>
                   No gallery item is linked yet for this finished event.
@@ -140,16 +311,90 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
               <p>{selectedEventMeta?.description || selectedPastEvent?.description || 'This past event is ready to be linked to gallery items and attendee records.'}</p>
               {selectedPastEvent?.story && <p>{selectedPastEvent.story}</p>}
               <h3 style={{ marginTop: '1rem' }}>Photos</h3>
+              {isAdmin && selectedEventId && (
+                <div style={{ marginTop: '0.85rem', padding: '0.9rem', borderRadius: '16px', border: '1px solid var(--border-color-strong)', background: 'color-mix(in srgb, var(--nav-link-bg) 70%, transparent)' }}>
+                  <p className="section-kicker" style={{ marginBottom: '0.45rem' }}>Add more photos or video</p>
+                  <p style={{ marginTop: 0, fontSize: '0.88rem', color: 'var(--muted-color)' }}>
+                    Upload extra images or a short video from this finished event. Videos must be under 4 minutes.
+                  </p>
+                  <div style={{ display: 'grid', gap: '0.65rem' }}>
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      multiple
+                      onChange={(e) => setPhotoFiles(Array.from(e.target.files || []))}
+                    />
+                    <input
+                      type="text"
+                      value={photoTitlePrefix}
+                      onChange={(e) => setPhotoTitlePrefix(e.target.value)}
+                      placeholder={`Title prefix (defaults to ${selectedEventMeta?.title || 'this event'})`}
+                      style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                    />
+                    <input
+                      type="text"
+                      value={photoArtist}
+                      onChange={(e) => setPhotoArtist(e.target.value)}
+                      placeholder="Artist / photographer"
+                      style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                    />
+                    <input
+                      type="text"
+                      value={photoMedium}
+                      onChange={(e) => setPhotoMedium(e.target.value)}
+                      placeholder="Medium (photo or video)"
+                      style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                    />
+                    <input
+                      type="text"
+                      value={photoYear}
+                      onChange={(e) => setPhotoYear(e.target.value)}
+                      placeholder="Year"
+                      style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                    />
+                    <textarea
+                      value={photoDescription}
+                      onChange={(e) => setPhotoDescription(e.target.value)}
+                      placeholder="Optional description for the photo set"
+                      rows={3}
+                      style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleAddPhotosToEvent(selectedEventMeta || selectedPastEvent)}
+                      disabled={photoUploading || photoFiles.length === 0}
+                      style={{ alignSelf: 'flex-start', padding: '0.55rem 0.95rem', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)', color: '#08111f', cursor: 'pointer' }}
+                    >
+                      {photoUploading ? 'Adding photos…' : 'Add photos to this event'}
+                    </button>
+                    {photoStatus && (
+                      <p style={{ margin: 0, fontSize: '0.82rem', color: photoStatus.toLowerCase().includes('failed') || photoStatus.toLowerCase().includes('choose') || photoStatus.toLowerCase().includes('open admin') ? '#e55' : '#4caf50' }}>
+                        {photoStatus}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
               {selectedPastEventItems.length > 0 ? (
                 <div className="artwork-gallery" style={{ marginTop: '0.75rem' }}>
                   {selectedPastEventItems.map((item) => (
                     <div key={item.id} className="artwork-card">
                       <div className="artwork-image">
-                        <img src={item.image_url} alt={item.title} />
+                        {isVideoUrl(item.image_url) ? (
+                          <video src={item.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block' }} />
+                        ) : (
+                          <img src={item.image_url} alt={item.title} />
+                        )}
                       </div>
                       <div className="artwork-info">
+                        {isVideoUrl(item.image_url) && (
+                          <p className="artwork-medium" style={{ marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            Video
+                          </p>
+                        )}
                         <h3>{item.title}</h3>
                         <p className="artwork-artist">{item.artist || 'Apollo Selene'}</p>
+                        <p className="artwork-medium">{item.medium || (isVideoUrl(item.image_url) ? 'Event Video' : 'Event Photo')}</p>
                         <p className="artwork-description">{item.description}</p>
                       </div>
                     </div>
@@ -180,12 +425,21 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
           {pastEvents.map((event) => (
             <div key={event.id} className="artwork-card">
               <div className="artwork-image">
-                <img src={event.image_url} alt={event.title} />
+                {isVideoUrl(event.image_url) ? (
+                  <video src={event.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block' }} />
+                ) : (
+                  <img src={event.image_url} alt={event.title} />
+                )}
               </div>
               <div className="artwork-info">
+                {isVideoUrl(event.image_url) && (
+                  <p className="artwork-medium" style={{ marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Video
+                  </p>
+                )}
                 <h3>{event.title}</h3>
                 <p className="artwork-artist">{event.artist || 'Apollo Selene'}</p>
-                <p className="artwork-medium">{event.medium || 'Event Poster'}</p>
+                <p className="artwork-medium">{event.medium || (isVideoUrl(event.image_url) ? 'Event Video' : 'Event Poster')}</p>
                 <p className="artwork-description">{event.description}</p>
                 <p className="artwork-date">
                   {event.event_date ? `Event Date: ${event.event_date}` : ''}
