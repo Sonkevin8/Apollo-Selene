@@ -268,6 +268,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
           method: 'POST',
           headers: {
             apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
           },
           body: formData,
         });

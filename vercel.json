@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/clerk/(.*)", "destination": "https://clerk.apollo-selene.com/$1" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }
