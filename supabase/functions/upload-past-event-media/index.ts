@@ -1,6 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
-import { Clerk } from 'npm:@clerk/clerk-sdk-node@4.13.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,44 +14,6 @@ const jsonResponse = (status: number, body: Record<string, unknown>) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-const verifyClerkAdmin = async (request: Request) => {
-  const clerkSecret = Deno.env.get('CLERK_SECRET_KEY');
-  const adminEmailsRaw = Deno.env.get('ADMIN_EMAILS') || Deno.env.get('VITE_ADMIN_EMAILS') || '';
-
-  if (!clerkSecret) {
-    return { ok: false, error: 'Missing Clerk secret.' };
-  }
-
-  const authHeader = request.headers.get('Authorization') || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-  if (!token) {
-    return { ok: false, error: 'Missing Clerk session token.' };
-  }
-
-  const clerk = new Clerk({ apiKey: clerkSecret });
-  let userEmail: string | null = null;
-
-  try {
-    // @ts-ignore Runtime types vary in Deno.
-    const session = await clerk.sessions.verifySessionToken(token);
-    const userId = session?.user_id || session?.user?.id || null;
-    if (!userId) {
-      return { ok: false, error: 'Invalid Clerk session.' };
-    }
-    const user = await clerk.users.getUser(userId);
-    userEmail = (user?.email_addresses && user.email_addresses[0]?.email_address) || user?.primary_email_address?.email_address || user?.email || null;
-  } catch {
-    return { ok: false, error: 'Failed to verify Clerk session.' };
-  }
-
-  const allowed = adminEmailsRaw.split(',').map((value) => value.trim().toLowerCase()).filter(Boolean);
-  if (!userEmail || !allowed.includes(userEmail.toLowerCase())) {
-    return { ok: false, error: 'User not authorized to perform this action.' };
-  }
-
-  return { ok: true };
-};
-
 serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -63,26 +24,29 @@ serve(async (request) => {
   }
 
   try {
+    const adminUsername = Deno.env.get('ADMIN_USERNAME');
     const adminPassword = Deno.env.get('ADMIN_PASSWORD');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!adminUsername || !adminPassword) {
+      return jsonResponse(500, { error: 'Admin credentials are not configured in Supabase secrets.' });
+    }
 
     if (!supabaseUrl || !supabaseServiceRoleKey) {
       return jsonResponse(500, { error: 'Missing required Supabase secrets.' });
     }
 
     const formData = await request.formData();
+    const suppliedUsername = String(formData.get('adminUsername') || '');
     const suppliedPassword = String(formData.get('adminPassword') || '');
 
-    if (suppliedPassword && suppliedPassword !== adminPassword) {
-      return jsonResponse(401, { error: 'Stored admin session is invalid. Open Admin Login and sign in again.' });
+    if (!suppliedUsername || !suppliedPassword) {
+      return jsonResponse(401, { error: 'Admin login is required. Enter admin username and password in the unlock fields.' });
     }
 
-    if (!suppliedPassword) {
-      const clerkCheck = await verifyClerkAdmin(request);
-      if (!clerkCheck.ok) {
-        return jsonResponse(401, { error: clerkCheck.error || 'Unauthorized.' });
-      }
+    if (suppliedUsername !== adminUsername || suppliedPassword !== adminPassword) {
+      return jsonResponse(401, { error: 'Stored admin session is invalid. Open Admin Login and sign in again.' });
     }
 
     const file = formData.get('file');

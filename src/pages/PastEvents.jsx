@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import InlineEditor from '../components/InlineEditor';
-import { clearLegacyAdminSession, getLegacyAdminPassword, isAdminUiEnabled, setLegacyAdminSession } from '../lib/adminAccess';
+import { clearLegacyAdminSession, getLegacyAdminPassword, getLegacyAdminUsername, isAdminUiEnabled, setLegacyAdminSession } from '../lib/adminAccess';
 
 const GALLERY_TABLE = 'gallery_items';
 const GALLERY_BUCKET = 'gallery';
@@ -131,11 +131,12 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
 
   const selectedGuests = selectedEventId ? (eventGuests[selectedEventId] || []) : [];
   const selectedPastEvent = selectedPastEventItems[0] || null;
+  const legacyAdminUsername = getLegacyAdminUsername();
   const legacyAdminPassword = getLegacyAdminPassword();
-  const hasStoredAdminPassword = Boolean(legacyAdminPassword);
+  const hasStoredAdminCredentials = Boolean(legacyAdminUsername && legacyAdminPassword);
 
-  const resetStoredAdminPassword = () => {
-    clearLegacyAdminSession({ clearPassword: true });
+  const resetStoredAdminCredentials = () => {
+    clearLegacyAdminSession({ clearUsername: true, clearPassword: true });
     setLegacyAdminSession();
   };
 
@@ -166,7 +167,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         throw new Error('That admin username or password was not accepted.');
       }
 
-      setLegacyAdminSession({ password: trimmedPassword });
+      setLegacyAdminSession({ username: trimmedUsername, password: trimmedPassword });
       setAdminUsernameInput('');
       setAdminPasswordInput('');
       setShowAdminUnlock(false);
@@ -183,6 +184,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
       return;
     }
 
+    const adminUsername = getLegacyAdminUsername();
     const adminPassword = getLegacyAdminPassword();
 
     if (!photoFiles.length) {
@@ -238,7 +240,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         throw new Error('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
       }
 
-      if (!adminPassword) {
+      if (!adminUsername || !adminPassword) {
         throw new Error('Admin login is required to upload media to this past event.');
       }
 
@@ -259,7 +261,8 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         if (eventDate) formData.append('eventDate', eventDate);
         if (eventTime) formData.append('eventTime', eventTime);
         if (eventLocation) formData.append('eventLocation', eventLocation);
-        if (adminPassword) formData.append('adminPassword', adminPassword);
+        formData.append('adminUsername', adminUsername);
+        formData.append('adminPassword', adminPassword);
 
         const response = await fetch(`${supabaseUrl}/functions/v1/upload-past-event-media`, {
           method: 'POST',
@@ -272,12 +275,12 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         const responseBody = await response.json().catch(() => ({}));
         if (!response.ok) {
           if (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid')) {
-            resetStoredAdminPassword();
+            resetStoredAdminCredentials();
             setShowAdminUnlock(true);
             throw new Error('Your admin session expired on this site. Re-enter your admin credentials in the unlock fields, then retry the upload.');
           }
           if (response.status === 401) {
-            resetStoredAdminPassword();
+            resetStoredAdminCredentials();
             setShowAdminUnlock(true);
             throw new Error('Upload was rejected (401). Re-enter your admin credentials in the unlock fields and try again.');
           }
@@ -323,22 +326,23 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     };
 
     try {
+      const adminUsername = getLegacyAdminUsername();
       const adminPassword = getLegacyAdminPassword();
-      if (!adminPassword) {
+      if (!adminUsername || !adminPassword) {
         throw new Error('Admin login is required to link this past event.');
       }
 
       const { data, error } = await supabase.functions.invoke('link-past-event', {
-        body: { ...payload, adminPassword },
+        body: { ...payload, adminUsername, adminPassword },
       });
       if (error) {
         if (typeof data?.error === 'string' && data.error.includes('Stored admin session is invalid')) {
-          resetStoredAdminPassword();
+          resetStoredAdminCredentials();
           setShowAdminUnlock(true);
           throw new Error('Your admin session expired on this site. Re-enter your admin credentials in the unlock fields, then retry linking this event.');
         }
         if (error.status === 401) {
-          resetStoredAdminPassword();
+          resetStoredAdminCredentials();
           setShowAdminUnlock(true);
           throw new Error('Link request was rejected (401). Re-enter your admin credentials in the unlock fields and try again.');
         }
@@ -412,7 +416,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                   <p style={{ marginTop: 0, fontSize: '0.88rem', color: 'var(--muted-color)' }}>
                     Upload extra images or a short video from this finished event. Videos must be under 4 minutes.
                   </p>
-                  {hasStoredAdminPassword && !showAdminUnlock && (
+                  {hasStoredAdminCredentials && !showAdminUnlock && (
                     <button
                       type="button"
                       onClick={() => {
@@ -424,7 +428,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                       Re-enter admin credentials
                     </button>
                   )}
-                  {(!hasStoredAdminPassword || showAdminUnlock) && (
+                  {(!hasStoredAdminCredentials || showAdminUnlock) && (
                     <div style={{ display: 'grid', gap: '0.65rem', marginBottom: '0.8rem' }}>
                       <input
                         type="text"
@@ -500,7 +504,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                     <button
                       type="button"
                       onClick={() => handleAddPhotosToEvent(selectedEventMeta || selectedPastEvent)}
-                      disabled={photoUploading || photoFiles.length === 0 || !hasStoredAdminPassword}
+                      disabled={photoUploading || photoFiles.length === 0 || !hasStoredAdminCredentials}
                       style={{ alignSelf: 'flex-start', padding: '0.55rem 0.95rem', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)', color: '#08111f', cursor: 'pointer' }}
                     >
                       {photoUploading ? 'Adding photos…' : 'Add photos to this event'}
