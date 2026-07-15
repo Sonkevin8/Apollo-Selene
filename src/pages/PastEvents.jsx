@@ -87,6 +87,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const [photoYear, setPhotoYear] = useState('');
   const [photoStatus, setPhotoStatus] = useState('');
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoRemovingId, setPhotoRemovingId] = useState(null);
   const [adminUsernameInput, setAdminUsernameInput] = useState('');
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [adminPasswordStatus, setAdminPasswordStatus] = useState('');
@@ -371,6 +372,80 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     setSavingLinkId(null);
   };
 
+  const handleRemovePastEventMedia = async (item) => {
+    if (!supabase || !item?.id) {
+      return;
+    }
+
+    const adminUsername = getLegacyAdminUsername();
+    const adminPassword = getLegacyAdminPassword();
+    if (!adminUsername || !adminPassword) {
+      setPhotoStatus('Admin login is required to remove this media item.');
+      setShowAdminUnlock(true);
+      return;
+    }
+
+    const shouldRemove = window.confirm(`Remove "${item.title || 'this media item'}" from this past event gallery? This cannot be undone.`);
+    if (!shouldRemove) {
+      return;
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) {
+      setPhotoStatus('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+      return;
+    }
+
+    setPhotoRemovingId(item.id);
+    setPhotoStatus('');
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/remove-past-event-media`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({
+          galleryItemId: item.id,
+          adminUsername,
+          adminPassword,
+        }),
+      });
+
+      const responseBody = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid')) {
+          resetStoredAdminCredentials();
+          setShowAdminUnlock(true);
+          throw new Error('Your admin session expired on this site. Re-enter your admin credentials in the unlock fields, then retry removing this media item.');
+        }
+        if (response.status === 401) {
+          resetStoredAdminCredentials();
+          setShowAdminUnlock(true);
+          throw new Error('Removal request was rejected (401). Re-enter your admin credentials in the unlock fields and try again.');
+        }
+        throw new Error(responseBody?.error || 'Failed to remove this media item.');
+      }
+
+      const { galleryItems, events: nextEvents, guests } = await loadPastEventsData();
+      setPastEvents(galleryItems);
+      setEvents(nextEvents);
+      const nextGuests = {};
+      guests.forEach((guest) => {
+        if (!nextGuests[guest.event_id]) nextGuests[guest.event_id] = [];
+        nextGuests[guest.event_id].push(guest);
+      });
+      setEventGuests(nextGuests);
+      setPhotoStatus(`Removed ${item.title || 'media item'} from this past event.`);
+    } catch (error) {
+      setPhotoStatus(error instanceof Error ? error.message : 'Failed to remove this media item.');
+    } finally {
+      setPhotoRemovingId(null);
+    }
+  };
+
   return (
     <div className="content-section">
       <div className="card">
@@ -539,6 +614,16 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                         <p className="artwork-artist">{item.artist || 'Apollo Selene'}</p>
                         <p className="artwork-medium">{item.medium || (isVideoUrl(item.image_url) ? 'Event Video' : 'Event Photo')}</p>
                         <p className="artwork-description">{item.description}</p>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePastEventMedia(item)}
+                            disabled={photoRemovingId === item.id || photoUploading}
+                            style={{ marginTop: '0.65rem', padding: '0.45rem 0.75rem', borderRadius: '10px', border: '1px solid color-mix(in srgb, #c34646 70%, var(--border-color-strong))', background: 'color-mix(in srgb, #c34646 20%, transparent)', color: 'var(--text-color)', cursor: 'pointer' }}
+                          >
+                            {photoRemovingId === item.id ? 'Removing…' : 'Remove media'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -591,6 +676,14 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                 {event.event_location && <p className="artwork-date">Location: {event.event_location}</p>}
                 {isAdmin && (
                   <div style={{ marginTop: '0.9rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePastEventMedia(event)}
+                      disabled={photoRemovingId === event.id || photoUploading}
+                      style={{ marginBottom: '0.6rem', padding: '0.45rem 0.75rem', borderRadius: '10px', border: '1px solid color-mix(in srgb, #c34646 70%, var(--border-color-strong))', background: 'color-mix(in srgb, #c34646 20%, transparent)', color: 'var(--text-color)', cursor: 'pointer' }}
+                    >
+                      {photoRemovingId === event.id ? 'Removing…' : 'Remove media'}
+                    </button>
                     <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.82rem', opacity: 0.75 }}>Connect this completed event to a button</label>
                     <select
                       value={event.event_id || ''}
