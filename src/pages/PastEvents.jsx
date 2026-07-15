@@ -649,9 +649,66 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
           <p>No past events have been added to the gallery yet.</p>
         </div>
       ) : (
-        <div className="artwork-gallery">
-          {pastEvents.map((event) => (
-            <div key={event.id} className="artwork-card">
+        <>
+          {isAdmin && (
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <p className="section-kicker" style={{ marginBottom: '0.45rem' }}>Admin media actions</p>
+              <p style={{ marginTop: 0, fontSize: '0.9rem', color: 'var(--muted-color)' }}>
+                Unlock admin credentials in this browser to remove past-event media from the gallery.
+              </p>
+              {hasStoredAdminCredentials && !showAdminUnlock && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAdminUnlock(true);
+                    setAdminPasswordStatus('');
+                  }}
+                  style={{ marginBottom: '0.8rem', padding: '0.55rem 0.95rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
+                >
+                  Re-enter admin credentials
+                </button>
+              )}
+              {(!hasStoredAdminCredentials || showAdminUnlock) && (
+                <div style={{ display: 'grid', gap: '0.65rem' }}>
+                  <input
+                    type="text"
+                    value={adminUsernameInput}
+                    onChange={(e) => setAdminUsernameInput(e.target.value)}
+                    placeholder="Admin username"
+                    style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                  />
+                  <input
+                    type="password"
+                    value={adminPasswordInput}
+                    onChange={(e) => setAdminPasswordInput(e.target.value)}
+                    placeholder="Admin password required for media actions"
+                    style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleStoreAdminPassword}
+                    disabled={adminPasswordSaving}
+                    style={{ alignSelf: 'flex-start', padding: '0.55rem 0.95rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
+                  >
+                    {adminPasswordSaving ? 'Checking…' : 'Unlock admin media actions'}
+                  </button>
+                  {adminPasswordStatus && (
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: adminPasswordStatus.toLowerCase().includes('unlocked') ? '#4caf50' : '#e55' }}>
+                      {adminPasswordStatus}
+                    </p>
+                  )}
+                </div>
+              )}
+              {photoStatus && (
+                <p style={{ marginBottom: 0, marginTop: '0.65rem', fontSize: '0.82rem', color: photoStatus.toLowerCase().includes('failed') || photoStatus.toLowerCase().includes('required') || photoStatus.toLowerCase().includes('rejected') ? '#e55' : '#4caf50' }}>
+                  {photoStatus}
+                </p>
+              )}
+            </div>
+          )}
+          <div className="artwork-gallery">
+            {pastEvents.map((event) => (
+              <div key={event.id} className="artwork-card">
               <div className="artwork-image">
                 {isVideoUrl(event.image_url) ? (
                   <video src={event.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block' }} />
@@ -678,11 +735,14 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                   <div style={{ marginTop: '0.9rem' }}>
                     <button
                       type="button"
-                      onClick={() => handleRemovePastEventMedia(event)}
-                      disabled={photoRemovingId === event.id || photoUploading}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemovePastEventMedia(event);
+                      }}
+                      disabled={photoRemovingId === event.id || photoUploading || !hasStoredAdminCredentials}
                       style={{ marginBottom: '0.6rem', padding: '0.45rem 0.75rem', borderRadius: '10px', border: '1px solid color-mix(in srgb, #c34646 70%, var(--border-color-strong))', background: 'color-mix(in srgb, #c34646 20%, transparent)', color: 'var(--text-color)', cursor: 'pointer' }}
                     >
-                      {photoRemovingId === event.id ? 'Removing…' : 'Remove media'}
+                      {photoRemovingId === event.id ? 'Removing…' : hasStoredAdminCredentials ? 'Remove media' : 'Unlock admin first'}
                     </button>
                     <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.82rem', opacity: 0.75 }}>Connect this completed event to a button</label>
                     <select
@@ -709,9 +769,10 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                   </div>
                 )}
               </div>
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {selectedEventId && !loading && !selectedEventMeta && selectedPastEventItems.length === 0 && (
