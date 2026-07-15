@@ -10,6 +10,20 @@ const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_VIDEO_SECONDS = 4 * 60;
 
 const isVideoUrl = (value = '') => /\.(mp4|webm|ogg)(\?.*)?$/i.test(value);
+const VALID_MEDIA_ROTATIONS = [0, 90, 180, 270];
+
+const normalizeMediaRotation = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  const normalized = ((parsed % 360) + 360) % 360;
+  return VALID_MEDIA_ROTATIONS.includes(normalized) ? normalized : 0;
+};
+
+const rotateMediaByStep = (currentRotation, step) => {
+  const current = normalizeMediaRotation(currentRotation);
+  const next = ((current + step) % 360 + 360) % 360;
+  return normalizeMediaRotation(next);
+};
 
 const getFileDuration = (file) =>
   new Promise((resolve, reject) => {
@@ -48,7 +62,7 @@ const loadPastEventsData = async () => {
   const [galleryRes, eventsRes, guestsRes] = await Promise.all([
     supabase
       .from(GALLERY_TABLE)
-      .select('id, title, artist, description, medium, year, story, image_url, event_id, event_date, event_time, event_location, created_at')
+      .select('id, title, artist, description, medium, year, story, image_url, event_id, event_date, event_time, event_location, media_rotation, created_at')
       .order('created_at', { ascending: false }),
     supabase
       .from('events')
@@ -98,6 +112,8 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     subtitle: '',
     items: [],
   });
+  const [mediaRotationDrafts, setMediaRotationDrafts] = useState({});
+  const [savingMediaRotationId, setSavingMediaRotationId] = useState(null);
 
   const selectedEventId = searchParams.get('event');
 
@@ -239,16 +255,31 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const hasMediaAdminAccess = clerkAdminActive || hasStoredAdminCredentials;
 
   const openMediaViewer = ({ title, subtitle, items }) => {
+    const nextItems = Array.isArray(items) ? items : [];
+    const nextDrafts = {};
+    nextItems.forEach((item) => {
+      nextDrafts[item.id] = normalizeMediaRotation(item.media_rotation);
+    });
+
+    setMediaRotationDrafts(nextDrafts);
     setMediaViewer({
       open: true,
       title: title || 'Past event media',
       subtitle: subtitle || '',
-      items: Array.isArray(items) ? items : [],
+      items: nextItems,
     });
   };
 
   const closeMediaViewer = () => {
     setMediaViewer((previous) => ({ ...previous, open: false }));
+  };
+
+  const getEffectiveMediaRotation = (item) => {
+    const draftValue = mediaRotationDrafts[item.id];
+    if (typeof draftValue === 'number') {
+      return normalizeMediaRotation(draftValue);
+    }
+    return normalizeMediaRotation(item.media_rotation);
   };
 
   const buildAdminRequestHeaders = ({ anonKey, includeJson = false } = {}) => {
@@ -550,11 +581,98 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         items: previous.items.filter((mediaItem) => mediaItem.id !== item.id),
         open: previous.items.length > 1 ? previous.open : false,
       }));
+      setMediaRotationDrafts((previous) => {
+        const next = { ...previous };
+        delete next[item.id];
+        return next;
+      });
       setPhotoStatus(`Removed ${item.title || 'media item'} from this past event.`);
     } catch (error) {
       setPhotoStatus(error instanceof Error ? error.message : 'Failed to remove this media item.');
     } finally {
       setPhotoRemovingId(null);
+    }
+  };
+
+  const handleRotateMediaPreview = (itemId, step) => {
+    setMediaRotationDrafts((previous) => {
+      const current = normalizeMediaRotation(previous[itemId] ?? 0);
+      return {
+        ...previous,
+        [itemId]: rotateMediaByStep(current, step),
+      };
+    });
+  };
+
+  const handleSaveMediaRotation = async (item) => {
+    const targetRotation = getEffectiveMediaRotation(item);
+    const currentRotation = normalizeMediaRotation(item.media_rotation);
+    if (targetRotation === currentRotation) {
+      return;
+    }
+
+    const adminUsername = getLegacyAdminUsername();
+    const adminPassword = getLegacyAdminPassword();
+    const useLegacyAdminAuth = !clerkAdminActive;
+    if (useLegacyAdminAuth && (!adminUsername || !adminPassword)) {
+      setPhotoStatus('Admin login is required to rotate this video. Sign in on the Account page first.');
+      return;
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) {
+      setPhotoStatus('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+      return;
+    }
+
+    setSavingMediaRotationId(item.id);
+    setPhotoStatus('');
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/update-past-event-media-rotation`, {
+        method: 'POST',
+        headers: buildAdminRequestHeaders({ anonKey, includeJson: true }),
+        body: JSON.stringify(
+          useLegacyAdminAuth
+            ? {
+              galleryItemId: item.id,
+              mediaRotation: targetRotation,
+              adminUsername,
+              adminPassword,
+            }
+            : {
+              galleryItemId: item.id,
+              mediaRotation: targetRotation,
+            }
+        ),
+      });
+
+      const responseBody = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid')) {
+          resetStoredAdminCredentials();
+          throw new Error('Your admin session expired on this site. Sign in again on the Account page, then retry video rotation.');
+        }
+        if (response.status === 401) {
+          resetStoredAdminCredentials();
+          throw new Error('Video rotation request was rejected (401). Sign in again on the Account page and try again.');
+        }
+        throw new Error(responseBody?.error || 'Failed to save video rotation.');
+      }
+
+      const applyRotation = (entry) =>
+        entry.id === item.id ? { ...entry, media_rotation: targetRotation } : entry;
+
+      setPastEvents((previous) => previous.map(applyRotation));
+      setMediaViewer((previous) => ({
+        ...previous,
+        items: previous.items.map(applyRotation),
+      }));
+      setPhotoStatus('Video orientation saved.');
+    } catch (error) {
+      setPhotoStatus(error instanceof Error ? error.message : 'Failed to save video rotation.');
+    } finally {
+      setSavingMediaRotationId(null);
     }
   };
 
@@ -582,7 +700,21 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
             <div style={{ borderRadius: '18px', overflow: 'hidden', minHeight: '220px', background: 'color-mix(in srgb, var(--nav-link-bg) 75%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {selectedPastEvent ? (
                 isVideoUrl(selectedPastEvent.image_url) ? (
-                  <video src={selectedPastEvent.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block' }} />
+                  <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000' }}>
+                    <video
+                      src={selectedPastEvent.image_url}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      style={{
+                        width: '100%',
+                        display: 'block',
+                        objectFit: 'contain',
+                        transform: `rotate(${normalizeMediaRotation(selectedPastEvent.media_rotation)}deg)`,
+                        transformOrigin: 'center center',
+                      }}
+                    />
+                  </div>
                 ) : (
                   <img src={selectedPastEvent.image_url} alt={selectedPastEvent.title} style={{ width: '100%', display: 'block' }} />
                 )
@@ -713,7 +845,21 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
               <div key={group.key} className="artwork-card">
               <div className="artwork-image">
                 {isVideoUrl(group.coverItem.image_url) ? (
-                  <video src={group.coverItem.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block' }} />
+                  <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000' }}>
+                    <video
+                      src={group.coverItem.image_url}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      style={{
+                        width: '100%',
+                        display: 'block',
+                        objectFit: 'contain',
+                        transform: `rotate(${normalizeMediaRotation(group.coverItem.media_rotation)}deg)`,
+                        transformOrigin: 'center center',
+                      }}
+                    />
+                  </div>
                 ) : (
                   <img src={group.coverItem.image_url} alt={group.title} />
                 )}
@@ -830,7 +976,22 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                 >
                   <div style={{ position: 'relative' }}>
                     {isVideoUrl(item.image_url) ? (
-                      <video src={item.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block', maxHeight: '48vh', objectFit: 'cover' }} />
+                      <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '220px', background: '#000' }}>
+                        <video
+                          src={item.image_url}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          style={{
+                            width: '100%',
+                            display: 'block',
+                            maxHeight: '70vh',
+                            objectFit: 'contain',
+                            transform: `rotate(${getEffectiveMediaRotation(item)}deg)`,
+                            transformOrigin: 'center center',
+                          }}
+                        />
+                      </div>
                     ) : (
                       <img src={item.image_url} alt={item.title} style={{ width: '100%', display: 'block', maxHeight: '48vh', objectFit: 'cover' }} />
                     )}
@@ -850,6 +1011,35 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                     <p style={{ margin: '0.35rem 0 0', fontSize: '0.84rem', color: 'var(--muted-color)' }}>
                       {item.medium || (isVideoUrl(item.image_url) ? 'Event Video' : 'Event Photo')}
                     </p>
+                    {isVideoUrl(item.image_url) && isAdmin && hasMediaAdminAccess && (
+                      <div style={{ marginTop: '0.55rem', display: 'flex', gap: '0.45rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleRotateMediaPreview(item.id, -90)}
+                          style={{ padding: '0.35rem 0.7rem', borderRadius: '10px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
+                        >
+                          Rotate -90°
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRotateMediaPreview(item.id, 90)}
+                          style={{ padding: '0.35rem 0.7rem', borderRadius: '10px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
+                        >
+                          Rotate +90°
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveMediaRotation(item)}
+                          disabled={savingMediaRotationId === item.id || getEffectiveMediaRotation(item) === normalizeMediaRotation(item.media_rotation)}
+                          style={{ padding: '0.35rem 0.7rem', borderRadius: '10px', border: '1px solid var(--border-color-strong)', background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)', color: '#08111f', cursor: 'pointer' }}
+                        >
+                          {savingMediaRotationId === item.id ? 'Saving…' : 'Save orientation'}
+                        </button>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--muted-color)' }}>
+                          {getEffectiveMediaRotation(item)}°
+                        </p>
+                      </div>
+                    )}
                     {item.description && (
                       <p style={{ margin: '0.45rem 0 0', fontSize: '0.88rem' }}>{item.description}</p>
                     )}

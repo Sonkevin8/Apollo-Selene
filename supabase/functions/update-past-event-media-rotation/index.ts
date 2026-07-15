@@ -73,6 +73,13 @@ const verifyClerkAdmin = async (request: Request) => {
   return Boolean(email && adminEmails.has(email));
 };
 
+const normalizeRotation = (value: unknown): number => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return NaN;
+  const normalized = ((parsed % 360) + 360) % 360;
+  return normalized;
+};
+
 serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -100,9 +107,9 @@ serve(async (request) => {
       return jsonResponse(500, { error: 'Missing required Supabase secrets.' });
     }
 
-    const formData = await request.formData();
-    const suppliedUsername = String(formData.get('adminUsername') || '');
-    const suppliedPassword = String(formData.get('adminPassword') || '');
+    const body = await request.json().catch(() => ({}));
+    const suppliedUsername = body?.adminUsername ? String(body.adminUsername) : '';
+    const suppliedPassword = body?.adminPassword ? String(body.adminPassword) : '';
 
     const legacyAuthorized =
       legacyAuthConfigured &&
@@ -119,62 +126,26 @@ serve(async (request) => {
       return jsonResponse(401, { error: 'Stored admin session is invalid. Open Admin Login and sign in again.' });
     }
 
-    const file = formData.get('file');
-    if (!(file instanceof File)) {
-      return jsonResponse(400, { error: 'file is required.' });
+    const galleryItemId = body?.galleryItemId ? String(body.galleryItemId) : '';
+    if (!galleryItemId) {
+      return jsonResponse(400, { error: 'galleryItemId is required.' });
     }
 
-    const eventId = String(formData.get('eventId') || '');
-    if (!eventId) {
-      return jsonResponse(400, { error: 'eventId is required.' });
+    const mediaRotation = normalizeRotation(body?.mediaRotation);
+    if (![0, 90, 180, 270].includes(mediaRotation)) {
+      return jsonResponse(400, { error: 'mediaRotation must be one of 0, 90, 180, or 270.' });
     }
-
-    const title = String(formData.get('title') || 'Untitled Event Media');
-    const artist = String(formData.get('artist') || 'Apollo Selene');
-    const description = String(formData.get('description') || 'Additional media added from a past event.');
-    const medium = String(formData.get('medium') || 'Event Media');
-    const year = String(formData.get('year') || '');
-    const story = String(formData.get('story') || '');
-    const eventDate = formData.get('eventDate') ? String(formData.get('eventDate')) : null;
-    const eventTime = formData.get('eventTime') ? String(formData.get('eventTime')) : null;
-    const eventLocation = formData.get('eventLocation') ? String(formData.get('eventLocation')) : null;
-
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const objectPath = `event-photos/${eventId}/${Date.now()}-${safeName}`;
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const { error: storageError } = await supabase.storage
-      .from('gallery')
-      .upload(objectPath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type || undefined,
-      });
-
-    if (storageError) {
-      return jsonResponse(500, { error: storageError.message });
-    }
-
-    const { data: publicData } = supabase.storage.from('gallery').getPublicUrl(objectPath);
-
-    const { data, error } = await supabase.from('gallery_items').insert([
-      {
-        title,
-        artist,
-        description,
-        medium,
-        year,
-        story,
-        image_url: publicData.publicUrl,
-        event_id: eventId,
-        event_date: eventDate,
-        event_time: eventTime,
-        event_location: eventLocation,
-      },
-    ]).select().single();
+    const { data, error } = await supabase
+      .from('gallery_items')
+      .update({ media_rotation: mediaRotation })
+      .eq('id', galleryItemId)
+      .select('id, media_rotation')
+      .single();
 
     if (error) {
       return jsonResponse(500, { error: error.message });
