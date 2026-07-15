@@ -14,6 +14,65 @@ const jsonResponse = (status: number, body: Record<string, unknown>) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
+const parseAdminEmails = () => {
+  const raw = Deno.env.get('ADMIN_EMAILS') || Deno.env.get('VITE_ADMIN_EMAILS') || '';
+  return new Set(
+    raw
+      .split(',')
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean)
+  );
+};
+
+const verifyClerkAdmin = async (request: Request) => {
+  const clerkSecretKey = Deno.env.get('CLERK_SECRET_KEY') || '';
+  const adminEmails = parseAdminEmails();
+  const sessionId = request.headers.get('x-clerk-session-id') || '';
+  const userIdHeader = request.headers.get('x-clerk-user-id') || '';
+
+  if (!clerkSecretKey || !sessionId || !userIdHeader || adminEmails.size === 0) {
+    return false;
+  }
+
+  const sessionResponse = await fetch(`https://api.clerk.com/v1/sessions/${encodeURIComponent(sessionId)}`, {
+    headers: {
+      Authorization: `Bearer ${clerkSecretKey}`,
+    },
+  });
+
+  if (!sessionResponse.ok) {
+    return false;
+  }
+
+  const sessionData = await sessionResponse.json().catch(() => null);
+  const sessionUserId = sessionData?.user_id ? String(sessionData.user_id) : '';
+  const sessionStatus = sessionData?.status ? String(sessionData.status).toLowerCase() : '';
+  if (!sessionUserId || sessionUserId !== userIdHeader || (sessionStatus && sessionStatus !== 'active')) {
+    return false;
+  }
+
+  const userResponse = await fetch(`https://api.clerk.com/v1/users/${encodeURIComponent(sessionUserId)}`, {
+    headers: {
+      Authorization: `Bearer ${clerkSecretKey}`,
+    },
+  });
+
+  if (!userResponse.ok) {
+    return false;
+  }
+
+  const userData = await userResponse.json().catch(() => null);
+  const emailAddresses = Array.isArray(userData?.email_addresses) ? userData.email_addresses : [];
+  const primaryEmailId = userData?.primary_email_address_id ? String(userData.primary_email_address_id) : '';
+  const primaryEmail =
+    emailAddresses.find((entry: Record<string, unknown>) => String(entry?.id || '') === primaryEmailId) ||
+    emailAddresses[0] ||
+    null;
+  const email = primaryEmail?.email_address ? String(primaryEmail.email_address).toLowerCase() : '';
+
+  return Boolean(email && adminEmails.has(email));
+};
+
 serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -26,11 +85,15 @@ serve(async (request) => {
   try {
     const adminUsername = Deno.env.get('ADMIN_USERNAME');
     const adminPassword = Deno.env.get('ADMIN_PASSWORD');
+    const clerkSecretKey = Deno.env.get('CLERK_SECRET_KEY');
+    const adminEmails = parseAdminEmails();
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!adminUsername || !adminPassword) {
-      return jsonResponse(500, { error: 'Admin credentials are not configured in Supabase secrets.' });
+    const legacyAuthConfigured = Boolean(adminUsername && adminPassword);
+    const clerkAuthConfigured = Boolean(clerkSecretKey && adminEmails.size > 0);
+    if (!legacyAuthConfigured && !clerkAuthConfigured) {
+      return jsonResponse(500, { error: 'Admin auth is not configured (set ADMIN_USERNAME/ADMIN_PASSWORD or CLERK_SECRET_KEY + ADMIN_EMAILS).' });
     }
 
     if (!supabaseUrl || !supabaseServiceRoleKey) {
@@ -41,11 +104,18 @@ serve(async (request) => {
     const suppliedUsername = body?.adminUsername ? String(body.adminUsername) : '';
     const suppliedPassword = body?.adminPassword ? String(body.adminPassword) : '';
 
-    if (!suppliedUsername || !suppliedPassword) {
-      return jsonResponse(401, { error: 'Admin login is required. Enter admin username and password in the unlock fields.' });
-    }
+    const legacyAuthorized =
+      legacyAuthConfigured &&
+      Boolean(suppliedUsername) &&
+      Boolean(suppliedPassword) &&
+      suppliedUsername === adminUsername &&
+      suppliedPassword === adminPassword;
+    const clerkAuthorized = await verifyClerkAdmin(request);
 
-    if (suppliedUsername !== adminUsername || suppliedPassword !== adminPassword) {
+    if (!legacyAuthorized && !clerkAuthorized) {
+      if (legacyAuthConfigured && (!suppliedUsername || !suppliedPassword)) {
+        return jsonResponse(401, { error: 'Admin login is required. Enter admin username and password in the unlock fields.' });
+      }
       return jsonResponse(401, { error: 'Stored admin session is invalid. Open Admin Login and sign in again.' });
     }
 

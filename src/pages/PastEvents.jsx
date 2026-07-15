@@ -93,6 +93,10 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const [adminPasswordStatus, setAdminPasswordStatus] = useState('');
   const [adminPasswordSaving, setAdminPasswordSaving] = useState(false);
   const [showAdminUnlock, setShowAdminUnlock] = useState(false);
+  const [clerkAdminActive, setClerkAdminActive] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return Boolean(window.Clerk?.session);
+  });
 
   const selectedEventId = searchParams.get('event');
 
@@ -130,11 +134,81 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     loadPastEvents();
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const syncClerkAdmin = () => {
+      setClerkAdminActive(Boolean(window.Clerk?.session));
+    };
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        syncClerkAdmin();
+      }
+    };
+
+    let removeClerkListener = null;
+    if (typeof window.Clerk?.addListener === 'function') {
+      try {
+        const unsubscribe = window.Clerk.addListener(() => {
+          syncClerkAdmin();
+        });
+        if (typeof unsubscribe === 'function') {
+          removeClerkListener = unsubscribe;
+        }
+      } catch {
+        // No-op: Clerk listener API availability can vary by runtime.
+      }
+    }
+
+    syncClerkAdmin();
+    window.addEventListener('focus', syncClerkAdmin);
+    window.addEventListener('clerk:loaded', syncClerkAdmin);
+    window.addEventListener('clerk:session-updated', syncClerkAdmin);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', syncClerkAdmin);
+      window.removeEventListener('clerk:loaded', syncClerkAdmin);
+      window.removeEventListener('clerk:session-updated', syncClerkAdmin);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (typeof removeClerkListener === 'function') {
+        removeClerkListener();
+      }
+    };
+  }, []);
+
   const selectedGuests = selectedEventId ? (eventGuests[selectedEventId] || []) : [];
   const selectedPastEvent = selectedPastEventItems[0] || null;
   const legacyAdminUsername = getLegacyAdminUsername();
   const legacyAdminPassword = getLegacyAdminPassword();
   const hasStoredAdminCredentials = Boolean(legacyAdminUsername && legacyAdminPassword);
+  const hasMediaAdminAccess = clerkAdminActive || hasStoredAdminCredentials;
+
+  const buildAdminRequestHeaders = ({ anonKey, includeJson = false } = {}) => {
+    const headers = {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+    };
+
+    if (includeJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    if (clerkAdminActive && typeof window !== 'undefined') {
+      const sessionId = window.Clerk?.session?.id;
+      const userId = window.Clerk?.user?.id || window.Clerk?.session?.user?.id;
+      if (sessionId) {
+        headers['x-clerk-session-id'] = String(sessionId);
+      }
+      if (userId) {
+        headers['x-clerk-user-id'] = String(userId);
+      }
+    }
+
+    return headers;
+  };
 
   const resetStoredAdminCredentials = () => {
     clearLegacyAdminSession({ clearUsername: true, clearPassword: true });
@@ -187,6 +261,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
 
     const adminUsername = getLegacyAdminUsername();
     const adminPassword = getLegacyAdminPassword();
+    const useLegacyAdminAuth = !clerkAdminActive;
 
     if (!photoFiles.length) {
       setPhotoStatus('Choose at least one photo or video to upload.');
@@ -241,7 +316,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         throw new Error('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
       }
 
-      if (!adminUsername || !adminPassword) {
+      if (useLegacyAdminAuth && (!adminUsername || !adminPassword)) {
         throw new Error('Admin login is required to upload media to this past event.');
       }
 
@@ -262,15 +337,14 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         if (eventDate) formData.append('eventDate', eventDate);
         if (eventTime) formData.append('eventTime', eventTime);
         if (eventLocation) formData.append('eventLocation', eventLocation);
-        formData.append('adminUsername', adminUsername);
-        formData.append('adminPassword', adminPassword);
+        if (useLegacyAdminAuth) {
+          formData.append('adminUsername', adminUsername);
+          formData.append('adminPassword', adminPassword);
+        }
 
         const response = await fetch(`${supabaseUrl}/functions/v1/upload-past-event-media`, {
           method: 'POST',
-          headers: {
-            apikey: anonKey,
-            Authorization: `Bearer ${anonKey}`,
-          },
+          headers: buildAdminRequestHeaders({ anonKey }),
           body: formData,
         });
 
@@ -330,12 +404,23 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     try {
       const adminUsername = getLegacyAdminUsername();
       const adminPassword = getLegacyAdminPassword();
-      if (!adminUsername || !adminPassword) {
+      const useLegacyAdminAuth = !clerkAdminActive;
+      if (useLegacyAdminAuth && (!adminUsername || !adminPassword)) {
         throw new Error('Admin login is required to link this past event.');
       }
 
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (!anonKey) {
+        throw new Error('Supabase anon key missing (VITE_SUPABASE_ANON_KEY).');
+      }
+
+      const body = useLegacyAdminAuth
+        ? { ...payload, adminUsername, adminPassword }
+        : payload;
+
       const { data, error } = await supabase.functions.invoke('link-past-event', {
-        body: { ...payload, adminUsername, adminPassword },
+        body,
+        headers: buildAdminRequestHeaders({ anonKey }),
       });
       if (error) {
         if (typeof data?.error === 'string' && data.error.includes('Stored admin session is invalid')) {
@@ -379,7 +464,8 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
 
     const adminUsername = getLegacyAdminUsername();
     const adminPassword = getLegacyAdminPassword();
-    if (!adminUsername || !adminPassword) {
+    const useLegacyAdminAuth = !clerkAdminActive;
+    if (useLegacyAdminAuth && (!adminUsername || !adminPassword)) {
       setPhotoStatus('Admin login is required to remove this media item.');
       setShowAdminUnlock(true);
       return;
@@ -402,16 +488,18 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     try {
       const response = await fetch(`${supabaseUrl}/functions/v1/remove-past-event-media`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-        },
-        body: JSON.stringify({
-          galleryItemId: item.id,
-          adminUsername,
-          adminPassword,
-        }),
+        headers: buildAdminRequestHeaders({ anonKey, includeJson: true }),
+        body: JSON.stringify(
+          useLegacyAdminAuth
+            ? {
+              galleryItemId: item.id,
+              adminUsername,
+              adminPassword,
+            }
+            : {
+              galleryItemId: item.id,
+            }
+        ),
       });
 
       const responseBody = await response.json().catch(() => ({}));
@@ -492,7 +580,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                   <p style={{ marginTop: 0, fontSize: '0.88rem', color: 'var(--muted-color)' }}>
                     Upload extra images or a short video from this finished event. Videos must be under 4 minutes.
                   </p>
-                  {hasStoredAdminCredentials && !showAdminUnlock && (
+                  {!clerkAdminActive && hasStoredAdminCredentials && !showAdminUnlock && (
                     <button
                       type="button"
                       onClick={() => {
@@ -504,7 +592,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                       Re-enter admin credentials
                     </button>
                   )}
-                  {(!hasStoredAdminCredentials || showAdminUnlock) && (
+                  {!clerkAdminActive && (!hasStoredAdminCredentials || showAdminUnlock) && (
                     <div style={{ display: 'grid', gap: '0.65rem', marginBottom: '0.8rem' }}>
                       <input
                         type="text"
@@ -580,7 +668,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                     <button
                       type="button"
                       onClick={() => handleAddPhotosToEvent(selectedEventMeta || selectedPastEvent)}
-                      disabled={photoUploading || photoFiles.length === 0 || !hasStoredAdminCredentials}
+                      disabled={photoUploading || photoFiles.length === 0 || !hasMediaAdminAccess}
                       style={{ alignSelf: 'flex-start', padding: '0.55rem 0.95rem', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)', color: '#08111f', cursor: 'pointer' }}
                     >
                       {photoUploading ? 'Adding photos…' : 'Add photos to this event'}
@@ -618,10 +706,10 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                           <button
                             type="button"
                             onClick={() => handleRemovePastEventMedia(item)}
-                            disabled={photoRemovingId === item.id || photoUploading}
+                            disabled={photoRemovingId === item.id || photoUploading || !hasMediaAdminAccess}
                             style={{ marginTop: '0.65rem', padding: '0.45rem 0.75rem', borderRadius: '10px', border: '1px solid color-mix(in srgb, #c34646 70%, var(--border-color-strong))', background: 'color-mix(in srgb, #c34646 20%, transparent)', color: 'var(--text-color)', cursor: 'pointer' }}
                           >
-                            {photoRemovingId === item.id ? 'Removing…' : 'Remove media'}
+                            {photoRemovingId === item.id ? 'Removing…' : hasMediaAdminAccess ? 'Remove media' : 'Unlock admin first'}
                           </button>
                         )}
                       </div>
@@ -654,9 +742,11 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
             <div className="card" style={{ marginBottom: '1rem' }}>
               <p className="section-kicker" style={{ marginBottom: '0.45rem' }}>Admin media actions</p>
               <p style={{ marginTop: 0, fontSize: '0.9rem', color: 'var(--muted-color)' }}>
-                Unlock admin credentials in this browser to remove past-event media from the gallery.
+                {clerkAdminActive
+                  ? 'Clerk admin session detected. Media actions are unlocked for this session.'
+                  : 'Unlock admin credentials in this browser to remove past-event media from the gallery.'}
               </p>
-              {hasStoredAdminCredentials && !showAdminUnlock && (
+              {!clerkAdminActive && hasStoredAdminCredentials && !showAdminUnlock && (
                 <button
                   type="button"
                   onClick={() => {
@@ -668,7 +758,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                   Re-enter admin credentials
                 </button>
               )}
-              {(!hasStoredAdminCredentials || showAdminUnlock) && (
+              {!clerkAdminActive && (!hasStoredAdminCredentials || showAdminUnlock) && (
                 <div style={{ display: 'grid', gap: '0.65rem' }}>
                   <input
                     type="text"
@@ -739,10 +829,10 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                         e.stopPropagation();
                         handleRemovePastEventMedia(event);
                       }}
-                      disabled={photoRemovingId === event.id || photoUploading || !hasStoredAdminCredentials}
+                      disabled={photoRemovingId === event.id || photoUploading || !hasMediaAdminAccess}
                       style={{ marginBottom: '0.6rem', padding: '0.45rem 0.75rem', borderRadius: '10px', border: '1px solid color-mix(in srgb, #c34646 70%, var(--border-color-strong))', background: 'color-mix(in srgb, #c34646 20%, transparent)', color: 'var(--text-color)', cursor: 'pointer' }}
                     >
-                      {photoRemovingId === event.id ? 'Removing…' : hasStoredAdminCredentials ? 'Remove media' : 'Unlock admin first'}
+                      {photoRemovingId === event.id ? 'Removing…' : hasMediaAdminAccess ? 'Remove media' : 'Unlock admin first'}
                     </button>
                     <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.82rem', opacity: 0.75 }}>Connect this completed event to a button</label>
                     <select
