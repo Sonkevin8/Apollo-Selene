@@ -99,6 +99,8 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     items: [],
   });
   const [videoPortraitHints, setVideoPortraitHints] = useState({});
+  const [mediaDescriptionDrafts, setMediaDescriptionDrafts] = useState({});
+  const [savingMediaDescriptionId, setSavingMediaDescriptionId] = useState(null);
 
   const selectedEventId = searchParams.get('event');
 
@@ -243,6 +245,12 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
 
   const openMediaViewer = ({ title, subtitle, items }) => {
     const nextItems = Array.isArray(items) ? items : [];
+    const nextDescriptionDrafts = {};
+    nextItems.forEach((item) => {
+      nextDescriptionDrafts[item.id] = item.description || '';
+    });
+
+    setMediaDescriptionDrafts(nextDescriptionDrafts);
     setMediaViewer({
       open: true,
       title: title || 'Past event media',
@@ -586,11 +594,95 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         delete next[item.id];
         return next;
       });
+      setMediaDescriptionDrafts((previous) => {
+        const next = { ...previous };
+        delete next[item.id];
+        return next;
+      });
       setPhotoStatus(`Removed ${item.title || 'media item'} from this past event.`);
     } catch (error) {
       setPhotoStatus(error instanceof Error ? error.message : 'Failed to remove this media item.');
     } finally {
       setPhotoRemovingId(null);
+    }
+  };
+
+  const handleMediaDescriptionChange = (itemId, nextValue) => {
+    setMediaDescriptionDrafts((previous) => ({
+      ...previous,
+      [itemId]: nextValue,
+    }));
+  };
+
+  const handleSaveMediaDescription = async (item) => {
+    const nextDescription = (mediaDescriptionDrafts[item.id] || '').trim();
+    const currentDescription = (item.description || '').trim();
+    if (nextDescription === currentDescription) {
+      return;
+    }
+
+    const adminUsername = getLegacyAdminUsername();
+    const adminPassword = getLegacyAdminPassword();
+    const useLegacyAdminAuth = !clerkAdminActive;
+    if (useLegacyAdminAuth && (!adminUsername || !adminPassword)) {
+      setPhotoStatus('Admin login is required to edit media descriptions. Sign in on the Account page first.');
+      return;
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) {
+      setPhotoStatus('Supabase env vars missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+      return;
+    }
+
+    setSavingMediaDescriptionId(item.id);
+    setPhotoStatus('');
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/update-past-event-media-description`, {
+        method: 'POST',
+        headers: buildAdminRequestHeaders({ anonKey, includeJson: true }),
+        body: JSON.stringify(
+          useLegacyAdminAuth
+            ? {
+              galleryItemId: item.id,
+              description: nextDescription,
+              adminUsername,
+              adminPassword,
+            }
+            : {
+              galleryItemId: item.id,
+              description: nextDescription,
+            }
+        ),
+      });
+
+      const responseBody = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid')) {
+          resetStoredAdminCredentials();
+          throw new Error('Your admin session expired on this site. Sign in again on the Account page, then retry saving this description.');
+        }
+        if (response.status === 401) {
+          resetStoredAdminCredentials();
+          throw new Error('Description update was rejected (401). Sign in again on the Account page and try again.');
+        }
+        throw new Error(responseBody?.error || 'Failed to update media description.');
+      }
+
+      const applyDescription = (entry) =>
+        entry.id === item.id ? { ...entry, description: nextDescription } : entry;
+
+      setPastEvents((previous) => previous.map(applyDescription));
+      setMediaViewer((previous) => ({
+        ...previous,
+        items: previous.items.map(applyDescription),
+      }));
+      setPhotoStatus('Media description updated.');
+    } catch (error) {
+      setPhotoStatus(error instanceof Error ? error.message : 'Failed to update media description.');
+    } finally {
+      setSavingMediaDescriptionId(null);
     }
   };
 
@@ -939,8 +1031,28 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                         Portrait video layout detected.
                       </p>
                     )}
-                    {item.description && (
-                      <p style={{ margin: '0.45rem 0 0', fontSize: '0.88rem' }}>{item.description}</p>
+                    {isAdmin && hasMediaAdminAccess ? (
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <textarea
+                          value={mediaDescriptionDrafts[item.id] ?? (item.description || '')}
+                          onChange={(event) => handleMediaDescriptionChange(item.id, event.target.value)}
+                          rows={3}
+                          placeholder="Add a media description"
+                          style={{ width: '100%', marginBottom: '0.55rem', padding: '0.5rem 0.6rem', borderRadius: '10px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveMediaDescription(item)}
+                          disabled={savingMediaDescriptionId === item.id || (mediaDescriptionDrafts[item.id] ?? '').trim() === (item.description || '').trim()}
+                          style={{ padding: '0.35rem 0.7rem', borderRadius: '10px', border: '1px solid var(--border-color-strong)', background: 'linear-gradient(135deg, #d9e4ff, #8aa4ca)', color: '#08111f', cursor: 'pointer' }}
+                        >
+                          {savingMediaDescriptionId === item.id ? 'Saving…' : 'Save description'}
+                        </button>
+                      </div>
+                    ) : (
+                      item.description && (
+                        <p style={{ margin: '0.45rem 0 0', fontSize: '0.88rem' }}>{item.description}</p>
+                      )
                     )}
                   </div>
                 </div>
