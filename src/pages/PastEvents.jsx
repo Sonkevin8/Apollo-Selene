@@ -48,7 +48,7 @@ const loadPastEventsData = async () => {
   const [galleryRes, eventsRes, guestsRes] = await Promise.all([
     supabase
       .from(GALLERY_TABLE)
-      .select('id, title, artist, description, medium, year, story, image_url, event_id, event_date, event_time, event_location')
+      .select('id, title, artist, description, medium, year, story, image_url, event_id, event_date, event_time, event_location, created_at')
       .order('created_at', { ascending: false }),
     supabase
       .from('events')
@@ -88,14 +88,15 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const [photoStatus, setPhotoStatus] = useState('');
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoRemovingId, setPhotoRemovingId] = useState(null);
-  const [adminUsernameInput, setAdminUsernameInput] = useState('');
-  const [adminPasswordInput, setAdminPasswordInput] = useState('');
-  const [adminPasswordStatus, setAdminPasswordStatus] = useState('');
-  const [adminPasswordSaving, setAdminPasswordSaving] = useState(false);
-  const [showAdminUnlock, setShowAdminUnlock] = useState(false);
   const [clerkAdminActive, setClerkAdminActive] = useState(() => {
     if (typeof window === 'undefined') return false;
     return Boolean(window.Clerk?.session);
+  });
+  const [mediaViewer, setMediaViewer] = useState({
+    open: false,
+    title: '',
+    subtitle: '',
+    items: [],
   });
 
   const selectedEventId = searchParams.get('event');
@@ -104,6 +105,57 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     () => pastEvents.filter((item) => String(item.event_id) === String(selectedEventId)),
     [pastEvents, selectedEventId]
   );
+
+  const eventsById = useMemo(() => {
+    const map = new Map();
+    events.forEach((eventItem) => {
+      map.set(String(eventItem.id), eventItem);
+    });
+    return map;
+  }, [events]);
+
+  const groupedPastEvents = useMemo(() => {
+    const groups = new Map();
+
+    pastEvents.forEach((item) => {
+      const eventKey = item.event_id ? `event-${item.event_id}` : `media-${item.id}`;
+      const linkedEvent = item.event_id ? eventsById.get(String(item.event_id)) : null;
+
+      if (!groups.has(eventKey)) {
+        groups.set(eventKey, {
+          key: eventKey,
+          eventId: item.event_id || null,
+          title: linkedEvent?.title || item.title || 'Past event',
+          date: linkedEvent?.date || item.event_date || null,
+          time: linkedEvent?.time || item.event_time || null,
+          location: linkedEvent?.location || item.event_location || null,
+          description: linkedEvent?.description || item.description || '',
+          coverItem: item,
+          latestCreatedAt: item.created_at || null,
+          items: [],
+        });
+      }
+
+      const group = groups.get(eventKey);
+      group.items.push(item);
+
+      const groupCreatedAt = new Date(group.latestCreatedAt || 0).getTime();
+      const itemCreatedAt = new Date(item.created_at || 0).getTime();
+      if (itemCreatedAt > groupCreatedAt) {
+        group.latestCreatedAt = item.created_at || group.latestCreatedAt;
+      }
+
+      if (!isVideoUrl(item.image_url) && isVideoUrl(group.coverItem.image_url)) {
+        group.coverItem = item;
+      }
+    });
+
+    return Array.from(groups.values()).sort((a, b) => {
+      const aStamp = new Date(a.latestCreatedAt || a.date || 0).getTime();
+      const bStamp = new Date(b.latestCreatedAt || b.date || 0).getTime();
+      return bStamp - aStamp;
+    });
+  }, [pastEvents, eventsById]);
 
   const selectedEventMeta = useMemo(
     () => events.find((item) => String(item.id) === String(selectedEventId)),
@@ -186,6 +238,19 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const hasStoredAdminCredentials = Boolean(legacyAdminUsername && legacyAdminPassword);
   const hasMediaAdminAccess = clerkAdminActive || hasStoredAdminCredentials;
 
+  const openMediaViewer = ({ title, subtitle, items }) => {
+    setMediaViewer({
+      open: true,
+      title: title || 'Past event media',
+      subtitle: subtitle || '',
+      items: Array.isArray(items) ? items : [],
+    });
+  };
+
+  const closeMediaViewer = () => {
+    setMediaViewer((previous) => ({ ...previous, open: false }));
+  };
+
   const buildAdminRequestHeaders = ({ anonKey, includeJson = false } = {}) => {
     const headers = {
       apikey: anonKey,
@@ -213,45 +278,6 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const resetStoredAdminCredentials = () => {
     clearLegacyAdminSession({ clearUsername: true, clearPassword: true });
     setLegacyAdminSession();
-  };
-
-  const handleStoreAdminPassword = async () => {
-    if (!supabase) return;
-    const trimmedUsername = adminUsernameInput.trim();
-    const trimmedPassword = adminPasswordInput.trim();
-    if (!trimmedUsername) {
-      setAdminPasswordStatus('Enter the admin username for this site.');
-      return;
-    }
-    if (!trimmedPassword) {
-      setAdminPasswordStatus('Enter the admin password for this site.');
-      return;
-    }
-
-    setAdminPasswordSaving(true);
-    setAdminPasswordStatus('');
-    try {
-      const { data, error } = await supabase.functions.invoke('verify-admin', {
-        body: {
-          username: trimmedUsername,
-          password: trimmedPassword,
-        },
-      });
-
-      if (error || !data?.success) {
-        throw new Error('That admin username or password was not accepted.');
-      }
-
-      setLegacyAdminSession({ username: trimmedUsername, password: trimmedPassword });
-      setAdminUsernameInput('');
-      setAdminPasswordInput('');
-      setShowAdminUnlock(false);
-      setAdminPasswordStatus('Admin media actions unlocked for this browser.');
-    } catch (error) {
-      setAdminPasswordStatus(error instanceof Error ? error.message : 'Could not validate the admin password.');
-    } finally {
-      setAdminPasswordSaving(false);
-    }
   };
 
   const handleAddPhotosToEvent = async (event) => {
@@ -352,13 +378,11 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         if (!response.ok) {
           if (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid')) {
             resetStoredAdminCredentials();
-            setShowAdminUnlock(true);
-            throw new Error('Your admin session expired on this site. Re-enter your admin credentials in the unlock fields, then retry the upload.');
+            throw new Error('Your admin session expired on this site. Sign in again on the Account page, then retry the upload.');
           }
           if (response.status === 401) {
             resetStoredAdminCredentials();
-            setShowAdminUnlock(true);
-            throw new Error('Upload was rejected (401). Re-enter your admin credentials in the unlock fields and try again.');
+            throw new Error('Upload was rejected (401). Sign in again on the Account page and try again.');
           }
           throw new Error(responseBody?.error || `Failed to upload ${file.name}.`);
         }
@@ -425,13 +449,11 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
       if (error) {
         if (typeof data?.error === 'string' && data.error.includes('Stored admin session is invalid')) {
           resetStoredAdminCredentials();
-          setShowAdminUnlock(true);
-          throw new Error('Your admin session expired on this site. Re-enter your admin credentials in the unlock fields, then retry linking this event.');
+          throw new Error('Your admin session expired on this site. Sign in again on the Account page, then retry linking this event.');
         }
         if (error.status === 401) {
           resetStoredAdminCredentials();
-          setShowAdminUnlock(true);
-          throw new Error('Link request was rejected (401). Re-enter your admin credentials in the unlock fields and try again.');
+          throw new Error('Link request was rejected (401). Sign in again on the Account page and try again.');
         }
         throw new Error(data?.error || error.message || 'Failed to link this past event.');
       }
@@ -466,8 +488,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     const adminPassword = getLegacyAdminPassword();
     const useLegacyAdminAuth = !clerkAdminActive;
     if (useLegacyAdminAuth && (!adminUsername || !adminPassword)) {
-      setPhotoStatus('Admin login is required to remove this media item.');
-      setShowAdminUnlock(true);
+      setPhotoStatus('Admin login is required to remove this media item. Sign in on the Account page first.');
       return;
     }
 
@@ -506,13 +527,11 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
       if (!response.ok) {
         if (typeof responseBody?.error === 'string' && responseBody.error.includes('Stored admin session is invalid')) {
           resetStoredAdminCredentials();
-          setShowAdminUnlock(true);
-          throw new Error('Your admin session expired on this site. Re-enter your admin credentials in the unlock fields, then retry removing this media item.');
+          throw new Error('Your admin session expired on this site. Sign in again on the Account page, then retry removing this media item.');
         }
         if (response.status === 401) {
           resetStoredAdminCredentials();
-          setShowAdminUnlock(true);
-          throw new Error('Removal request was rejected (401). Re-enter your admin credentials in the unlock fields and try again.');
+          throw new Error('Removal request was rejected (401). Sign in again on the Account page and try again.');
         }
         throw new Error(responseBody?.error || 'Failed to remove this media item.');
       }
@@ -526,6 +545,11 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         nextGuests[guest.event_id].push(guest);
       });
       setEventGuests(nextGuests);
+      setMediaViewer((previous) => ({
+        ...previous,
+        items: previous.items.filter((mediaItem) => mediaItem.id !== item.id),
+        open: previous.items.length > 1 ? previous.open : false,
+      }));
       setPhotoStatus(`Removed ${item.title || 'media item'} from this past event.`);
     } catch (error) {
       setPhotoStatus(error instanceof Error ? error.message : 'Failed to remove this media item.');
@@ -574,55 +598,12 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
               <p>{selectedEventMeta?.description || selectedPastEvent?.description || 'This past event is ready to be linked to gallery items and attendee records.'}</p>
               {selectedPastEvent?.story && <p>{selectedPastEvent.story}</p>}
               <h3 style={{ marginTop: '1rem' }}>Photos</h3>
-              {isAdmin && selectedEventId && (
+              {isAdmin && hasMediaAdminAccess && selectedEventId && (
                 <div style={{ marginTop: '0.85rem', padding: '0.9rem', borderRadius: '16px', border: '1px solid var(--border-color-strong)', background: 'color-mix(in srgb, var(--nav-link-bg) 70%, transparent)' }}>
                   <p className="section-kicker" style={{ marginBottom: '0.45rem' }}>Add more photos or video</p>
                   <p style={{ marginTop: 0, fontSize: '0.88rem', color: 'var(--muted-color)' }}>
                     Upload extra images or a short video from this finished event. Videos must be under 4 minutes.
                   </p>
-                  {!clerkAdminActive && hasStoredAdminCredentials && !showAdminUnlock && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAdminUnlock(true);
-                        setAdminPasswordStatus('');
-                      }}
-                      style={{ marginBottom: '0.8rem', padding: '0.55rem 0.95rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
-                    >
-                      Re-enter admin credentials
-                    </button>
-                  )}
-                  {!clerkAdminActive && (!hasStoredAdminCredentials || showAdminUnlock) && (
-                    <div style={{ display: 'grid', gap: '0.65rem', marginBottom: '0.8rem' }}>
-                      <input
-                        type="text"
-                        value={adminUsernameInput}
-                        onChange={(e) => setAdminUsernameInput(e.target.value)}
-                        placeholder="Admin username"
-                        style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
-                      />
-                      <input
-                        type="password"
-                        value={adminPasswordInput}
-                        onChange={(e) => setAdminPasswordInput(e.target.value)}
-                        placeholder="Admin password required for uploads on this browser"
-                        style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleStoreAdminPassword}
-                        disabled={adminPasswordSaving}
-                        style={{ alignSelf: 'flex-start', padding: '0.55rem 0.95rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
-                      >
-                        {adminPasswordSaving ? 'Checking…' : 'Unlock admin media actions'}
-                      </button>
-                      {adminPasswordStatus && (
-                        <p style={{ margin: 0, fontSize: '0.82rem', color: adminPasswordStatus.toLowerCase().includes('unlocked') ? '#4caf50' : '#e55' }}>
-                          {adminPasswordStatus}
-                        </p>
-                      )}
-                    </div>
-                  )}
                   <div style={{ display: 'grid', gap: '0.65rem' }}>
                     <input
                       type="file"
@@ -682,39 +663,23 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                 </div>
               )}
               {selectedPastEventItems.length > 0 ? (
-                <div className="artwork-gallery" style={{ marginTop: '0.75rem' }}>
-                  {selectedPastEventItems.map((item) => (
-                    <div key={item.id} className="artwork-card">
-                      <div className="artwork-image">
-                        {isVideoUrl(item.image_url) ? (
-                          <video src={item.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block' }} />
-                        ) : (
-                          <img src={item.image_url} alt={item.title} />
-                        )}
-                      </div>
-                      <div className="artwork-info">
-                        {isVideoUrl(item.image_url) && (
-                          <p className="artwork-medium" style={{ marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                            Video
-                          </p>
-                        )}
-                        <h3>{item.title}</h3>
-                        <p className="artwork-artist">{item.artist || 'Apollo Selene'}</p>
-                        <p className="artwork-medium">{item.medium || (isVideoUrl(item.image_url) ? 'Event Video' : 'Event Photo')}</p>
-                        <p className="artwork-description">{item.description}</p>
-                        {isAdmin && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePastEventMedia(item)}
-                            disabled={photoRemovingId === item.id || photoUploading || !hasMediaAdminAccess}
-                            style={{ marginTop: '0.65rem', padding: '0.45rem 0.75rem', borderRadius: '10px', border: '1px solid color-mix(in srgb, #c34646 70%, var(--border-color-strong))', background: 'color-mix(in srgb, #c34646 20%, transparent)', color: 'var(--text-color)', cursor: 'pointer' }}
-                          >
-                            {photoRemovingId === item.id ? 'Removing…' : hasMediaAdminAccess ? 'Remove media' : 'Unlock admin first'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <p style={{ margin: 0, color: 'var(--muted-color)', fontSize: '0.9rem' }}>
+                    {selectedPastEventItems.length} media item{selectedPastEventItems.length === 1 ? '' : 's'} available.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openMediaViewer({
+                        title: selectedEventMeta?.title || selectedPastEvent?.title || 'Past event media',
+                        subtitle: selectedEventMeta?.location || selectedPastEvent?.event_location || '',
+                        items: selectedPastEventItems,
+                      })
+                    }
+                    style={{ padding: '0.55rem 0.95rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
+                  >
+                    View media
+                  </button>
                 </div>
               ) : (
                 <p style={{ marginTop: '0.75rem' }}>No gallery items are linked yet.</p>
@@ -738,107 +703,56 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
         </div>
       ) : (
         <>
-          {isAdmin && (
-            <div className="card" style={{ marginBottom: '1rem' }}>
-              <p className="section-kicker" style={{ marginBottom: '0.45rem' }}>Admin media actions</p>
-              <p style={{ marginTop: 0, fontSize: '0.9rem', color: 'var(--muted-color)' }}>
-                {clerkAdminActive
-                  ? 'Clerk admin session detected. Media actions are unlocked for this session.'
-                  : 'Unlock admin credentials in this browser to remove past-event media from the gallery.'}
-              </p>
-              {!clerkAdminActive && hasStoredAdminCredentials && !showAdminUnlock && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAdminUnlock(true);
-                    setAdminPasswordStatus('');
-                  }}
-                  style={{ marginBottom: '0.8rem', padding: '0.55rem 0.95rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
-                >
-                  Re-enter admin credentials
-                </button>
-              )}
-              {!clerkAdminActive && (!hasStoredAdminCredentials || showAdminUnlock) && (
-                <div style={{ display: 'grid', gap: '0.65rem' }}>
-                  <input
-                    type="text"
-                    value={adminUsernameInput}
-                    onChange={(e) => setAdminUsernameInput(e.target.value)}
-                    placeholder="Admin username"
-                    style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
-                  />
-                  <input
-                    type="password"
-                    value={adminPasswordInput}
-                    onChange={(e) => setAdminPasswordInput(e.target.value)}
-                    placeholder="Admin password required for media actions"
-                    style={{ width: '100%', padding: '0.55rem 0.7rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleStoreAdminPassword}
-                    disabled={adminPasswordSaving}
-                    style={{ alignSelf: 'flex-start', padding: '0.55rem 0.95rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
-                  >
-                    {adminPasswordSaving ? 'Checking…' : 'Unlock admin media actions'}
-                  </button>
-                  {adminPasswordStatus && (
-                    <p style={{ margin: 0, fontSize: '0.82rem', color: adminPasswordStatus.toLowerCase().includes('unlocked') ? '#4caf50' : '#e55' }}>
-                      {adminPasswordStatus}
-                    </p>
-                  )}
-                </div>
-              )}
-              {photoStatus && (
-                <p style={{ marginBottom: 0, marginTop: '0.65rem', fontSize: '0.82rem', color: photoStatus.toLowerCase().includes('failed') || photoStatus.toLowerCase().includes('required') || photoStatus.toLowerCase().includes('rejected') ? '#e55' : '#4caf50' }}>
-                  {photoStatus}
-                </p>
-              )}
-            </div>
+          {isAdmin && !hasMediaAdminAccess && (
+            <p style={{ marginTop: 0, marginBottom: '1rem', fontSize: '0.85rem', color: '#e55' }}>
+              Sign in as admin on the Account page to manage past-event media.
+            </p>
           )}
           <div className="artwork-gallery">
-            {pastEvents.map((event) => (
-              <div key={event.id} className="artwork-card">
+            {groupedPastEvents.map((group) => (
+              <div key={group.key} className="artwork-card">
               <div className="artwork-image">
-                {isVideoUrl(event.image_url) ? (
-                  <video src={event.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block' }} />
+                {isVideoUrl(group.coverItem.image_url) ? (
+                  <video src={group.coverItem.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block' }} />
                 ) : (
-                  <img src={event.image_url} alt={event.title} />
+                  <img src={group.coverItem.image_url} alt={group.title} />
                 )}
               </div>
               <div className="artwork-info">
-                {isVideoUrl(event.image_url) && (
+                {isVideoUrl(group.coverItem.image_url) && (
                   <p className="artwork-medium" style={{ marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     Video
                   </p>
                 )}
-                <h3>{event.title}</h3>
-                <p className="artwork-artist">{event.artist || 'Apollo Selene'}</p>
-                <p className="artwork-medium">{event.medium || (isVideoUrl(event.image_url) ? 'Event Video' : 'Event Poster')}</p>
-                <p className="artwork-description">{event.description}</p>
+                <h3>{group.title}</h3>
+                <p className="artwork-artist">{group.coverItem.artist || 'Apollo Selene'}</p>
+                <p className="artwork-medium">{group.items.length} media item{group.items.length === 1 ? '' : 's'}</p>
+                <p className="artwork-description">{group.description || group.coverItem.description}</p>
                 <p className="artwork-date">
-                  {event.event_date ? `Event Date: ${event.event_date}` : ''}
-                  {event.event_time ? ` · ${event.event_time}` : ''}
+                  {group.date ? `Event Date: ${group.date}` : ''}
+                  {group.time ? ` · ${group.time}` : ''}
                 </p>
-                {event.event_location && <p className="artwork-date">Location: {event.event_location}</p>}
-                {isAdmin && (
+                {group.location && <p className="artwork-date">Location: {group.location}</p>}
+                <button
+                  type="button"
+                  onClick={() =>
+                    openMediaViewer({
+                      title: group.title,
+                      subtitle: group.location || '',
+                      items: group.items,
+                    })
+                  }
+                  style={{ marginTop: '0.5rem', marginBottom: '0.6rem', padding: '0.55rem 0.95rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
+                >
+                  View media
+                </button>
+                {isAdmin && hasMediaAdminAccess && (
                   <div style={{ marginTop: '0.9rem' }}>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemovePastEventMedia(event);
-                      }}
-                      disabled={photoRemovingId === event.id || photoUploading || !hasMediaAdminAccess}
-                      style={{ marginBottom: '0.6rem', padding: '0.45rem 0.75rem', borderRadius: '10px', border: '1px solid color-mix(in srgb, #c34646 70%, var(--border-color-strong))', background: 'color-mix(in srgb, #c34646 20%, transparent)', color: 'var(--text-color)', cursor: 'pointer' }}
-                    >
-                      {photoRemovingId === event.id ? 'Removing…' : hasMediaAdminAccess ? 'Remove media' : 'Unlock admin first'}
-                    </button>
                     <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.82rem', opacity: 0.75 }}>Connect this completed event to a button</label>
                     <select
-                      value={event.event_id || ''}
-                      onChange={(e) => handleLinkEvent(event.id, e.target.value)}
-                      disabled={savingLinkId === event.id}
+                      value={group.coverItem.event_id || ''}
+                      onChange={(e) => handleLinkEvent(group.coverItem.id, e.target.value)}
+                      disabled={savingLinkId === group.coverItem.id}
                       style={{ width: '100%', padding: '0.55rem 0.65rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--input-bg)', color: 'var(--text-color)' }}
                     >
                       <option value="">Unlinked</option>
@@ -849,11 +763,11 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
                       ))}
                     </select>
                     <p style={{ fontSize: '0.78rem', opacity: 0.7, marginTop: '0.35rem' }}>
-                      Admin only: choose which live event card opens this past event.
+                      Admin only: choose which live event card opens this past event. This links the cover media item.
                     </p>
-                    {linkStatus[event.id] && (
-                      <p style={{ fontSize: '0.78rem', marginTop: '0.35rem', color: linkStatus[event.id].toLowerCase().includes('failed') || linkStatus[event.id].toLowerCase().includes('required') ? '#e55' : '#4caf50' }}>
-                        {linkStatus[event.id]}
+                    {linkStatus[group.coverItem.id] && (
+                      <p style={{ fontSize: '0.78rem', marginTop: '0.35rem', color: linkStatus[group.coverItem.id].toLowerCase().includes('failed') || linkStatus[group.coverItem.id].toLowerCase().includes('required') ? '#e55' : '#4caf50' }}>
+                        {linkStatus[group.coverItem.id]}
                       </p>
                     )}
                   </div>
@@ -863,6 +777,88 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
             ))}
           </div>
         </>
+      )}
+
+      {mediaViewer.open && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1200,
+            background: 'rgba(6, 9, 16, 0.92)',
+            backdropFilter: 'blur(6px)',
+            overflowY: 'auto',
+            padding: 'clamp(0.9rem, 2.5vw, 1.75rem)',
+          }}
+        >
+          <div style={{ width: 'min(1600px, 100%)', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.9rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <div>
+                <p className="section-kicker" style={{ marginBottom: '0.25rem' }}>Past event media</p>
+                <h2 style={{ margin: 0 }}>{mediaViewer.title}</h2>
+                {mediaViewer.subtitle && <p style={{ margin: '0.35rem 0 0', color: 'var(--muted-color)' }}>{mediaViewer.subtitle}</p>}
+              </div>
+              <button
+                type="button"
+                onClick={closeMediaViewer}
+                style={{ padding: '0.55rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color-strong)', background: 'var(--button-bg)', color: 'var(--button-text)', cursor: 'pointer' }}
+              >
+                Close
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))',
+                gap: 'clamp(0.8rem, 1.8vw, 1.2rem)',
+                alignItems: 'start',
+              }}
+            >
+              {mediaViewer.items.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    background: 'color-mix(in srgb, var(--surface-color) 88%, transparent)',
+                    border: '1px solid var(--border-color-strong)',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: 'var(--shadow-soft)',
+                  }}
+                >
+                  <div style={{ position: 'relative' }}>
+                    {isVideoUrl(item.image_url) ? (
+                      <video src={item.image_url} controls playsInline preload="metadata" style={{ width: '100%', display: 'block', maxHeight: '48vh', objectFit: 'cover' }} />
+                    ) : (
+                      <img src={item.image_url} alt={item.title} style={{ width: '100%', display: 'block', maxHeight: '48vh', objectFit: 'cover' }} />
+                    )}
+                    {isAdmin && hasMediaAdminAccess && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePastEventMedia(item)}
+                        disabled={photoRemovingId === item.id || photoUploading}
+                        style={{ position: 'absolute', top: '0.6rem', right: '0.6rem', padding: '0.35rem 0.7rem', borderRadius: '999px', border: '1px solid color-mix(in srgb, #c34646 70%, var(--border-color-strong))', background: 'rgba(20, 12, 12, 0.78)', color: '#ffd5d5', cursor: 'pointer' }}
+                      >
+                        {photoRemovingId === item.id ? 'Removing…' : 'Remove'}
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ padding: '0.75rem 0.85rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.02rem' }}>{item.title}</h3>
+                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.84rem', color: 'var(--muted-color)' }}>
+                      {item.medium || (isVideoUrl(item.image_url) ? 'Event Video' : 'Event Photo')}
+                    </p>
+                    {item.description && (
+                      <p style={{ margin: '0.45rem 0 0', fontSize: '0.88rem' }}>{item.description}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {selectedEventId && !loading && !selectedEventMeta && selectedPastEventItems.length === 0 && (
