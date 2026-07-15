@@ -90,7 +90,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const [photoRemovingId, setPhotoRemovingId] = useState(null);
   const [clerkAdminActive, setClerkAdminActive] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return Boolean(window.Clerk?.session);
+    return Boolean(window.Clerk?.session || window.Clerk?.user);
   });
   const [mediaViewer, setMediaViewer] = useState({
     open: false,
@@ -193,7 +193,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     }
 
     const syncClerkAdmin = () => {
-      setClerkAdminActive(Boolean(window.Clerk?.session));
+      setClerkAdminActive(Boolean(window.Clerk?.session || window.Clerk?.user));
     };
 
     const onVisibilityChange = () => {
@@ -217,11 +217,13 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
     }
 
     syncClerkAdmin();
+    const pollId = window.setInterval(syncClerkAdmin, 1200);
     window.addEventListener('focus', syncClerkAdmin);
     window.addEventListener('clerk:loaded', syncClerkAdmin);
     window.addEventListener('clerk:session-updated', syncClerkAdmin);
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
+      window.clearInterval(pollId);
       window.removeEventListener('focus', syncClerkAdmin);
       window.removeEventListener('clerk:loaded', syncClerkAdmin);
       window.removeEventListener('clerk:session-updated', syncClerkAdmin);
@@ -237,7 +239,7 @@ const PastEvents = ({ siteContent = {}, onSiteContentUpdated }) => {
   const legacyAdminUsername = getLegacyAdminUsername();
   const legacyAdminPassword = getLegacyAdminPassword();
   const hasStoredAdminCredentials = Boolean(legacyAdminUsername && legacyAdminPassword);
-  const hasMediaAdminAccess = clerkAdminActive || hasStoredAdminCredentials;
+  const hasMediaAdminAccess = isAdmin || clerkAdminActive || hasStoredAdminCredentials;
 
   const openMediaViewer = ({ title, subtitle, items }) => {
     const nextItems = Array.isArray(items) ? items : [];
