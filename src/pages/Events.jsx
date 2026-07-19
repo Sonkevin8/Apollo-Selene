@@ -339,12 +339,13 @@ const PosterSlideshow = ({ images, tagsByPoster = [] }) => {
         <div
           style={{
             position: 'absolute',
-            left: 8,
             right: 8,
             bottom: valid.length > 1 ? 22 : 8,
             display: 'flex',
             flexWrap: 'wrap',
             gap: 6,
+            justifyContent: 'flex-end',
+            maxWidth: '70%',
             zIndex: 2,
             pointerEvents: 'auto',
           }}
