@@ -253,6 +253,39 @@ const resolvePosters = (event) => {
   return arr.filter(Boolean).slice(0, 8);
 };
 
+const normalizeInstagramHandle = (value = '') => {
+  const trimmed = String(value || '').trim().replace(/^@+/, '').trim();
+  if (!trimmed) return '';
+  return trimmed.replace(/[^a-zA-Z0-9._]/g, '');
+};
+
+const parseInstagramTagList = (value = '') =>
+  String(value || '')
+    .split(',')
+    .map((part) => normalizeInstagramHandle(part))
+    .filter(Boolean);
+
+const resolvePosterInstagramTags = (event) => {
+  const raw = Array.isArray(event?.poster_instagram_tags) ? event.poster_instagram_tags : [];
+  const posters = resolvePosters(event);
+  return posters.map((_, index) => parseInstagramTagList(raw[index] || ''));
+};
+
+const buildPosterPayload = ({ posters = [], tagInputs = [] } = {}) => {
+  const compactPosters = [];
+  const compactTags = [];
+
+  for (let i = 0; i < Math.max(posters.length, tagInputs.length, 8); i += 1) {
+    const posterUrl = String(posters[i] || '').trim();
+    const tags = parseInstagramTagList(tagInputs[i] || '');
+    if (!posterUrl) continue;
+    compactPosters.push(posterUrl);
+    compactTags.push(tags.join(','));
+  }
+
+  return { posters: compactPosters, posterInstagramTags: compactTags };
+};
+
 const normalizeEvent = (event) => ({
   ...event,
   phase: event?.phase || inferEventPhase(event?.time)
@@ -279,10 +312,11 @@ const isEventFinished = (event) => {
 };
 
 // ── Inline poster slideshow ──────────────────────────────────────────────────
-const PosterSlideshow = ({ images }) => {
+const PosterSlideshow = ({ images, tagsByPoster = [] }) => {
   const [idx, setIdx] = React.useState(0);
   const valid = (images || []).filter(Boolean);
   if (!valid.length) return null;
+  const activeTags = Array.isArray(tagsByPoster[idx]) ? tagsByPoster[idx] : [];
 
   // Auto-advance
   React.useEffect(() => {
@@ -301,6 +335,47 @@ const PosterSlideshow = ({ images }) => {
         alt={`Poster ${idx + 1}`}
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'opacity 0.3s' }}
       />
+      {activeTags.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 8,
+            right: 8,
+            bottom: valid.length > 1 ? 22 : 8,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 6,
+            zIndex: 2,
+            pointerEvents: 'auto',
+          }}
+        >
+          {activeTags.map((handle) => (
+            <a
+              key={`${idx}-${handle}`}
+              href={`https://instagram.com/${handle}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '3px 8px',
+                borderRadius: 999,
+                background: 'rgba(0, 0, 0, 0.62)',
+                border: '1px solid rgba(255, 255, 255, 0.28)',
+                color: '#fff',
+                fontSize: 11,
+                textDecoration: 'none',
+                lineHeight: 1.2,
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              @{handle}
+            </a>
+          ))}
+        </div>
+      )}
       {valid.length > 1 && (
         <>
           <button
@@ -335,6 +410,7 @@ const createEventDraft = (theme) => ({
   description: '',
   poster: '',
   posters: ['', '', '', '', '', '', '', ''],
+  posterInstagramTags: ['', '', '', '', '', '', '', ''],
   posterGalleryMap: [null, null, null, null, null, null, null, null],
   maxAttendees: 50,
   ticket_price: ''
@@ -472,6 +548,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
     description: '',
     poster: '',
     posters: ['', '', '', '', '', '', '', ''],
+    posterInstagramTags: ['', '', '', '', '', '', '', ''],
     posterGalleryMap: [null, null, null, null, null, null, null, null],
     maxAttendees: 50,
     ticket_price: ''
@@ -922,6 +999,10 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
       return;
     }
     setAddEventLoading(true);
+    const posterPayload = buildPosterPayload({
+      posters: newEvent.posters || [],
+      tagInputs: newEvent.posterInstagramTags || [],
+    });
     const event = {
       title: newEvent.title,
       date: newEvent.date,
@@ -929,8 +1010,9 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
       phase: newEvent.phase || inferEventPhase(newEvent.time),
       location: newEvent.location,
       description: newEvent.description,
-      poster: newEvent.posters.filter(Boolean)[0] || newEvent.poster || '',
-      posters: newEvent.posters.filter(Boolean),
+      poster: posterPayload.posters[0] || newEvent.poster || '',
+      posters: posterPayload.posters,
+      poster_instagram_tags: posterPayload.posterInstagramTags,
       max_attendees: newEvent.maxAttendees,
       attendees: 0,
       ticketed: newEvent.ticketed === true ? true : false,
@@ -971,6 +1053,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
       description: event.description,
       poster: event.poster,
       posters: Array.isArray(event.posters) && event.posters.length ? [...event.posters, '', '', '', '', '', '', '', ''].slice(0, 8) : [event.poster || '', '', '', '', '', '', '', ''],
+      posterInstagramTags: Array.isArray(event.poster_instagram_tags) && event.poster_instagram_tags.length ? [...event.poster_instagram_tags, '', '', '', '', '', '', '', ''].slice(0, 8) : ['', '', '', '', '', '', '', ''],
       posterGalleryMap: [null, null, null, null, null, null, null, null],
       maxAttendees: event.maxAttendees,
       ticket_price: event.ticket_price != null ? String(event.ticket_price) : ''
@@ -995,6 +1078,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
       description: '',
       poster: '',
       posters: ['', '', '', '', '', '', '', ''],
+      posterInstagramTags: ['', '', '', '', '', '', '', ''],
       posterGalleryMap: [null, null, null, null, null, null, null, null],
       maxAttendees: 50
     });
@@ -1013,10 +1097,15 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
       : 1;
 
     const posterGalleryMap = editEventData.posterGalleryMap || [null, null, null, null, null, null, null, null];
+    const posterPayload = buildPosterPayload({
+      posters: editEventData.posters || [],
+      tagInputs: editEventData.posterInstagramTags || [],
+    });
     const update = {
       ...editEventData,
       phase: editEventData.phase || inferEventPhase(editEventData.time),
-      posters: (editEventData.posters || []).filter(Boolean),
+      posters: posterPayload.posters,
+      poster_instagram_tags: posterPayload.posterInstagramTags,
       max_attendees: safeMaxAttendees,
       ticket_price: editEventData.ticketed && editEventData.ticket_price !== ''
         ? (parseFloat(editEventData.ticket_price) || null)
@@ -1679,6 +1768,17 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
                         />
                       </label>
                     </div>
+                    <input
+                      type="text"
+                      placeholder="Instagram tags for this poster (comma-separated, e.g. @apollo,@selene)"
+                      value={newEvent.posterInstagramTags?.[i] || ''}
+                      onChange={(e) => {
+                        const updated = [...(newEvent.posterInstagramTags || ['', '', '', '', '', '', '', ''])];
+                        updated[i] = e.target.value;
+                        setNewEvent({ ...newEvent, posterInstagramTags: updated });
+                      }}
+                      style={{ width: '100%', marginBottom: '4px', padding: '0.3rem 0.5rem', borderRadius: '8px', border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--text-color)', fontSize: '0.82rem' }}
+                    />
                     {posterUploadError[i] && (
                       <p style={{ margin: '0 0 4px', fontSize: '0.78rem', color: 'var(--error-color, #e05)' }}>{posterUploadError[i]}</p>
                     )}
@@ -1829,6 +1929,17 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
                         />
                       </label>
                     </div>
+                    <input
+                      type="text"
+                      placeholder="Instagram tags for this poster (comma-separated, e.g. @apollo,@selene)"
+                      value={(editEventData.posterInstagramTags || ['', '', '', '', '', '', '', ''])[i] || ''}
+                      onChange={(e) => {
+                        const updated = [...(editEventData.posterInstagramTags || ['', '', '', '', '', '', '', ''])];
+                        updated[i] = e.target.value;
+                        setEditEventData({ ...editEventData, posterInstagramTags: updated });
+                      }}
+                      style={{ width: '100%', marginBottom: '4px', padding: '0.3rem 0.5rem', borderRadius: '8px', border: '1px solid var(--border-color-strong)', background: 'var(--nav-link-bg)', color: 'var(--text-color)', fontSize: '0.82rem' }}
+                    />
                     {posterUploadError[i] && (
                       <p style={{ margin: '0 0 4px', fontSize: '0.78rem', color: 'var(--error-color, #e05)' }}>{posterUploadError[i]}</p>
                     )}
@@ -2128,7 +2239,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
                 </div>
                 {resolvePosters(event).length > 0 && (
                   <div style={{ width: 200, height: 200, borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
-                    <PosterSlideshow images={resolvePosters(event)} />
+                    <PosterSlideshow images={resolvePosters(event)} tagsByPoster={resolvePosterInstagramTags(event)} />
                   </div>
                 )}
               </div>
