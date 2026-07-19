@@ -1023,6 +1023,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
     const { error } = await supabase.from(EVENTS_TABLE).insert([event]);
     if (error) {
       alert('Failed to save event: ' + error.message);
+      setAddEventLoading(false);
       return;
     }
     const { data } = await supabase
@@ -1105,6 +1106,7 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
     const update = {
       ...editEventData,
       phase: editEventData.phase || inferEventPhase(editEventData.time),
+      poster: posterPayload.posters[0] || '',
       posters: posterPayload.posters,
       poster_instagram_tags: posterPayload.posterInstagramTags,
       max_attendees: safeMaxAttendees,
@@ -1116,11 +1118,17 @@ const Events = ({ theme, siteContent = {}, onSiteContentUpdated }) => {
     // Remove non-DB fields
     delete update.maxAttendees;
     delete update.posterGalleryMap;
+    delete update.posterInstagramTags;
 
-    await supabase
+    const { error: updateError } = await supabase
       .from(EVENTS_TABLE)
       .update(update)
       .eq('id', editingEventId);
+    if (updateError) {
+      alert('Failed to save event changes: ' + updateError.message);
+      setEditEventLoading(false);
+      return;
+    }
 
     // Refresh events from backend
     const { data } = await supabase
